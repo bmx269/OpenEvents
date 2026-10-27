@@ -151,6 +151,29 @@ export function DisplayFields( { settings, update } ) {
 				}
 			/>
 			<RadioGroupControl
+				label={ __( 'When someone selects an event', 'openevents' ) }
+				description={ __(
+					'Calendar blocks can override this.',
+					'openevents'
+				) }
+				items={ [
+					{
+						value: 'page',
+						label: __( 'Go to the event page', 'openevents' ),
+					},
+					{
+						value: 'popup',
+						label: __( 'Show a summary popup', 'openevents' ),
+						description: __(
+							'Date, venue, and summary, with a link to the full event.',
+							'openevents'
+						),
+					},
+				] }
+				value={ settings.click_action || 'page' }
+				onValueChange={ ( value ) => update( { click_action: value } ) }
+			/>
+			<RadioGroupControl
 				label={ __( 'Default view', 'openevents' ) }
 				items={ [
 					{

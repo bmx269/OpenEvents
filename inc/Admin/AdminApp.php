@@ -82,6 +82,10 @@ final class AdminApp {
 								'type' => 'string',
 								'enum' => array( 'month', 'list' ),
 							),
+							'click_action'             => array(
+								'type' => 'string',
+								'enum' => array( 'page', 'popup' ),
+							),
 							'date_format'              => array( 'type' => 'string' ),
 							'time_format'              => array( 'type' => 'string' ),
 							'remove_data_on_uninstall' => array( 'type' => 'boolean' ),

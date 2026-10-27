@@ -77,6 +77,35 @@ export default function Edit( { attributes, setAttributes } ) {
 					/>
 				</PanelBody>
 				<PanelBody title={ __( 'Display', 'openevents' ) }>
+					<SelectControl
+						__next40pxDefaultSize
+						__nextHasNoMarginBottom
+						label={ __( 'Selecting an event', 'openevents' ) }
+						value={ attributes.clickAction }
+						options={ [
+							{
+								value: '',
+								label: __( 'Site default', 'openevents' ),
+							},
+							{
+								value: 'page',
+								label: __(
+									'Go to the event page',
+									'openevents'
+								),
+							},
+							{
+								value: 'popup',
+								label: __(
+									'Show a summary popup',
+									'openevents'
+								),
+							},
+						] }
+						onChange={ ( value ) =>
+							setAttributes( { clickAction: value } )
+						}
+					/>
 					<ToggleControl
 						__nextHasNoMarginBottom
 						label={ __( 'Show filter and search', 'openevents' ) }
