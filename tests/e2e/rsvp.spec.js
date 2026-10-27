@@ -87,11 +87,9 @@ test.describe( 'RSVP', () => {
 			table.getByText( 'Grace Hopper', { exact: true } )
 		).toBeVisible();
 
-		const row = table
-			.locator( 'tr' )
-			.filter( {
-				has: page.getByText( 'Katherine Johnson', { exact: true } ),
-			} );
+		const row = table.locator( 'tr' ).filter( {
+			has: page.getByText( 'Katherine Johnson', { exact: true } ),
+		} );
 		await row.getByRole( 'button', { name: 'Check in' } ).click();
 		await expect( row ).toContainText( 'Yes' );
 	} );
