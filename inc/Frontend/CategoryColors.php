@@ -39,6 +39,14 @@ final class CategoryColors {
 	}
 
 	/**
+	 * Inline CSS custom properties for one category, or '' when it has no colour.
+	 */
+	public static function style_for_term( int $term_id ): string {
+		$color = self::color( $term_id );
+		return $color ? sprintf( '--oe-event-bg:%s;--oe-event-fg:%s;', $color, self::contrast( $color ) ) : '';
+	}
+
+	/**
 	 * Inline CSS custom properties for an event, from its first coloured category.
 	 */
 	public static function style_for( int $post_id ): string {

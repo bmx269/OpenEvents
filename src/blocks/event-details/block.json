@@ -13,6 +13,7 @@
 		"showVenue": { "type": "boolean", "default": true },
 		"showOrganizers": { "type": "boolean", "default": true },
 		"showCost": { "type": "boolean", "default": true },
+		"showCategories": { "type": "boolean", "default": true },
 		"showLinks": { "type": "boolean", "default": true }
 	},
 	"supports": {

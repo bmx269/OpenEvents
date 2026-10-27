@@ -42,6 +42,7 @@ final class EventDetails {
 				'showVenue'      => true,
 				'showOrganizers' => true,
 				'showCost'       => true,
+				'showCategories' => true,
 				'showLinks'      => true,
 			)
 		);
@@ -97,6 +98,26 @@ final class EventDetails {
 			$rows['cost'] = array(
 				'label' => __( 'Cost', 'openevents' ),
 				'html'  => esc_html( $cost ),
+			);
+		}
+
+		$terms = get_the_terms( $event->post, \OpenEvents\Content\PostTypes::CATEGORY );
+		if ( $options['showCategories'] && is_array( $terms ) && $terms ) {
+			$badges = '';
+			foreach ( $terms as $term ) {
+				$link    = get_term_link( $term );
+				$style   = CategoryColors::style_for_term( $term->term_id );
+				$badges .= sprintf(
+					'<li><a class="oe-badge%s" href="%s"%s>%s</a></li>',
+					$style ? ' has-color' : '',
+					esc_url( is_wp_error( $link ) ? '' : $link ),
+					$style ? ' style="' . esc_attr( $style ) . '"' : '',
+					esc_html( $term->name )
+				);
+			}
+			$rows['categories'] = array(
+				'label' => _n( 'Category', 'Categories', count( $terms ), 'openevents' ),
+				'html'  => '<ul class="oe-details__categories">' . $badges . '</ul>',
 			);
 		}
 

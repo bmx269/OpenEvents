@@ -250,6 +250,20 @@ final class OutputTest extends TestCase {
 		);
 	}
 
+	public function test_event_details_show_coloured_category_badges(): void {
+		$music = self::factory()->term->create( array( 'taxonomy' => PostTypes::CATEGORY, 'name' => 'Music' ) );
+		$plain = self::factory()->term->create( array( 'taxonomy' => PostTypes::CATEGORY, 'name' => 'Talks' ) );
+		update_term_meta( $music, CategoryColors::META_KEY, '#7c3aed' );
+		$id = $this->event( array( '_oe_start' => '2030-05-05 10:00:00' ) );
+		wp_set_object_terms( $id, array( $music, $plain ), PostTypes::CATEGORY );
+
+		$html = EventDetails::render( $id );
+
+		$this->assertStringContainsString( '<dt>Categories</dt>', $html );
+		$this->assertMatchesRegularExpression( '/<a class="oe-badge has-color" href="[^"]+" style="--oe-event-bg:#7c3aed;--oe-event-fg:#ffffff;">Music<\/a>/', $html );
+		$this->assertMatchesRegularExpression( '/<a class="oe-badge" href="[^"]+">Talks<\/a>/', $html );
+	}
+
 	public function test_category_colour_style_on_events(): void {
 		$term = self::factory()->term->create( array( 'taxonomy' => PostTypes::CATEGORY ) );
 		update_term_meta( $term, CategoryColors::META_KEY, '#7c3aed' );
