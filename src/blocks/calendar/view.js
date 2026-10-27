@@ -12,8 +12,34 @@ const isModifiedClick = ( event ) =>
 	event.shiftKey ||
 	event.defaultPrevented;
 
+const focusTitle = ( regionId ) =>
+	document
+		.getElementById( regionId )
+		?.querySelector( '.oe-calendar__title' )
+		?.focus();
+
 store( 'openevents/calendar', {
 	actions: {
+		/**
+		 * Submits the filter form through the router, keeping only filled fields.
+		 */
+		filter: withSyncEvent( function* ( event ) {
+			event.preventDefault();
+			const { ref } = getElement();
+			const form = ref.closest( 'form' ) || ref;
+			const regionId = form.closest( '[data-wp-router-region]' )?.id;
+			const url = new URL( form.action, window.location.href );
+			for ( const [ key, value ] of new window.FormData( form ) ) {
+				if ( value ) {
+					url.searchParams.set( key, value );
+				}
+			}
+			const { actions } = yield import(
+				'@wordpress/interactivity-router'
+			);
+			yield actions.navigate( url.toString() );
+			focusTitle( regionId );
+		} ),
 		navigate: withSyncEvent( function* ( event ) {
 			if ( isModifiedClick( event ) ) {
 				return;
@@ -28,10 +54,7 @@ store( 'openevents/calendar', {
 			yield actions.navigate( ref.href );
 
 			// Move focus to the new heading so screen reader users hear the change.
-			document
-				.getElementById( regionId )
-				?.querySelector( '.oe-calendar__title' )
-				?.focus();
+			focusTitle( regionId );
 		} ),
 	},
 } );
