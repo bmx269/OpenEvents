@@ -194,11 +194,11 @@ final class ApiTest extends TestCase {
 		$registry = new \OpenEvents\Modules\Registry( new Settings() );
 		$this->assertSame( array( 'acme-zoom', 'ical' ), $registry->resolve( array( 'acme-zoom', 'missing' ) ) );
 
-		// The registered setting's sanitiser uses the plugin's already-booted registry,
-		// which predates this test's filter; write the raw option instead.
-		remove_all_filters( 'sanitize_option_' . Settings::MODULES_OPTION );
-		update_option( Settings::MODULES_OPTION, array( 'acme-zoom' ) );
+		// The bootstrap pins enabled modules with a pre_option filter; override it here.
+		$enabled = static fn() => array( 'acme-zoom' );
+		add_filter( 'pre_option_' . Settings::MODULES_OPTION, $enabled, 20 );
 		$registry->boot_enabled();
+		remove_filter( 'pre_option_' . Settings::MODULES_OPTION, $enabled, 20 );
 		$this->assertTrue( $module->booted );
 		$this->assertTrue( $registry->is_enabled( 'ical' ), 'Dependencies boot too.' );
 

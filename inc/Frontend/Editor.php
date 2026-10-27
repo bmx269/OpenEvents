@@ -56,6 +56,8 @@ final class Editor {
 					'siteTimezone'    => wp_timezone_string(),
 					'timezones'       => timezone_identifiers_list(),
 					'timeFormat12h'   => (bool) preg_match( '/[aAgh]/', (string) get_option( 'time_format' ) ),
+					'modules'         => openevents()->modules()->enabled_ids(),
+					'attendeesUrl'    => admin_url( 'admin.php?page=openevents-attendees' ),
 				)
 			) . ';',
 			'before'

@@ -2,11 +2,12 @@
 
 OpenEvents is a single plugin: a core calendar plus optional modules (iCal today; recurrence, RSVP, and tickets planned). Site owners turn modules on and off under **Events → Settings → Modules**, and third-party plugins can register their own.
 
-Three priorities drive the design, in this order:
+Four priorities drive the design:
 
 1. **Performance at library scale.** Thousands of events, with listings that cost about the same as a plain page.
-2. **Not breaking sites.** No fatals on upgrade, no runtime rewrite flushes, existing content left alone.
-3. **Open extension.** Every feature is built on public hooks and APIs that add-ons can use too.
+2. **Accessibility.** WCAG 2.2 AA for every display and admin screen, enforced by automated axe scans in CI.
+3. **Not breaking sites.** No fatals on upgrade, no runtime rewrite flushes, existing content left alone.
+4. **Open extension.** Every feature is built on public hooks and APIs that add-ons can use too.
 
 | Item | Value |
 | --- | --- |
@@ -132,6 +133,28 @@ How the plugin gets there:
 6. **Front-end weight.** Server-rendered HTML; the only JS is a 683-byte view module that lazy-loads the core router. Block styles are about 5 KB.
 
 `wp openevents stats` prints row counts and `EXPLAIN` plans for the hot queries. `dev/bench-blueprint.json` plus `dev/bench-mu.php` reproduce the numbers above (an `?openevents_bench=1` HTML comment with query count and timings).
+
+## Accessibility
+
+Target: WCAG 2.2 AA. `tests/e2e/accessibility.spec.js` runs axe-core (WCAG 2.0/2.1/2.2, A and AA) on the plugin's own markup: month, list, and past views (desktop and phone), event details, the RSVP form, and the settings, setup, and attendee screens. Any violation fails CI.
+
+Patterns used throughout:
+- Semantic structure: the month grid is a `<table>` with a caption and column headers; lists are `<ol>`; details are a `<dl>`; headings follow a configurable level.
+- Real links and buttons, so everything works with a keyboard and without JavaScript.
+- Focus management after in-place updates: calendar navigation moves focus to the new heading; RSVP moves focus to the result message, which is also a live region.
+- Errors are announced (`role="alert"` / live regions), fields have visible labels, groups use `<fieldset>`/`<legend>`, touch targets are at least about 44px.
+- Contrast: category colours get automatic black/white text; muted text never uses opacity.
+
+## RSVP module
+
+- Settings live in the `_oe_rsvp` meta object (saved and revisioned with the event) and are mirrored into an `oe_ticket_types` row of kind `rsvp`, keyed by `(event_id, type_key)` so `sold` survives edits.
+- One `oe_attendees` row per person (guests included) for per-person check-in; a response is a group sharing `group_uuid`.
+- Seats: `UPDATE … SET sold = sold + n WHERE … sold + n <= capacity`; no row changed means full. Changing a response reserves or releases the difference.
+- Privacy: a second response with an already-used email never changes the first. The owner is emailed a fresh private link (token stored as an HMAC hash) to change or cancel.
+- Cache-safe public form: no nonce. Spam defences are a honeypot, a signed timestamp (submissions under 2 seconds are rejected), and a per-IP rate limit (hashed IPs).
+- Entry points: REST `POST /openevents/v1/events/{id}/rsvp` (status codes 409 full, 403 closed, 422 invalid, 429 rate-limited), the no-JS `admin-post.php` form, and `Service::respond()` for add-ons.
+- Admin: Events → Attendees (DataViews, server-paged) with check-in, cancel, and streamed CSV export protected against spreadsheet formula injection.
+- Hooks: `openevents/rsvp/responded`, `openevents/rsvp/cancelled`, `openevents/rsvp/email`, `openevents/attendees/capability`, `openevents/client_ip`.
 
 ## Module system
 

@@ -55,7 +55,15 @@ function nextHour() {
 	return now;
 }
 
-function DateField( { label, value, onChange, allDay, is12Hour } ) {
+export function DateField( {
+	label,
+	value,
+	onChange,
+	allDay,
+	is12Hour,
+	emptyLabel,
+	onClear,
+} ) {
 	const settings = getSettings();
 	const labelText = value
 		? display(
@@ -64,7 +72,7 @@ function DateField( { label, value, onChange, allDay, is12Hour } ) {
 					: `${ settings.formats.date } ${ settings.formats.time }`,
 				value
 		  )
-		: __( 'Not set', 'openevents' );
+		: emptyLabel || __( 'Not set', 'openevents' );
 
 	return (
 		<Flex justify="space-between" className="oe-editor-panel__row">
@@ -95,6 +103,11 @@ function DateField( { label, value, onChange, allDay, is12Hour } ) {
 							}
 							is12Hour={ is12Hour }
 						/>
+						{ onClear && value && (
+							<Button variant="link" onClick={ onClear }>
+								{ __( 'Clear', 'openevents' ) }
+							</Button>
+						) }
 					</div>
 				) }
 			/>

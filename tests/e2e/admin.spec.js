@@ -54,6 +54,8 @@ test.describe( 'Admin', () => {
 	test( 'settings: turning off the iCal module removes its links', async ( {
 		page,
 	} ) => {
+		const original = ( await rest( page, '/wp/v2/settings' ) ).body
+			.openevents_modules;
 		await page.goto(
 			'/wp-admin/edit.php?post_type=oe_event&page=openevents-settings'
 		);
@@ -72,7 +74,7 @@ test.describe( 'Admin', () => {
 		// Restore for other tests.
 		await rest( page, '/wp/v2/settings', {
 			method: 'POST',
-			data: { openevents_modules: [ 'ical' ] },
+			data: { openevents_modules: original },
 		} );
 		await page.goto( '/events/' );
 		await expect(

@@ -90,7 +90,7 @@ $make( 'Online Talk (Toronto time)', $d( 16, '18:00:00' ), $d( 16, '19:00:00' ),
 foreach ( array( 'Open Mic', 'Choir Practice', 'Board Games', 'Late Show' ) as $i => $title ) {
 	$make( $title, $d( 20, sprintf( '%02d:00:00', 12 + $i * 2 ) ), $d( 20, sprintf( '%02d:30:00', 13 + $i * 2 ) ), array(), 'Community' );
 }
-$make( 'Next Month Gala', $month->modify( '+1 month +4 days' )->format( 'Y-m-d' ) . ' 18:00:00', $month->modify( '+1 month +4 days' )->format( 'Y-m-d' ) . ' 23:00:00' );
+$gala = $make( 'Next Month Gala', $month->modify( '+1 month +4 days' )->format( 'Y-m-d' ) . ' 18:00:00', $month->modify( '+1 month +4 days' )->format( 'Y-m-d' ) . ' 23:00:00' );
 $make( 'Hidden Rehearsal', $d( 22, '09:00:00' ), $d( 22, '10:00:00' ), array( '_oe_hide_from_listings' => true ) );
 
 // An ordinary Post that becomes an event, and one that stays a plain post.
@@ -103,5 +103,27 @@ wp_insert_post(
 		'post_content' => '<!-- wp:paragraph --><p>Nothing about this post should change.</p><!-- /wp:paragraph -->',
 	)
 );
+
+// RSVP on upcoming events (when the module is on), with a few responses.
+$soon = current_datetime()->modify( '+6 days' )->format( 'Y-m-d' );
+$workshop = $make( 'Intro to Bookbinding (3 places)', "{$soon} 18:30:00", "{$soon} 20:30:00", array( '_oe_cost' => '0' ), 'Workshops' );
+$rsvp_events = array(
+	$gala     => array( 'enabled' => true, 'capacity' => 120, 'max_per_response' => 4 ),
+	$workshop => array( 'enabled' => true, 'capacity' => 3, 'max_per_response' => 2 ),
+);
+update_option( 'openevents_modules', array( 'ical', 'rsvp' ) );
+OpenEvents\Attendance\Schema::install();
+$rsvp = new OpenEvents\Modules\Rsvp\Service();
+foreach ( $rsvp_events as $event_id => $config ) {
+	update_post_meta( $event_id, '_oe_rsvp', $config );
+	$rsvp->sync( $event_id );
+}
+openevents()->occurrences()->query( array( 'per_page' => 1 ) ); // Flush occurrence syncs first.
+add_filter( 'pre_wp_mail', '__return_true' ); // No emails from sample data.
+foreach ( array( array( 'Grace Hopper', 'grace@example.com', 2 ), array( 'Alan Turing', 'alan@example.com', 1 ), array( 'Katherine Johnson', 'katherine@example.com', 3 ) ) as $i => $person ) {
+	$rsvp->respond( $gala, array( 'name' => $person[0], 'email' => $person[1], 'status' => 'going', 'quantity' => $person[2], 'ts' => OpenEvents\Modules\Rsvp\Service::sign_timestamp( time() - 60 ), 'ip' => '192.0.2.' . ( $i + 1 ) ) );
+}
+$rsvp->respond( $workshop, array( 'name' => 'Ada Lovelace', 'email' => 'ada@example.com', 'status' => 'going', 'quantity' => 2, 'ts' => OpenEvents\Modules\Rsvp\Service::sign_timestamp( time() - 60 ), 'ip' => '192.0.2.9' ) );
+remove_filter( 'pre_wp_mail', '__return_true' );
 
 update_option( 'openevents_sample_data', 1 );
