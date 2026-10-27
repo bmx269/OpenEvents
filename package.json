@@ -12,9 +12,9 @@
 		"lint:css": "wp-scripts lint-style ./src",
 		"lint:php": "composer lint",
 		"plugin-zip": "wp-scripts plugin-zip",
-		"playground": "wp-playground-cli server --blueprint=blueprint.json --auto-mount",
+		"playground": "wp-playground-cli server --blueprint=blueprint.json --mount=.:/wordpress/wp-content/plugins/openevents",
 		"make-pot": "wp i18n make-pot . languages/openevents.pot --exclude=node_modules,vendor,src",
-		"bench": "wp-playground-cli server --blueprint=dev/bench-blueprint.json --auto-mount",
+		"bench": "wp-playground-cli server --blueprint=dev/bench-blueprint.json --mount=.:/wordpress/wp-content/plugins/openevents",
 		"test:php": "vendor/bin/phpunit",
 		"test:e2e": "playwright test",
 		"test": "npm run test:php && npm run test:e2e"
