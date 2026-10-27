@@ -1,0 +1,40 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>OpenEvents</title>
+<style>
+@font-face { font-family: Inter; src: url(https://cdn.jsdelivr.net/npm/@fontsource-variable/inter/files/inter-latin-wght-normal.woff2) format('woff2'); font-weight: 100 900; }
+:root { --blue: #1D3A8A; --coral: #FF7A59; --ink: #1E1E1E; --muted: #50575e; --bg: #F3F5FB; }
+* { box-sizing: border-box; margin: 0; }
+html, body { width: 1280px; height: 800px; overflow: hidden; background: var(--bg); font-family: Inter, sans-serif; color: var(--ink); }
+.head { position: absolute; left: 64px; top: 48px; width: 1152px; display: flex; align-items: flex-end; justify-content: space-between; }
+.brand { display: flex; align-items: center; gap: 12px; }
+.brand img { width: 52px; height: 52px; }
+.brand b { font-size: 40px; font-weight: 800; letter-spacing: -1.3px; }
+.head p { font-size: 18px; line-height: 26px; color: var(--muted); font-weight: 500; text-align: right; }
+.head p strong { color: var(--ink); }
+.browser { position: absolute; left: 64px; top: 150px; width: 900px; border-radius: 12px; overflow: hidden; background: #fff; box-shadow: 0 20px 50px rgba(29,58,138,.18); }
+.bar { height: 34px; background: #E7EBF5; display: flex; align-items: center; gap: 7px; padding: 0 14px; }
+.bar i { width: 11px; height: 11px; border-radius: 50%; background: #c5cbd9; display: block; }
+.bar span { margin-left: 14px; font-size: 12px; color: var(--muted); background: #fff; border-radius: 6px; padding: 4px 12px; }
+.browser { height: 560px; }
+.browser img { display: block; width: 900px; }
+.phone { position: absolute; right: 64px; top: 128px; width: 290px; height: 610px; border-radius: 36px; background: #111; padding: 12px; box-shadow: 0 24px 50px rgba(0,0,0,.28); }
+.phone div { width: 100%; height: 100%; border-radius: 26px; overflow: hidden; background: #fff; }
+.phone img { width: 100%; display: block; }
+.chips { position: absolute; left: 64px; bottom: 34px; display: flex; gap: 10px; }
+.chips span { background: #fff; border: 1px solid #DCE2F0; border-radius: 99px; padding: 7px 14px; font-size: 13px; font-weight: 600; }
+.chips span b { color: var(--coral); }
+</style></head>
+<body>
+<div class="head">
+	<div class="brand"><img src="icon.svg" alt=""><b>OpenEvents</b></div>
+	<p><strong>Month and list views</strong> that work without JavaScript,<br>and become an agenda on phones.</p>
+</div>
+<div class="browser"><div class="bar"><i></i><i></i><i></i><span>example.org/events/</span></div><img src="captures/month.png" alt=""></div>
+<div class="phone"><div><img src="captures/phone.png" alt=""></div></div>
+<div class="chips">
+	<span><b>●</b> Events on any post type</span>
+	<span><b>●</b> Category colours</span>
+	<span><b>●</b> iCal &amp; Google Calendar</span>
+	<span><b>●</b> Constant query cost at 5,000+ events</span>
+</div>
+</body></html>

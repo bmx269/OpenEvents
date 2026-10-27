@@ -11,3 +11,4 @@ vendor/
 # Playwright
 /test-results/
 /playwright-report/
+/dist/

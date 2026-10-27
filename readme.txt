@@ -28,6 +28,15 @@ Built for sites with thousands of events: listings run indexed queries against a
 1. Install and activate the plugin.
 2. Follow the setup wizard to choose where events live and where the calendar appears.
 
+== Screenshots ==
+
+1. Month calendar on desktop, and the same calendar as an agenda on a phone.
+2. Event page with date, venue, organizer, cost, and calendar links.
+3. List view of past events, grouped by month.
+4. Event panel in the block editor sidebar.
+5. Setup wizard: choose where events live.
+6. Module settings.
+
 == Changelog ==
 
 = 0.1.0 =
