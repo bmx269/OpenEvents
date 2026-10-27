@@ -16,6 +16,9 @@
 		"lint": "find inc src templates dev *.php -name '*.php' -print0 | xargs -0 -n1 php -l | grep -v '^No syntax errors' || true"
 	},
 	"config": {
-		"sort-packages": true
+		"sort-packages": true,
+		"platform": {
+			"php": "8.2.0"
+		}
 	}
 }
