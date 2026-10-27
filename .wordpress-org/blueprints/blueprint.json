@@ -20,7 +20,7 @@
 			"step": "installPlugin",
 			"pluginData": {
 				"resource": "url",
-				"url": "https://raw.githubusercontent.com/bmx269/openevents/playground/openevents.zip"
+				"url": "https://raw.githubusercontent.com/bmx269/OpenEvents/playground/openevents.zip"
 			},
 			"options": {
 				"activate": true

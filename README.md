@@ -4,7 +4,7 @@ Open-source events for WordPress, built to replace The Events Calendar and its p
 
 ![OpenEvents: a month calendar on desktop that becomes an agenda on phones](.wordpress-org/screenshot-1.png)
 
-**[Try it in WordPress Playground](https://playground.wordpress.net/?blueprint-url=https://raw.githubusercontent.com/bmx269/openevents/main/.wordpress-org/blueprints/blueprint.json)** to test the plugin in your browser, with nothing to install. The demo loads sample events, venues, and coloured categories for the current month, and opens on the calendar. You're logged in as admin, so you can try the setup wizard (**Events → Settings → Run setup wizard**) and the editor too.
+**[Try it in WordPress Playground](https://playground.wordpress.net/?blueprint-url=https://raw.githubusercontent.com/bmx269/OpenEvents/main/.wordpress-org/blueprints/blueprint.json)** to test the plugin in your browser, with nothing to install. The demo loads sample events, venues, and coloured categories for the current month, and opens on the calendar. You're logged in as admin, so you can try the setup wizard (**Events → Settings → Run setup wizard**) and the editor too.
 
 - **Requires:** WordPress 7.1+, PHP 8.2+
 - **License:** GPLv2 or later
