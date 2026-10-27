@@ -1,6 +1,6 @@
-# Open Events Calendar
+# OpenEvents
 
-An open-source WordPress events calendar, built as a replacement for The Events Calendar, with room for the features that are usually paid add-ons (recurrence, RSVP, tickets) as built-in modules.
+Open-source events for WordPress, built to replace The Events Calendar and its paid add-ons. **OpenEvents Calendar** is the core; **RSVP**, **Tickets**, recurrence, and more are modules you switch on, with no upsells.
 
 - **Events on any post type.** Use a dedicated Events post type, add event dates to post types you already have, or both. Existing posts are never changed.
 - **Fast at library scale.** Listings read one indexed table and batch-load everything they render. With 5,000 events, a month view costs 2 more queries than a plain page.
@@ -20,18 +20,30 @@ Phase 1 (core foundation) is done. See [docs/ROADMAP.md](docs/ROADMAP.md) for wh
 npm install
 npm run build          # or: npm start (watch)
 npm run playground     # WordPress Playground with the plugin and sample events
-npm run bench          # Playground with 5,000 generated events; add ?oec_bench=1 to a page
+npm run bench          # Playground with 5,000 generated events; add ?openevents_bench=1 to a page
 npm run lint:js
 ```
+
+### Tests
+
+```bash
+composer install && composer test:install   # one-time: WordPress + test library + SQLite drop-in in .wp-tests/
+npm run test:php                            # PHPUnit integration tests, including query-count budgets
+npm run test:e2e                            # Playwright against WordPress Playground
+```
+
+No Docker or MySQL is needed: PHPUnit runs WordPress on the official SQLite drop-in, and the end-to-end tests boot Playground. The same suites run in GitHub Actions on every push.
+
+`tests/phpunit/integration/PerformanceTest.php` fails if rendering cost grows with the number of events (an N+1 query), so performance regressions are caught like any other bug.
 
 The built `build/` directory is not committed. Run `npm run build` after cloning, or use `npm run plugin-zip` to make an installable zip.
 
 ### WP-CLI
 
 ```bash
-wp open-events rebuild     # rebuild the occurrences table (after bulk imports)
-wp open-events stats       # row counts and EXPLAIN plans for hot queries
-wp open-events generate --count=5000   # load-test data; never on production
+wp openevents rebuild     # rebuild the occurrences table (after bulk imports)
+wp openevents stats       # row counts and EXPLAIN plans for hot queries
+wp openevents generate --count=5000   # load-test data; never on production
 ```
 
 ## Documentation
@@ -44,14 +56,14 @@ wp open-events generate --count=5000   # load-test data; never on production
 
 ```php
 // Add a module that site owners can toggle in Events → Settings → Modules.
-add_filter( 'open_events_calendar/modules', function ( array $modules ) {
+add_filter( 'openevents/modules', function ( array $modules ) {
 	$modules[] = new My_Zoom_Module(); // extends OpenEvents\Modules\AbstractModule
 	return $modules;
 } );
 
 // Query events anywhere.
-foreach ( oec_get_upcoming( 5, array( 'categories' => array( 12 ) ) ) as $occurrence ) {
-	echo esc_html( get_the_title( $occurrence->event_id ) . ': ' . oec_format_range( $occurrence ) );
+foreach ( openevents_get_upcoming( 5, array( 'categories' => array( 12 ) ) ) as $occurrence ) {
+	echo esc_html( get_the_title( $occurrence->event_id ) . ': ' . openevents_format_range( $occurrence ) );
 }
 ```
 

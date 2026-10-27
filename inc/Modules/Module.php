@@ -10,7 +10,7 @@ namespace OpenEvents\Modules;
 /**
  * A feature that site owners can switch on and off under Events → Settings → Modules.
  *
- * Add-on plugins register modules with the open_events_calendar/modules filter.
+ * Add-on plugins register modules with the openevents/modules filter.
  * Extend AbstractModule rather than implementing this directly so new optional
  * methods do not break you.
  */

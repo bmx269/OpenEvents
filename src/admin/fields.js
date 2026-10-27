@@ -14,7 +14,7 @@ import {
 	Text,
 } from '@wordpress/ui';
 
-const config = window.openEventsCalendarAdmin || {};
+const config = window.openEventsAdmin || {};
 
 /**
  * Where events live: the dedicated post type and/or existing post types.
@@ -35,13 +35,10 @@ export function EventContentFields( { settings, update } ) {
 	return (
 		<Stack direction="column" gap="lg">
 			<SwitchControl
-				label={ __(
-					'Create an Events post type',
-					'open-events-calendar'
-				) }
+				label={ __( 'Create an Events post type', 'openevents' ) }
 				description={ __(
 					'Adds an Events menu with its own archive page. Turning this off later hides existing events but does not delete them.',
-					'open-events-calendar'
+					'openevents'
 				) }
 				checked={ !! settings.register_event_type }
 				onCheckedChange={ ( checked ) =>
@@ -50,7 +47,7 @@ export function EventContentFields( { settings, update } ) {
 			/>
 			{ settings.register_event_type && (
 				<InputControl
-					label={ __( 'Events URL slug', 'open-events-calendar' ) }
+					label={ __( 'Events URL slug', 'openevents' ) }
 					prefix={
 						<InputLayout.Slot>
 							<Text variant="body-md">{ config.homeUrl }</Text>
@@ -67,13 +64,13 @@ export function EventContentFields( { settings, update } ) {
 					<Text variant="heading-sm">
 						{ __(
 							'Add events to existing post types',
-							'open-events-calendar'
+							'openevents'
 						) }
 					</Text>
 					<Text variant="body-sm">
 						{ __(
 							'An Event panel appears in the editor for these types. Existing posts are not changed: an item only becomes an event when you give it a date.',
-							'open-events-calendar'
+							'openevents'
 						) }
 					</Text>
 					{ config.postTypes.map( ( type ) => (
@@ -86,7 +83,7 @@ export function EventContentFields( { settings, update } ) {
 									'%d published',
 									'%d published',
 									type.count,
-									'open-events-calendar'
+									'openevents'
 								),
 								type.count
 							) }
@@ -114,8 +111,8 @@ export function DisplayFields( { settings, update } ) {
 		{
 			value: '0',
 			label: settings.register_event_type
-				? __( 'Use the Events archive', 'open-events-calendar' )
-				: __( 'None', 'open-events-calendar' ),
+				? __( 'Use the Events archive', 'openevents' )
+				: __( 'None', 'openevents' ),
 		},
 		...( config.pages || [] ).map( ( page ) => ( {
 			value: String( page.id ),
@@ -126,10 +123,10 @@ export function DisplayFields( { settings, update } ) {
 	return (
 		<Stack direction="column" gap="lg">
 			<SelectControl
-				label={ __( 'Calendar page', 'open-events-calendar' ) }
+				label={ __( 'Calendar page', 'openevents' ) }
 				description={ __(
 					'A page containing the Calendar block. Used for “View all events” links and the iCal feed.',
-					'open-events-calendar'
+					'openevents'
 				) }
 				items={ pageItems }
 				value={ String( settings.calendar_page || 0 ) }
@@ -138,15 +135,15 @@ export function DisplayFields( { settings, update } ) {
 				}
 			/>
 			<RadioGroupControl
-				label={ __( 'Default view', 'open-events-calendar' ) }
+				label={ __( 'Default view', 'openevents' ) }
 				items={ [
 					{
 						value: 'month',
-						label: __( 'Month grid', 'open-events-calendar' ),
+						label: __( 'Month grid', 'openevents' ),
 					},
 					{
 						value: 'list',
-						label: __( 'List', 'open-events-calendar' ),
+						label: __( 'List', 'openevents' ),
 					},
 				] }
 				value={ settings.default_view || 'month' }
@@ -170,24 +167,24 @@ export function FormatFields( { settings, update } ) {
 				type="number"
 				min={ 1 }
 				max={ 100 }
-				label={ __( 'Events per page', 'open-events-calendar' ) }
+				label={ __( 'Events per page', 'openevents' ) }
 				value={ String( settings.per_page ?? 10 ) }
 				onValueChange={ ( value ) =>
 					update( { per_page: Number( value ) || 10 } )
 				}
 			/>
 			<InputControl
-				label={ __( 'Date format', 'open-events-calendar' ) }
+				label={ __( 'Date format', 'openevents' ) }
 				description={ __(
 					'Leave blank to use the site date format.',
-					'open-events-calendar'
+					'openevents'
 				) }
 				placeholder={ config.siteFormats?.date }
 				value={ settings.date_format || '' }
 				onValueChange={ ( value ) => update( { date_format: value } ) }
 			/>
 			<InputControl
-				label={ __( 'Time format', 'open-events-calendar' ) }
+				label={ __( 'Time format', 'openevents' ) }
 				placeholder={ config.siteFormats?.time }
 				value={ settings.time_format || '' }
 				onValueChange={ ( value ) => update( { time_format: value } ) }
@@ -195,11 +192,11 @@ export function FormatFields( { settings, update } ) {
 			<SwitchControl
 				label={ __(
 					'Show event details above the content automatically',
-					'open-events-calendar'
+					'openevents'
 				) }
 				description={ __(
 					'Skipped when the Event Details block is already on the page.',
-					'open-events-calendar'
+					'openevents'
 				) }
 				checked={ !! settings.append_details }
 				onCheckedChange={ ( checked ) =>
@@ -232,10 +229,7 @@ export function ModuleFields( { enabled, onChange } ) {
 						module.requires.length
 							? `${ module.description } ${ sprintf(
 									/* translators: %s: comma-separated module names */
-									__(
-										'Requires: %s.',
-										'open-events-calendar'
-									),
+									__( 'Requires: %s.', 'openevents' ),
 									module.requires.map( labelFor ).join( ', ' )
 							  ) }`
 							: module.description

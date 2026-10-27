@@ -17,7 +17,7 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Plugin instance: settings(), occurrences() repository, modules() registry.
  */
-function open_events_calendar(): Plugin {
+function openevents(): Plugin {
 	return Plugin::instance();
 }
 
@@ -26,21 +26,21 @@ function open_events_calendar(): Plugin {
  *
  * @return string[]
  */
-function oec_event_post_types(): array {
-	return open_events_calendar()->settings()->event_post_types();
+function openevents_event_post_types(): array {
+	return openevents()->settings()->event_post_types();
 }
 
 /**
  * Event wrapper for a post, or null when the post's type is not event-enabled
  * or the post has no start date.
  */
-function oec_get_event( int|WP_Post|null $post = null ): ?Event {
+function openevents_get_event( int|WP_Post|null $post = null ): ?Event {
 	$event = Event::get( $post );
 	return ( $event && $event->is_scheduled() ) ? $event : null;
 }
 
-function oec_is_event( int|WP_Post|null $post = null ): bool {
-	return null !== oec_get_event( $post );
+function openevents_is_event( int|WP_Post|null $post = null ): bool {
+	return null !== openevents_get_event( $post );
 }
 
 /**
@@ -49,8 +49,8 @@ function oec_is_event( int|WP_Post|null $post = null ): bool {
  * @param array<string, mixed> $args Query arguments.
  * @return array{items: Occurrence[], total: int, pages: int}
  */
-function oec_get_occurrences( array $args = array() ): array {
-	return open_events_calendar()->occurrences()->query( $args );
+function openevents_get_occurrences( array $args = array() ): array {
+	return openevents()->occurrences()->query( $args );
 }
 
 /**
@@ -58,7 +58,7 @@ function oec_get_occurrences( array $args = array() ): array {
  *
  * @return Occurrence[]
  */
-function oec_get_upcoming( int $limit = 10, array $args = array() ): array {
+function openevents_get_upcoming( int $limit = 10, array $args = array() ): array {
 	$args = array_merge(
 		array(
 			'ends_after' => OpenEvents\Occurrences\Repository::now(),
@@ -67,26 +67,26 @@ function oec_get_upcoming( int $limit = 10, array $args = array() ): array {
 		),
 		$args
 	);
-	return oec_get_occurrences( $args )['items'];
+	return openevents_get_occurrences( $args )['items'];
 }
 
 /**
  * Human-readable date range for an occurrence, e.g. "November 3, 2026, 7:00 pm – 9:00 pm".
  */
-function oec_format_range( Occurrence $occurrence ): string {
+function openevents_format_range( Occurrence $occurrence ): string {
 	return OpenEvents\Frontend\Formatter::range( $occurrence );
 }
 
-function oec_is_module_enabled( string $id ): bool {
-	return open_events_calendar()->modules()->is_enabled( $id );
+function openevents_is_module_enabled( string $id ): bool {
+	return openevents()->modules()->is_enabled( $id );
 }
 
 /**
  * URL of the main calendar: the Events archive when the post type is registered,
  * otherwise the calendar page chosen in setup.
  */
-function oec_calendar_url(): string {
-	$settings = open_events_calendar()->settings();
+function openevents_calendar_url(): string {
+	$settings = openevents()->settings();
 	if ( $settings->registers_event_type() ) {
 		$url = get_post_type_archive_link( $settings::EVENT_TYPE );
 		if ( $url ) {

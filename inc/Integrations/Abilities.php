@@ -19,7 +19,7 @@ use WP_Error;
  */
 final class Abilities {
 
-	private const CATEGORY = 'open-events-calendar';
+	private const CATEGORY = 'openevents';
 
 	public function __construct( private OccurrencesController $presenter ) {}
 
@@ -32,8 +32,8 @@ final class Abilities {
 		wp_register_ability_category(
 			self::CATEGORY,
 			array(
-				'label'       => __( 'Events', 'open-events-calendar' ),
-				'description' => __( 'Find, read, and create calendar events.', 'open-events-calendar' ),
+				'label'       => __( 'Events', 'openevents' ),
+				'description' => __( 'Find, read, and create calendar events.', 'openevents' ),
 			)
 		);
 	}
@@ -55,10 +55,10 @@ final class Abilities {
 		);
 
 		wp_register_ability(
-			'open-events-calendar/list-events',
+			'openevents/list-events',
 			array(
-				'label'               => __( 'List events', 'open-events-calendar' ),
-				'description'         => __( 'Lists published events. Without dates, returns upcoming events soonest first.', 'open-events-calendar' ),
+				'label'               => __( 'List events', 'openevents' ),
+				'description'         => __( 'Lists published events. Without dates, returns upcoming events soonest first.', 'openevents' ),
 				'category'            => self::CATEGORY,
 				'input_schema'        => array(
 					'type'                 => 'object',
@@ -66,16 +66,16 @@ final class Abilities {
 						'start'      => array(
 							'type'        => 'string',
 							'format'      => 'date',
-							'description' => __( 'First day (Y-m-d) of a date range.', 'open-events-calendar' ),
+							'description' => __( 'First day (Y-m-d) of a date range.', 'openevents' ),
 						),
 						'end'        => array(
 							'type'        => 'string',
 							'format'      => 'date',
-							'description' => __( 'Last day (Y-m-d) of a date range, inclusive.', 'open-events-calendar' ),
+							'description' => __( 'Last day (Y-m-d) of a date range, inclusive.', 'openevents' ),
 						),
 						'past'       => array(
 							'type'        => 'boolean',
-							'description' => __( 'Return past events, newest first.', 'open-events-calendar' ),
+							'description' => __( 'Return past events, newest first.', 'openevents' ),
 						),
 						'search'     => array( 'type' => 'string' ),
 						'categories' => array(
@@ -109,10 +109,10 @@ final class Abilities {
 		);
 
 		wp_register_ability(
-			'open-events-calendar/create-event',
+			'openevents/create-event',
 			array(
-				'label'               => __( 'Create event', 'open-events-calendar' ),
-				'description'         => __( 'Creates an event. Saved as a draft unless status is "publish" and the user can publish.', 'open-events-calendar' ),
+				'label'               => __( 'Create event', 'openevents' ),
+				'description'         => __( 'Creates an event. Saved as a draft unless status is "publish" and the user can publish.', 'openevents' ),
 				'category'            => self::CATEGORY,
 				'input_schema'        => array(
 					'type'                 => 'object',
@@ -122,18 +122,18 @@ final class Abilities {
 						'content'   => array( 'type' => 'string' ),
 						'start'     => array(
 							'type'        => 'string',
-							'description' => __( 'Local start, "Y-m-d H:i" in the event timezone.', 'open-events-calendar' ),
+							'description' => __( 'Local start, "Y-m-d H:i" in the event timezone.', 'openevents' ),
 						),
 						'end'       => array( 'type' => 'string' ),
 						'all_day'   => array( 'type' => 'boolean' ),
 						'timezone'  => array(
 							'type'        => 'string',
-							'description' => __( 'IANA timezone. Defaults to the site timezone.', 'open-events-calendar' ),
+							'description' => __( 'IANA timezone. Defaults to the site timezone.', 'openevents' ),
 						),
 						'venue_id'  => array( 'type' => 'integer' ),
 						'post_type' => array(
 							'type' => 'string',
-							'enum' => oec_event_post_types(),
+							'enum' => openevents_event_post_types(),
 						),
 						'status'    => array(
 							'type'    => 'string',
@@ -153,7 +153,7 @@ final class Abilities {
 				),
 				'execute_callback'    => array( $this, 'create_event' ),
 				'permission_callback' => static function ( $input ): bool {
-					$type   = get_post_type_object( (string) ( $input['post_type'] ?? oec_event_post_types()[0] ?? '' ) );
+					$type   = get_post_type_object( (string) ( $input['post_type'] ?? openevents_event_post_types()[0] ?? '' ) );
 					return $type && current_user_can( $type->cap->edit_posts );
 				},
 				'meta'                => array(
@@ -188,7 +188,7 @@ final class Abilities {
 		} else {
 			$args['ends_after'] = Repository::now();
 		}
-		return array_map( array( $this->presenter, 'prepare_item' ), oec_get_occurrences( $args )['items'] );
+		return array_map( array( $this->presenter, 'prepare_item' ), openevents_get_occurrences( $args )['items'] );
 	}
 
 	/**
@@ -197,15 +197,15 @@ final class Abilities {
 	 */
 	public function create_event( $input ) {
 		$input     = (array) $input;
-		$post_type = (string) ( $input['post_type'] ?? oec_event_post_types()[0] ?? '' );
+		$post_type = (string) ( $input['post_type'] ?? openevents_event_post_types()[0] ?? '' );
 		$type      = get_post_type_object( $post_type );
 		if ( ! $type ) {
-			return new WP_Error( 'oec_no_event_type', __( 'No event post type is enabled.', 'open-events-calendar' ) );
+			return new WP_Error( 'openevents_no_event_type', __( 'No event post type is enabled.', 'openevents' ) );
 		}
 
 		$start = Meta::sanitize_datetime( $input['start'] ?? '' );
 		if ( '' === $start ) {
-			return new WP_Error( 'oec_invalid_start', __( 'Start must be a date like "2026-11-03 19:00".', 'open-events-calendar' ) );
+			return new WP_Error( 'openevents_invalid_start', __( 'Start must be a date like "2026-11-03 19:00".', 'openevents' ) );
 		}
 		$end = Meta::sanitize_datetime( $input['end'] ?? '' ) ?: $start;
 

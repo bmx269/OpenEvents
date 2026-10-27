@@ -20,7 +20,7 @@ import {
 	ModuleFields,
 } from './fields';
 
-const config = window.openEventsCalendarAdmin || {};
+const config = window.openEventsAdmin || {};
 
 function Section( { title, children } ) {
 	return (
@@ -56,34 +56,35 @@ export default function SettingsScreen() {
 
 	return (
 		<Page
-			title={ __( 'Event Settings', 'open-events-calendar' ) }
+			title={ __( 'OpenEvents Settings', 'openevents' ) }
 			actions={
 				<Stack direction="row" gap="sm">
 					<ButtonLink
 						variant="outline"
-						href={ `${ config.adminUrl }admin.php?page=open-events-calendar-setup` }
+						href={ `${ config.adminUrl }admin.php?page=openevents-setup` }
 					>
-						{ __( 'Run setup wizard', 'open-events-calendar' ) }
+						{ __( 'Run setup wizard', 'openevents' ) }
 					</ButtonLink>
 					<Button
 						onClick={ onSave }
 						loading={ saving }
-						loadingAnnouncement={ __(
-							'Saving',
-							'open-events-calendar'
-						) }
+						loadingAnnouncement={ __( 'Saving', 'openevents' ) }
 					>
-						{ __( 'Save changes', 'open-events-calendar' ) }
+						{ __( 'Save changes', 'openevents' ) }
 					</Button>
 				</Stack>
 			}
 			hasPadding
 		>
-			<Stack direction="column" gap="lg" className="oec-admin__body">
+			<Stack
+				direction="column"
+				gap="lg"
+				className="openevents-admin__body"
+			>
 				{ saved && (
 					<Notice.Root intent="success">
 						<Notice.Description>
-							{ __( 'Settings saved.', 'open-events-calendar' ) }
+							{ __( 'Settings saved.', 'openevents' ) }
 						</Notice.Description>
 					</Notice.Root>
 				) }
@@ -97,24 +98,21 @@ export default function SettingsScreen() {
 				<Tabs.Root defaultValue="content">
 					<Tabs.List>
 						<Tabs.Tab value="content">
-							{ __( 'Event content', 'open-events-calendar' ) }
+							{ __( 'Event content', 'openevents' ) }
 						</Tabs.Tab>
 						<Tabs.Tab value="display">
-							{ __( 'Display', 'open-events-calendar' ) }
+							{ __( 'Display', 'openevents' ) }
 						</Tabs.Tab>
 						<Tabs.Tab value="modules">
-							{ __( 'Modules', 'open-events-calendar' ) }
+							{ __( 'Modules', 'openevents' ) }
 						</Tabs.Tab>
 						<Tabs.Tab value="advanced">
-							{ __( 'Advanced', 'open-events-calendar' ) }
+							{ __( 'Advanced', 'openevents' ) }
 						</Tabs.Tab>
 					</Tabs.List>
 					<Tabs.Panel value="content">
 						<Section
-							title={ __(
-								'Where events live',
-								'open-events-calendar'
-							) }
+							title={ __( 'Where events live', 'openevents' ) }
 						>
 							<EventContentFields
 								settings={ settings }
@@ -124,23 +122,13 @@ export default function SettingsScreen() {
 					</Tabs.Panel>
 					<Tabs.Panel value="display">
 						<Stack direction="column" gap="lg">
-							<Section
-								title={ __(
-									'Calendar',
-									'open-events-calendar'
-								) }
-							>
+							<Section title={ __( 'Calendar', 'openevents' ) }>
 								<DisplayFields
 									settings={ settings }
 									update={ update }
 								/>
 							</Section>
-							<Section
-								title={ __(
-									'Formats',
-									'open-events-calendar'
-								) }
-							>
+							<Section title={ __( 'Formats', 'openevents' ) }>
 								<FormatFields
 									settings={ settings }
 									update={ update }
@@ -149,14 +137,12 @@ export default function SettingsScreen() {
 						</Stack>
 					</Tabs.Panel>
 					<Tabs.Panel value="modules">
-						<Section
-							title={ __( 'Modules', 'open-events-calendar' ) }
-						>
+						<Section title={ __( 'Modules', 'openevents' ) }>
 							<Stack direction="column" gap="md">
 								<Text variant="body-sm">
 									{ __(
 										'Turn features on or off. Modules that others depend on are enabled automatically.',
-										'open-events-calendar'
+										'openevents'
 									) }
 								</Text>
 								<ModuleFields
@@ -167,17 +153,15 @@ export default function SettingsScreen() {
 						</Section>
 					</Tabs.Panel>
 					<Tabs.Panel value="advanced">
-						<Section
-							title={ __( 'Uninstall', 'open-events-calendar' ) }
-						>
+						<Section title={ __( 'Uninstall', 'openevents' ) }>
 							<SwitchControl
 								label={ __(
 									'Delete all event data when the plugin is deleted',
-									'open-events-calendar'
+									'openevents'
 								) }
 								description={ __(
 									'Removes events, venues, organizers, categories, and settings. On existing post types only the event fields are removed; the posts are kept.',
-									'open-events-calendar'
+									'openevents'
 								) }
 								checked={ !! settings.remove_data_on_uninstall }
 								onCheckedChange={ ( checked ) =>

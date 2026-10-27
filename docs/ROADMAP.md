@@ -24,7 +24,7 @@ How the plugin reaches parity with The Events Calendar (TEC), Events Calendar Pr
 
 ## Phase 2: TEC parity and migration
 
-- **TEC importer** (admin screen and `wp open-events import-tec`), following `docs/research/tec-data-model.md`:
+- **TEC importer** (admin screen and `wp openevents import-tec`), following `docs/research/tec-data-model.md`:
   - Batched and resumable. It runs with Sync suspended, then rebuilds.
   - Idempotent through `_oe_source_tec_id`.
   - Maps category colour term meta.
@@ -34,7 +34,10 @@ How the plugin reaches parity with The Events Calendar (TEC), Events Calendar Pr
 - Event status: scheduled, cancelled, postponed (with a reason).
 - `Event` JSON-LD with Offer, Place, and Organizer.
 - Venue map embed (OpenStreetMap; Google optional).
-- PHPUnit (repository, sync, generator, formatter) and Playwright (views, wizard, editor) in CI on PHP 8.2–8.5 and WP 7.1–trunk. Query-count budgets enforced in CI.
+- ✅ PHPUnit integration suite (67 tests: sync, repository, output, REST, abilities, bindings, modules) on WordPress + SQLite, with **query-count budgets** that fail on N+1 regressions.
+- ✅ Playwright suite (15 tests: calendar views, no-JS navigation, phone layout, noindex, event pages, REST lifecycle, setup wizard, settings, editor) against Playground.
+- ✅ GitHub Actions: lint, build, PHPUnit on PHP 8.2–8.4, end-to-end.
+- Add WP trunk and PHP 8.5 to the CI matrix; MySQL job alongside SQLite.
 
 ## Phase 3: Recurrence module (free)
 
@@ -59,7 +62,7 @@ How the plugin reaches parity with The Events Calendar (TEC), Events Calendar Pr
 
 ## Phase 6: Pro views and extras
 
-- Week, photo, map, and summary views (through `open_events_calendar/calendar/views`).
+- Week, photo, map, and summary views (through `openevents/calendar/views`).
 - Additional fields (filterable), duplicate event, related events, virtual events.
 - Admin event list built on DataViews.
 

@@ -142,7 +142,7 @@ final class Meta {
 			 * @param array  $fields    Meta key => register_post_meta args.
 			 * @param string $post_type Post type.
 			 */
-			$fields = apply_filters( 'open_events_calendar/meta_fields', $fields, $post_type );
+			$fields = apply_filters( 'openevents/meta_fields', $fields, $post_type );
 
 			// Track event dates and details in revisions where the post type keeps them.
 			$revisions = in_array( $post_type, $this->settings->event_post_types(), true ) && post_type_supports( $post_type, 'revisions' );

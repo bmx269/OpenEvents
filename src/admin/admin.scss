@@ -1,5 +1,5 @@
 // The app renders its own page chrome; remove wp-admin's content padding around it.
-.oec-admin {
+.openevents-admin {
 	margin-inline-start: -20px;
 
 	@media (max-width: 782px) {
@@ -7,11 +7,11 @@
 	}
 }
 
-.oec-admin__body {
+.openevents-admin__body {
 	max-width: 760px;
 }
 
-.oec-setup__steps {
+.openevents-setup__steps {
 	display: flex;
 	flex-wrap: wrap;
 	gap: 0.5rem 1.5rem;

@@ -49,6 +49,6 @@ From a shallow clone of [the-events-calendar](https://github.com/the-events-cale
 1. Read organizer and cost meta with `get_post_meta( $id, $key, false )`.
 2. Recompute duration and UTC from local time plus timezone. Convert `UTC±N` offsets.
 3. Treat `'false'` and `'no'` as false.
-4. Block-editor events contain `wp:tribe/*` blocks in `post_content`. Strip them or map them to `open-events-calendar/event-details`.
+4. Block-editor events contain `wp:tribe/*` blocks in `post_content`. Strip them or map them to `openevents/event-details`.
 5. Events with `_tribe_aggregator_*` meta were imported from a feed. Keep the origin in meta for re-sync.
 6. Store the source id in `_oe_source_tec_id` so reruns update instead of duplicating.

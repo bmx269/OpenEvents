@@ -8,16 +8,16 @@
  * @package OpenEvents
  */
 
-if ( get_option( 'oec_sample_data' ) ) {
+if ( get_option( 'openevents_sample_data' ) ) {
 	return;
 }
 
 // Make Posts event-capable alongside the Events post type, and finish setup.
 update_option(
-	'open_events_calendar_settings',
+	'openevents_settings',
 	OpenEvents\Settings::sanitize( array_merge( OpenEvents\Settings::defaults(), array( 'event_post_types' => array( 'post' ), 'append_details' => true ) ) )
 );
-update_option( 'open_events_calendar_setup_complete', 1 );
+update_option( 'openevents_setup_complete', 1 );
 
 $cats = array();
 foreach ( array( 'Music' => '#7c3aed', 'Workshops' => '#f59e0b', 'Community' => '#059669' ) as $name => $color ) {
@@ -104,4 +104,4 @@ wp_insert_post(
 	)
 );
 
-update_option( 'oec_sample_data', 1 );
+update_option( 'openevents_sample_data', 1 );

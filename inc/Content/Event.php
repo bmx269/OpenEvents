@@ -29,7 +29,7 @@ final class Event {
 	}
 
 	public static function is_event_type( string $post_type ): bool {
-		return in_array( $post_type, open_events_calendar()->settings()->event_post_types(), true );
+		return in_array( $post_type, openevents()->settings()->event_post_types(), true );
 	}
 
 	public function is_scheduled(): bool {
@@ -121,7 +121,7 @@ final class Event {
 		}
 		if ( is_numeric( $cost ) ) {
 			if ( 0.0 === (float) $cost ) {
-				return __( 'Free', 'open-events-calendar' );
+				return __( 'Free', 'openevents' );
 			}
 			return (string) $this->meta( '_oe_currency_symbol' ) . $cost;
 		}

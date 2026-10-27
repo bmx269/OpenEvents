@@ -27,7 +27,7 @@ export default function CategoryPicker( { value, onChange } ) {
 		<FormTokenField
 			__next40pxDefaultSize
 			__nextHasNoMarginBottom
-			label={ __( 'Event categories', 'open-events-calendar' ) }
+			label={ __( 'Event categories', 'openevents' ) }
 			value={ value.map( ( id ) => byId.get( id ) ).filter( Boolean ) }
 			suggestions={ terms.map( ( t ) => t.name ) }
 			__experimentalExpandOnFocus

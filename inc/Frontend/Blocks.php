@@ -17,8 +17,24 @@ final class Blocks {
 
 	public function register(): void {
 		add_action( 'init', array( $this, 'register_blocks' ) );
+		add_filter( 'block_categories_all', array( $this, 'category' ) );
 		add_filter( 'wp_robots', array( $this, 'robots' ) );
 		CategoryColors::register();
+	}
+
+	/**
+	 * Groups the plugin's blocks under "OpenEvents" in the inserter.
+	 *
+	 * @param array<int, array<string, string>> $categories Block categories.
+	 * @return array<int, array<string, string>>
+	 */
+	public function category( array $categories ): array {
+		$categories[] = array(
+			'slug'  => 'openevents',
+			'title' => __( 'OpenEvents', 'openevents' ),
+			'icon'  => null,
+		);
+		return $categories;
 	}
 
 	public function register_blocks(): void {

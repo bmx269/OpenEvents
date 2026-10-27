@@ -19,14 +19,11 @@ export default function Edit( { attributes, setAttributes } ) {
 	return (
 		<div { ...useBlockProps() }>
 			<InspectorControls>
-				<PanelBody title={ __( 'Settings', 'open-events-calendar' ) }>
+				<PanelBody title={ __( 'Settings', 'openevents' ) }>
 					<RangeControl
 						__next40pxDefaultSize
 						__nextHasNoMarginBottom
-						label={ __(
-							'Number of events',
-							'open-events-calendar'
-						) }
+						label={ __( 'Number of events', 'openevents' ) }
 						min={ 1 }
 						max={ 20 }
 						value={ count }
@@ -42,28 +39,22 @@ export default function Edit( { attributes, setAttributes } ) {
 					/>
 					{ toggle(
 						'showImage',
-						__( 'Show featured image', 'open-events-calendar' )
+						__( 'Show featured image', 'openevents' )
 					) }
 					{ toggle(
 						'showExcerpt',
-						__( 'Show excerpt', 'open-events-calendar' )
+						__( 'Show excerpt', 'openevents' )
 					) }
-					{ toggle(
-						'showVenue',
-						__( 'Show venue', 'open-events-calendar' )
-					) }
+					{ toggle( 'showVenue', __( 'Show venue', 'openevents' ) ) }
 					{ toggle(
 						'showViewAll',
-						__(
-							'Show “View all events” link',
-							'open-events-calendar'
-						)
+						__( 'Show “View all events” link', 'openevents' )
 					) }
 				</PanelBody>
 			</InspectorControls>
 			<div inert="">
 				<ServerSideRender
-					block="open-events-calendar/upcoming-events"
+					block="openevents/upcoming-events"
 					attributes={ attributes }
 				/>
 			</div>

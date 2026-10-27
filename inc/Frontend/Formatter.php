@@ -16,12 +16,12 @@ use OpenEvents\Occurrences\Occurrence;
 final class Formatter {
 
 	public static function date( \DateTimeImmutable $date, ?string $format = null ): string {
-		$format ??= open_events_calendar()->settings()->date_format();
+		$format ??= openevents()->settings()->date_format();
 		return wp_date( $format, $date->getTimestamp(), $date->getTimezone() );
 	}
 
 	public static function time( \DateTimeImmutable $date ): string {
-		return wp_date( open_events_calendar()->settings()->time_format(), $date->getTimestamp(), $date->getTimezone() );
+		return wp_date( openevents()->settings()->time_format(), $date->getTimestamp(), $date->getTimezone() );
 	}
 
 	/**
@@ -36,7 +36,7 @@ final class Formatter {
 		$start = $occurrence->start;
 		$end   = $occurrence->end;
 		/* translators: separator between start and end of a date range */
-		$sep = _x( ' – ', 'date range separator', 'open-events-calendar' );
+		$sep = _x( ' – ', 'date range separator', 'openevents' );
 
 		if ( $occurrence->all_day ) {
 			$out = self::date( $start );
@@ -62,7 +62,7 @@ final class Formatter {
 		 * @param string     $out        Formatted range.
 		 * @param Occurrence $occurrence Occurrence.
 		 */
-		return apply_filters( 'open_events_calendar/format_range', $out, $occurrence );
+		return apply_filters( 'openevents/format_range', $out, $occurrence );
 	}
 
 	/**

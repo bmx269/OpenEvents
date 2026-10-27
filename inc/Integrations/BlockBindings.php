@@ -11,16 +11,16 @@ use OpenEvents\Content\Event;
 use OpenEvents\Frontend\Formatter;
 
 /**
- * "open-events-calendar/event" binding source: lets core blocks (Paragraph,
+ * "openevents/event" binding source: lets core blocks (Paragraph,
  * Heading, Button, Image) show event fields, so themes can design event
  * templates from core blocks instead of fixed plugin markup.
  *
  *   <!-- wp:paragraph {"metadata":{"bindings":{"content":{
- *        "source":"open-events-calendar/event","args":{"key":"date"}}}}} -->
+ *        "source":"openevents/event","args":{"key":"date"}}}}} -->
  */
 final class BlockBindings {
 
-	public const SOURCE = 'open-events-calendar/event';
+	public const SOURCE = 'openevents/event';
 
 	/**
 	 * Bindable keys and their labels.
@@ -29,16 +29,16 @@ final class BlockBindings {
 	 */
 	public static function fields(): array {
 		return array(
-			'date'          => __( 'Event date and time', 'open-events-calendar' ),
-			'start_date'    => __( 'Start date', 'open-events-calendar' ),
-			'start_time'    => __( 'Start time', 'open-events-calendar' ),
-			'end_date'      => __( 'End date', 'open-events-calendar' ),
-			'end_time'      => __( 'End time', 'open-events-calendar' ),
-			'venue'         => __( 'Venue name', 'open-events-calendar' ),
-			'venue_address' => __( 'Venue address', 'open-events-calendar' ),
-			'venue_url'     => __( 'Venue link', 'open-events-calendar' ),
-			'cost'          => __( 'Cost', 'open-events-calendar' ),
-			'website'       => __( 'Event website', 'open-events-calendar' ),
+			'date'          => __( 'Event date and time', 'openevents' ),
+			'start_date'    => __( 'Start date', 'openevents' ),
+			'start_time'    => __( 'Start time', 'openevents' ),
+			'end_date'      => __( 'End date', 'openevents' ),
+			'end_time'      => __( 'End time', 'openevents' ),
+			'venue'         => __( 'Venue name', 'openevents' ),
+			'venue_address' => __( 'Venue address', 'openevents' ),
+			'venue_url'     => __( 'Venue link', 'openevents' ),
+			'cost'          => __( 'Cost', 'openevents' ),
+			'website'       => __( 'Event website', 'openevents' ),
 		);
 	}
 
@@ -50,7 +50,7 @@ final class BlockBindings {
 		register_block_bindings_source(
 			self::SOURCE,
 			array(
-				'label'              => __( 'Event', 'open-events-calendar' ),
+				'label'              => __( 'Event', 'openevents' ),
 				'get_value_callback' => array( $this, 'get_value' ),
 				'uses_context'       => array( 'postId', 'postType' ),
 			)
@@ -63,11 +63,11 @@ final class BlockBindings {
 	 */
 	public function get_value( array $args, \WP_Block $block ): ?string {
 		$post_id = (int) ( $block->context['postId'] ?? get_the_ID() );
-		$event   = $post_id ? oec_get_event( $post_id ) : null;
+		$event   = $post_id ? openevents_get_event( $post_id ) : null;
 		if ( ! $event ) {
 			return null;
 		}
-		$occurrence = open_events_calendar()->occurrences()->for_event( $post_id );
+		$occurrence = openevents()->occurrences()->for_event( $post_id );
 		$venue      = $event->venue();
 
 		$value = match ( (string) ( $args['key'] ?? '' ) ) {
@@ -91,7 +91,7 @@ final class BlockBindings {
 		 * @param array<string, mixed> $args  Binding args.
 		 * @param Event                $event Event.
 		 */
-		$value = apply_filters( 'open_events_calendar/block_bindings/value', $value, $args, $event );
+		$value = apply_filters( 'openevents/block_bindings/value', $value, $args, $event );
 
 		if ( null === $value ) {
 			return null;

@@ -1,13 +1,13 @@
 {
 	"$schema": "https://schemas.wp.org/trunk/block.json",
 	"apiVersion": 3,
-	"name": "open-events-calendar/upcoming-events",
+	"name": "openevents/upcoming-events",
 	"title": "Upcoming Events",
-	"category": "widgets",
+	"category": "openevents",
 	"icon": "list-view",
 	"description": "A short list of the next events, for sidebars and landing pages.",
 	"keywords": [ "events", "upcoming", "list" ],
-	"textdomain": "open-events-calendar",
+	"textdomain": "openevents",
 	"attributes": {
 		"count": { "type": "integer", "default": 5 },
 		"categories": {

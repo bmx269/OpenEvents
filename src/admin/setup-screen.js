@@ -16,18 +16,18 @@ import { useState } from '@wordpress/element';
 import useSettings from './use-settings';
 import { DisplayFields, EventContentFields, ModuleFields } from './fields';
 
-const config = window.openEventsCalendarAdmin || {};
+const config = window.openEventsAdmin || {};
 
 const STEPS = [
-	{ id: 'content', label: __( 'Event content', 'open-events-calendar' ) },
-	{ id: 'calendar', label: __( 'Calendar', 'open-events-calendar' ) },
-	{ id: 'modules', label: __( 'Features', 'open-events-calendar' ) },
-	{ id: 'done', label: __( 'Done', 'open-events-calendar' ) },
+	{ id: 'content', label: __( 'Event content', 'openevents' ) },
+	{ id: 'calendar', label: __( 'Calendar', 'openevents' ) },
+	{ id: 'modules', label: __( 'Features', 'openevents' ) },
+	{ id: 'done', label: __( 'Done', 'openevents' ) },
 ];
 
 function Steps( { current } ) {
 	return (
-		<ol className="oec-setup__steps">
+		<ol className="openevents-setup__steps">
 			{ STEPS.map( ( step, index ) => (
 				<li
 					key={ step.id }
@@ -84,10 +84,10 @@ export default function SetupScreen() {
 				path: '/wp/v2/pages',
 				method: 'POST',
 				data: {
-					title: __( 'Calendar', 'open-events-calendar' ),
+					title: __( 'Calendar', 'openevents' ),
 					status: 'publish',
 					content:
-						'<!-- wp:open-events-calendar/calendar {"showLegend":true} /-->',
+						'<!-- wp:openevents/calendar {"showLegend":true} /-->',
 				},
 			} );
 			update( { calendar_page: page.id } );
@@ -95,7 +95,7 @@ export default function SetupScreen() {
 			setPageMode( 'existing' );
 			// Settings state updates asynchronously; save with the new id explicitly.
 			await save( {
-				open_events_calendar_settings: {
+				openevents_settings: {
 					...settings,
 					calendar_page: page.id,
 				},
@@ -116,17 +116,11 @@ export default function SetupScreen() {
 	const current = STEPS[ step ].id;
 
 	return (
-		<Page
-			title={ __(
-				'Set up Open Events Calendar',
-				'open-events-calendar'
-			) }
-			hasPadding
-		>
+		<Page title={ __( 'Set up OpenEvents', 'openevents' ) } hasPadding>
 			<Stack
 				direction="column"
 				gap="lg"
-				className="oec-admin__body oec-setup"
+				className="openevents-admin__body openevents-setup"
 			>
 				<Steps current={ step } />
 				{ error && (
@@ -142,20 +136,20 @@ export default function SetupScreen() {
 							{ current === 'content' &&
 								__(
 									'Where should events live?',
-									'open-events-calendar'
+									'openevents'
 								) }
 							{ current === 'calendar' &&
 								__(
 									'Where should the calendar appear?',
-									'open-events-calendar'
+									'openevents'
 								) }
 							{ current === 'modules' &&
 								__(
 									'Which features do you want?',
-									'open-events-calendar'
+									'openevents'
 								) }
 							{ current === 'done' &&
-								__( 'You’re all set', 'open-events-calendar' ) }
+								__( 'You’re all set', 'openevents' ) }
 						</Card.Title>
 					</Card.Header>
 					<Card.Content>
@@ -164,7 +158,7 @@ export default function SetupScreen() {
 								<Text>
 									{ __(
 										'Create a dedicated Events post type, add event dates to post types you already use, or both.',
-										'open-events-calendar'
+										'openevents'
 									) }
 								</Text>
 								<EventContentFields
@@ -180,7 +174,7 @@ export default function SetupScreen() {
 													'We found %d event from The Events Calendar. It is left untouched; an importer is planned for an upcoming release.',
 													'We found %d events from The Events Calendar. They are left untouched; an importer is planned for an upcoming release.',
 													config.tecCount,
-													'open-events-calendar'
+													'openevents'
 												),
 												config.tecCount
 											) }
@@ -194,7 +188,7 @@ export default function SetupScreen() {
 								<RadioGroupControl
 									label={ __(
 										'Calendar location',
-										'open-events-calendar'
+										'openevents'
 									) }
 									items={ [
 										...( settings.register_event_type
@@ -205,7 +199,7 @@ export default function SetupScreen() {
 															/* translators: %s: URL */
 															__(
 																'The Events archive at %s',
-																'open-events-calendar'
+																'openevents'
 															),
 															`${ config.homeUrl }${ settings.events_slug }/`
 														),
@@ -216,14 +210,14 @@ export default function SetupScreen() {
 											value: 'create',
 											label: __(
 												'Create a “Calendar” page with the calendar block',
-												'open-events-calendar'
+												'openevents'
 											),
 										},
 										{
 											value: 'existing',
 											label: __(
 												'An existing page',
-												'open-events-calendar'
+												'openevents'
 											),
 										},
 									] }
@@ -244,21 +238,21 @@ export default function SetupScreen() {
 									<RadioGroupControl
 										label={ __(
 											'Default view',
-											'open-events-calendar'
+											'openevents'
 										) }
 										items={ [
 											{
 												value: 'month',
 												label: __(
 													'Month grid',
-													'open-events-calendar'
+													'openevents'
 												),
 											},
 											{
 												value: 'list',
 												label: __(
 													'List',
-													'open-events-calendar'
+													'openevents'
 												),
 											},
 										] }
@@ -281,7 +275,7 @@ export default function SetupScreen() {
 								<Text variant="body-sm">
 									{ __(
 										'Recurring events, RSVP, and ticket sales are in development and will appear here as modules.',
-										'open-events-calendar'
+										'openevents'
 									) }
 								</Text>
 							</Stack>
@@ -294,7 +288,7 @@ export default function SetupScreen() {
 									>
 										{ __(
 											'Add your first event',
-											'open-events-calendar'
+											'openevents'
 										) }
 									</Link>
 								) }
@@ -313,7 +307,7 @@ export default function SetupScreen() {
 												/* translators: %s: post type name */
 												__(
 													'Open any item in %s and set a date in the Event panel',
-													'open-events-calendar'
+													'openevents'
 												),
 												type.label
 											) }
@@ -322,16 +316,10 @@ export default function SetupScreen() {
 								<Link
 									href={ `${ config.adminUrl }post-new.php?post_type=oe_venue` }
 								>
-									{ __(
-										'Add a venue',
-										'open-events-calendar'
-									) }
+									{ __( 'Add a venue', 'openevents' ) }
 								</Link>
 								<Link href={ calendarUrl }>
-									{ __(
-										'View your calendar',
-										'open-events-calendar'
-									) }
+									{ __( 'View your calendar', 'openevents' ) }
 								</Link>
 							</Stack>
 						) }
@@ -352,7 +340,7 @@ export default function SetupScreen() {
 							>
 								{ __(
 									'Skip setup and use the defaults',
-									'open-events-calendar'
+									'openevents'
 								) }
 							</Button>
 							<Stack direction="row" gap="sm">
@@ -362,7 +350,7 @@ export default function SetupScreen() {
 										onClick={ () => setStep( step - 1 ) }
 										disabled={ saving }
 									>
-										{ __( 'Back', 'open-events-calendar' ) }
+										{ __( 'Back', 'openevents' ) }
 									</Button>
 								) }
 								<Button
@@ -370,10 +358,10 @@ export default function SetupScreen() {
 									loading={ saving }
 									loadingAnnouncement={ __(
 										'Saving',
-										'open-events-calendar'
+										'openevents'
 									) }
 								>
-									{ __( 'Continue', 'open-events-calendar' ) }
+									{ __( 'Continue', 'openevents' ) }
 								</Button>
 							</Stack>
 						</>
@@ -382,10 +370,7 @@ export default function SetupScreen() {
 							href={ config.settingsUrl }
 							variant="outline"
 						>
-							{ __(
-								'Review all settings',
-								'open-events-calendar'
-							) }
+							{ __( 'Review all settings', 'openevents' ) }
 						</ButtonLink>
 					) }
 				</Stack>

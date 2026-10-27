@@ -1,5 +1,5 @@
 {
-	"name": "open-events-calendar",
+	"name": "openevents",
 	"version": "0.1.0",
 	"private": true,
 	"description": "Open-source WordPress events calendar.",
@@ -13,19 +13,23 @@
 		"lint:php": "composer lint",
 		"plugin-zip": "wp-scripts plugin-zip",
 		"playground": "wp-playground-cli server --blueprint=blueprint.json --auto-mount",
-		"make-pot": "wp i18n make-pot . languages/open-events-calendar.pot --exclude=node_modules,vendor,src",
-		"bench": "wp-playground-cli server --blueprint=dev/bench-blueprint.json --auto-mount"
+		"make-pot": "wp i18n make-pot . languages/openevents.pot --exclude=node_modules,vendor,src",
+		"bench": "wp-playground-cli server --blueprint=dev/bench-blueprint.json --auto-mount",
+		"test:php": "vendor/bin/phpunit",
+		"test:e2e": "playwright test",
+		"test": "npm run test:php && npm run test:e2e"
 	},
 	"files": [
 		"build",
 		"inc",
 		"templates",
 		"languages",
-		"open-events-calendar.php",
+		"openevents.php",
 		"uninstall.php",
 		"readme.txt"
 	],
 	"devDependencies": {
+		"@playwright/test": "^1.64.1",
 		"@wordpress/scripts": "^30.27.0",
 		"@wp-playground/cli": "^3.1.61",
 		"typescript": "^5.9.3"

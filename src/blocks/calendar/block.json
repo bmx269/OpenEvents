@@ -1,13 +1,13 @@
 {
 	"$schema": "https://schemas.wp.org/trunk/block.json",
 	"apiVersion": 3,
-	"name": "open-events-calendar/calendar",
-	"title": "Events Calendar",
-	"category": "widgets",
+	"name": "openevents/calendar",
+	"title": "Calendar",
+	"category": "openevents",
 	"icon": "calendar-alt",
 	"description": "Month and list views of your events, with navigation that works with or without JavaScript.",
 	"keywords": [ "events", "calendar", "month", "agenda" ],
-	"textdomain": "open-events-calendar",
+	"textdomain": "openevents",
 	"attributes": {
 		"views": {
 			"type": "array",

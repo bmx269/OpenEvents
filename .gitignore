@@ -3,3 +3,11 @@ build/
 vendor/
 *.zip
 .DS_Store
+
+# PHP tests
+/vendor/
+/.wp-tests/
+.phpunit.result.cache
+# Playwright
+/test-results/
+/playwright-report/

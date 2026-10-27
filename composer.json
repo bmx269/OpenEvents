@@ -1,0 +1,21 @@
+{
+	"name": "bmx269/openevents",
+	"description": "Open-source events for WordPress: Calendar, with RSVP, Tickets, and more as modules.",
+	"type": "wordpress-plugin",
+	"license": "GPL-2.0-or-later",
+	"require": {
+		"php": ">=8.2"
+	},
+	"require-dev": {
+		"phpunit/phpunit": "^9.6",
+		"yoast/phpunit-polyfills": "^2.0"
+	},
+	"scripts": {
+		"test:install": "bash bin/install-wp-tests.sh",
+		"test": "phpunit",
+		"lint": "find inc src templates dev *.php -name '*.php' -print0 | xargs -0 -n1 php -l | grep -v '^No syntax errors' || true"
+	},
+	"config": {
+		"sort-packages": true
+	}
+}

@@ -23,7 +23,7 @@ final class Writer {
 		$lines = array(
 			'BEGIN:VCALENDAR',
 			'VERSION:2.0',
-			'PRODID:-//Open Events Calendar//' . self::text( get_bloginfo( 'name' ) ) . '//EN',
+			'PRODID:-//OpenEvents//' . self::text( get_bloginfo( 'name' ) ) . '//EN',
 			'CALSCALE:GREGORIAN',
 			'METHOD:PUBLISH',
 			'X-WR-CALNAME:' . self::text( get_bloginfo( 'name' ) ),

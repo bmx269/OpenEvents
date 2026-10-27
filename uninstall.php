@@ -8,11 +8,11 @@
 
 defined( 'WP_UNINSTALL_PLUGIN' ) || exit;
 
-require_once __DIR__ . '/open-events-calendar.php';
+require_once __DIR__ . '/openevents.php';
 
-$open_events_calendar_settings = get_option( OpenEvents\Settings::OPTION, array() );
+$openevents_settings = get_option( OpenEvents\Settings::OPTION, array() );
 
-if ( ! empty( $open_events_calendar_settings['remove_data_on_uninstall'] ) ) {
+if ( ! empty( $openevents_settings['remove_data_on_uninstall'] ) ) {
 	// Post types must exist for wp_delete_post() to clean up meta and terms.
 	( new OpenEvents\Content\PostTypes( new OpenEvents\Settings() ) )->register_types();
 	OpenEvents\Installer::uninstall();

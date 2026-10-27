@@ -43,7 +43,7 @@ final class Generator {
 		 * @param array<int, array<string, mixed>> $rows  Rows keyed by sequence. Build them with Generator::row().
 		 * @param Event                            $event Event.
 		 */
-		return apply_filters( 'open_events_calendar/occurrences/generate', $rows, $event );
+		return apply_filters( 'openevents/occurrences/generate', $rows, $event );
 	}
 
 	/**

@@ -28,7 +28,7 @@ use OpenEvents\Installer;
  */
 final class Repository {
 
-	public const CACHE_GROUP = 'open_events_calendar';
+	public const CACHE_GROUP = 'openevents';
 
 	/** @var array<int, Occurrence|null> Per-request memo for for_event(). */
 	private array $event_memo = array();
@@ -78,9 +78,9 @@ final class Repository {
 		 *
 		 * @param array<string, mixed> $args Query arguments.
 		 */
-		$args = apply_filters( 'open_events_calendar/occurrences/query_args', $args );
+		$args = apply_filters( 'openevents/occurrences/query_args', $args );
 
-		$post_types = array_values( array_filter( (array) $args['post_types'] ) ) ?: open_events_calendar()->settings()->event_post_types();
+		$post_types = array_values( array_filter( (array) $args['post_types'] ) ) ?: openevents()->settings()->event_post_types();
 		if ( ! $post_types ) {
 			return array(
 				'items' => array(),
@@ -295,6 +295,13 @@ final class Repository {
 	 */
 	public function forget( int $event_id ): void {
 		unset( $this->event_memo[ $event_id ] );
+	}
+
+	/**
+	 * Forgets all memoised results (long-running processes, tests).
+	 */
+	public function forget_all(): void {
+		$this->event_memo = array();
 	}
 
 	/**

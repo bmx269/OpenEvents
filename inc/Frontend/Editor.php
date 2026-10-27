@@ -28,7 +28,7 @@ final class Editor {
 		if ( ! $screen || ! $screen->post_type ) {
 			return;
 		}
-		$settings    = open_events_calendar()->settings();
+		$settings    = openevents()->settings();
 		$event_types = $settings->event_post_types();
 		if ( ! in_array( $screen->post_type, array_merge( $event_types, array( PostTypes::VENUE, PostTypes::ORGANIZER ) ), true ) ) {
 			return;
@@ -40,15 +40,15 @@ final class Editor {
 		}
 		$asset = require $asset_file;
 
-		wp_enqueue_script( 'open-events-calendar-editor', plugins_url( 'build/editor/index.js', PLUGIN_FILE ), $asset['dependencies'], $asset['version'], true );
-		wp_set_script_translations( 'open-events-calendar-editor', 'open-events-calendar' );
+		wp_enqueue_script( 'openevents-editor', plugins_url( 'build/editor/index.js', PLUGIN_FILE ), $asset['dependencies'], $asset['version'], true );
+		wp_set_script_translations( 'openevents-editor', 'openevents' );
 		if ( is_readable( PLUGIN_DIR . '/build/editor/index.css' ) ) {
-			wp_enqueue_style( 'open-events-calendar-editor', plugins_url( 'build/editor/index.css', PLUGIN_FILE ), array( 'wp-components' ), $asset['version'] );
+			wp_enqueue_style( 'openevents-editor', plugins_url( 'build/editor/index.css', PLUGIN_FILE ), array( 'wp-components' ), $asset['version'] );
 		}
 
 		wp_add_inline_script(
-			'open-events-calendar-editor',
-			'window.openEventsCalendar = ' . wp_json_encode(
+			'openevents-editor',
+			'window.openEvents = ' . wp_json_encode(
 				array(
 					'eventPostTypes'  => $event_types,
 					// Posts in the dedicated type are always events; existing types opt in per post.
@@ -70,8 +70,8 @@ final class Editor {
 		$asset_file = PLUGIN_DIR . '/build/editor/bindings.asset.php';
 		if ( is_readable( $asset_file ) ) {
 			$asset = require $asset_file;
-			wp_enqueue_script( 'open-events-calendar-bindings', plugins_url( 'build/editor/bindings.js', PLUGIN_FILE ), $asset['dependencies'], $asset['version'], true );
-			wp_set_script_translations( 'open-events-calendar-bindings', 'open-events-calendar' );
+			wp_enqueue_script( 'openevents-bindings', plugins_url( 'build/editor/bindings.js', PLUGIN_FILE ), $asset['dependencies'], $asset['version'], true );
+			wp_set_script_translations( 'openevents-bindings', 'openevents' );
 		}
 	}
 }

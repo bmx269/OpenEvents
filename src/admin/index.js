@@ -7,7 +7,7 @@ import SettingsScreen from './settings-screen';
 import SetupScreen from './setup-screen';
 import './admin.scss';
 
-const root = document.getElementById( 'open-events-calendar-admin' );
+const root = document.getElementById( 'openevents-admin' );
 if ( root ) {
 	createRoot( root ).render(
 		root.dataset.screen === 'setup' ? <SetupScreen /> : <SettingsScreen />

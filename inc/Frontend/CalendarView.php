@@ -48,13 +48,13 @@ final class CalendarView {
 		 *
 		 * @param array<string, callable> $views View id => renderer.
 		 */
-		return apply_filters( 'open_events_calendar/calendar/views', $views );
+		return apply_filters( 'openevents/calendar/views', $views );
 	}
 
 	public static function view_label( string $id ): string {
 		$labels = array(
-			'month' => __( 'Month', 'open-events-calendar' ),
-			'list'  => __( 'List', 'open-events-calendar' ),
+			'month' => __( 'Month', 'openevents' ),
+			'list'  => __( 'List', 'openevents' ),
 		);
 		return $labels[ $id ] ?? ucfirst( $id );
 	}
@@ -84,7 +84,7 @@ final class CalendarView {
 		 * @param bool  $cache      Whether to cache.
 		 * @param array $attributes Block attributes.
 		 */
-		$use_cache = apply_filters( 'open_events_calendar/calendar/cache', true, $this->attributes );
+		$use_cache = apply_filters( 'openevents/calendar/cache', true, $this->attributes );
 		if ( $use_cache ) {
 			$html = wp_cache_get( $key, Repository::CACHE_GROUP );
 			if ( is_string( $html ) ) {
@@ -102,7 +102,7 @@ final class CalendarView {
 	private function render_uncached(): string {
 		$views   = self::views();
 		$enabled = array_values( array_intersect( (array) ( $this->attributes['views'] ?? array( 'month', 'list' ) ), array_keys( $views ) ) ) ?: array( 'month' );
-		$wanted  = (string) ( $this->attributes['defaultView'] ?? '' ) ?: (string) open_events_calendar()->settings()->get( 'default_view' );
+		$wanted  = (string) ( $this->attributes['defaultView'] ?? '' ) ?: (string) openevents()->settings()->get( 'default_view' );
 		$default = in_array( $wanted, $enabled, true ) ? $wanted : $enabled[0];
 
 		// phpcs:disable WordPress.Security.NonceVerification.Recommended -- read-only navigation.
@@ -122,7 +122,7 @@ final class CalendarView {
 
 		$switcher = '';
 		if ( count( $enabled ) > 1 ) {
-			$switcher = '<div class="oe-calendar__views" role="group" aria-label="' . esc_attr__( 'Calendar view', 'open-events-calendar' ) . '">';
+			$switcher = '<div class="oe-calendar__views" role="group" aria-label="' . esc_attr__( 'Calendar view', 'openevents' ) . '">';
 			foreach ( $enabled as $view ) {
 				$switcher .= sprintf(
 					'<a class="oe-calendar__view" href="%s" rel="nofollow" data-wp-on--click="actions.navigate"%s>%s</a>',
@@ -143,7 +143,7 @@ final class CalendarView {
 		 *
 		 * @param array<int, array{label: string, url: string}> $links Links.
 		 */
-		$links  = apply_filters( 'open_events_calendar/calendar/links', array() );
+		$links  = apply_filters( 'openevents/calendar/links', array() );
 		$footer = '';
 		if ( $links ) {
 			$footer = '<ul class="oe-calendar__links">';
@@ -154,7 +154,7 @@ final class CalendarView {
 		}
 
 		return sprintf(
-			'<div class="oe-calendar oe-calendar--%1$s" data-wp-interactive="open-events-calendar/calendar" data-wp-router-region="%2$s" id="%2$s">%3$s%4$s%5$s</div>',
+			'<div class="oe-calendar oe-calendar--%1$s" data-wp-interactive="openevents/calendar" data-wp-router-region="%2$s" id="%2$s">%3$s%4$s%5$s</div>',
 			esc_attr( $state['view'] ),
 			esc_attr( $region ),
 			$body,
@@ -180,7 +180,7 @@ final class CalendarView {
 		$grid_start = $first->modify( '-' . ( ( (int) $first->format( 'w' ) - $sow + 7 ) % 7 ) . ' days' );
 		$grid_end   = $last->modify( '+' . ( ( $sow + 6 - (int) $last->format( 'w' ) + 7 ) % 7 ) . ' days' );
 
-		$result = open_events_calendar()->occurrences()->query(
+		$result = openevents()->occurrences()->query(
 			array(
 				'local_from' => $grid_start->format( 'Y-m-d 00:00:00' ),
 				'local_to'   => $grid_end->format( 'Y-m-d 23:59:59' ),
@@ -210,10 +210,10 @@ final class CalendarView {
 		$nav  = '<div class="oe-calendar__header">';
 		$nav .= sprintf( '<%1$s class="oe-calendar__title" tabindex="-1">%2$s</%1$s>', $tag, esc_html( $title ) );
 		$nav .= '<div class="oe-calendar__tools">' . $state['switcher'];
-		$nav .= '<nav class="oe-calendar__nav" aria-label="' . esc_attr__( 'Months', 'open-events-calendar' ) . '">';
-		$nav .= $prev >= $min ? self::nav_link( array( 'oe_month' => $prev->format( 'Y-m' ) ), __( 'Previous month', 'open-events-calendar' ), '‹' ) : '';
-		$nav .= self::nav_link( array( 'oe_month' => null ), __( 'This month', 'open-events-calendar' ), __( 'Today', 'open-events-calendar' ), false );
-		$nav .= $next <= $max ? self::nav_link( array( 'oe_month' => $next->format( 'Y-m' ) ), __( 'Next month', 'open-events-calendar' ), '›' ) : '';
+		$nav .= '<nav class="oe-calendar__nav" aria-label="' . esc_attr__( 'Months', 'openevents' ) . '">';
+		$nav .= $prev >= $min ? self::nav_link( array( 'oe_month' => $prev->format( 'Y-m' ) ), __( 'Previous month', 'openevents' ), '‹' ) : '';
+		$nav .= self::nav_link( array( 'oe_month' => null ), __( 'This month', 'openevents' ), __( 'Today', 'openevents' ), false );
+		$nav .= $next <= $max ? self::nav_link( array( 'oe_month' => $next->format( 'Y-m' ) ), __( 'Next month', 'openevents' ), '›' ) : '';
 		$nav .= '</nav></div></div>';
 
 		$today = current_datetime()->format( 'Y-m-d' );
@@ -268,7 +268,7 @@ final class CalendarView {
 							)
 						),
 						/* translators: %d: number of additional events */
-						esc_html( sprintf( _n( '+%d more', '+%d more', count( $events ) - $max_per_day, 'open-events-calendar' ), count( $events ) - $max_per_day ) )
+						esc_html( sprintf( _n( '+%d more', '+%d more', count( $events ) - $max_per_day, 'openevents' ), count( $events ) - $max_per_day ) )
 					);
 				}
 			}
@@ -280,7 +280,7 @@ final class CalendarView {
 		$html .= '</tbody></table>';
 
 		if ( ! $result['items'] ) {
-			$html .= '<p class="oe-calendar__empty">' . esc_html__( 'No events scheduled this month.', 'open-events-calendar' ) . '</p>';
+			$html .= '<p class="oe-calendar__empty">' . esc_html__( 'No events scheduled this month.', 'openevents' ) . '</p>';
 		}
 
 		return $nav . $html;
@@ -307,7 +307,7 @@ final class CalendarView {
 	 * @param array<string, mixed> $state View state.
 	 */
 	public static function render_list( CalendarView $view, array $state ): string {
-		$per_page = (int) ( $view->attributes['perPage'] ?? 0 ) ?: (int) open_events_calendar()->settings()->get( 'per_page' );
+		$per_page = (int) ( $view->attributes['perPage'] ?? 0 ) ?: (int) openevents()->settings()->get( 'per_page' );
 		$args     = array(
 			'categories'   => $state['categories'],
 			'per_page'     => $per_page,
@@ -318,31 +318,31 @@ final class CalendarView {
 		if ( $state['past'] ) {
 			$args['ends_before'] = Repository::now();
 			$args['order']       = 'DESC';
-			$title               = __( 'Past events', 'open-events-calendar' );
+			$title               = __( 'Past events', 'openevents' );
 		} elseif ( $state['date'] ) {
 			$args['local_from'] = $state['date']->format( 'Y-m-d 00:00:00' );
 			$args['local_to']   = '9999-12-31 23:59:59';
 			/* translators: %s: date */
-			$title = sprintf( __( 'Events from %s', 'open-events-calendar' ), Formatter::date( $state['date'] ) );
+			$title = sprintf( __( 'Events from %s', 'openevents' ), Formatter::date( $state['date'] ) );
 		} else {
 			$args['ends_after'] = Repository::now();
-			$title              = __( 'Upcoming events', 'open-events-calendar' );
+			$title              = __( 'Upcoming events', 'openevents' );
 		}
 
-		$result = open_events_calendar()->occurrences()->query( $args );
+		$result = openevents()->occurrences()->query( $args );
 		$tag    = $view->heading_tag();
 
 		$html  = '<div class="oe-calendar__header">';
 		$html .= sprintf( '<%1$s class="oe-calendar__title" tabindex="-1">%2$s</%1$s>', $tag, esc_html( $title ) );
 		$html .= '<div class="oe-calendar__tools">' . $state['switcher'];
-		$html .= '<nav class="oe-calendar__nav" aria-label="' . esc_attr__( 'Event list', 'open-events-calendar' ) . '">';
+		$html .= '<nav class="oe-calendar__nav" aria-label="' . esc_attr__( 'Event list', 'openevents' ) . '">';
 		$html .= $state['past']
-			? self::nav_link( array( 'oe_past' => null, 'oe_page' => null ), __( 'Upcoming events', 'open-events-calendar' ), __( 'Upcoming', 'open-events-calendar' ), false )
-			: self::nav_link( array( 'oe_past' => 1, 'oe_page' => null, 'oe_date' => null ), __( 'Past events', 'open-events-calendar' ), __( 'Past', 'open-events-calendar' ), false );
+			? self::nav_link( array( 'oe_past' => null, 'oe_page' => null ), __( 'Upcoming events', 'openevents' ), __( 'Upcoming', 'openevents' ), false )
+			: self::nav_link( array( 'oe_past' => 1, 'oe_page' => null, 'oe_date' => null ), __( 'Past events', 'openevents' ), __( 'Past', 'openevents' ), false );
 		$html .= '</nav></div></div>';
 
 		if ( ! $result['items'] ) {
-			return $html . '<p class="oe-calendar__empty">' . esc_html__( 'There are no events to show.', 'open-events-calendar' ) . '</p>';
+			return $html . '<p class="oe-calendar__empty">' . esc_html__( 'There are no events to show.', 'openevents' ) . '</p>';
 		}
 
 		$current_group = '';
@@ -359,14 +359,14 @@ final class CalendarView {
 		$html .= '</ol></div>';
 
 		if ( $result['pages'] > 1 ) {
-			$html .= '<nav class="oe-pagination" aria-label="' . esc_attr__( 'Event pages', 'open-events-calendar' ) . '">';
+			$html .= '<nav class="oe-pagination" aria-label="' . esc_attr__( 'Event pages', 'openevents' ) . '">';
 			if ( $state['page'] > 1 ) {
-				$html .= self::nav_link( array( 'oe_page' => $state['page'] - 1 ), __( 'Previous page', 'open-events-calendar' ), __( 'Previous', 'open-events-calendar' ), false );
+				$html .= self::nav_link( array( 'oe_page' => $state['page'] - 1 ), __( 'Previous page', 'openevents' ), __( 'Previous', 'openevents' ), false );
 			}
 			/* translators: 1: current page, 2: total pages */
-			$html .= '<span class="oe-pagination__status">' . esc_html( sprintf( __( 'Page %1$d of %2$d', 'open-events-calendar' ), $state['page'], $result['pages'] ) ) . '</span>';
+			$html .= '<span class="oe-pagination__status">' . esc_html( sprintf( __( 'Page %1$d of %2$d', 'openevents' ), $state['page'], $result['pages'] ) ) . '</span>';
 			if ( $state['page'] < $result['pages'] ) {
-				$html .= self::nav_link( array( 'oe_page' => $state['page'] + 1 ), __( 'Next page', 'open-events-calendar' ), __( 'Next', 'open-events-calendar' ), false );
+				$html .= self::nav_link( array( 'oe_page' => $state['page'] + 1 ), __( 'Next page', 'openevents' ), __( 'Next', 'openevents' ), false );
 			}
 			$html .= '</nav>';
 		}
@@ -424,7 +424,7 @@ final class CalendarView {
 		if ( ! $terms ) {
 			return '';
 		}
-		$html = '<ul class="oe-legend" aria-label="' . esc_attr__( 'Category colours', 'open-events-calendar' ) . '">';
+		$html = '<ul class="oe-legend" aria-label="' . esc_attr__( 'Category colours', 'openevents' ) . '">';
 		foreach ( $terms as $term ) {
 			$html .= sprintf(
 				'<li><span class="oe-legend__swatch" style="background:%s" aria-hidden="true"></span><a href="%s">%s</a></li>',

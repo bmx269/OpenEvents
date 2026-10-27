@@ -11,8 +11,8 @@ import ServerSideRender from '@wordpress/server-side-render';
 import CategoryPicker from '../shared/category-picker';
 
 const VIEWS = [
-	{ value: 'month', label: __( 'Month', 'open-events-calendar' ) },
-	{ value: 'list', label: __( 'List', 'open-events-calendar' ) },
+	{ value: 'month', label: __( 'Month', 'openevents' ) },
+	{ value: 'list', label: __( 'List', 'openevents' ) },
 ];
 
 export default function Edit( { attributes, setAttributes } ) {
@@ -37,7 +37,7 @@ export default function Edit( { attributes, setAttributes } ) {
 	return (
 		<div { ...useBlockProps() }>
 			<InspectorControls>
-				<PanelBody title={ __( 'Views', 'open-events-calendar' ) }>
+				<PanelBody title={ __( 'Views', 'openevents' ) }>
 					{ VIEWS.map( ( view ) => (
 						<CheckboxControl
 							key={ view.value }
@@ -52,15 +52,12 @@ export default function Edit( { attributes, setAttributes } ) {
 					<SelectControl
 						__next40pxDefaultSize
 						__nextHasNoMarginBottom
-						label={ __( 'Default view', 'open-events-calendar' ) }
+						label={ __( 'Default view', 'openevents' ) }
 						value={ defaultView }
 						options={ [
 							{
 								value: '',
-								label: __(
-									'Site default',
-									'open-events-calendar'
-								),
+								label: __( 'Site default', 'openevents' ),
 							},
 							...VIEWS.filter( ( v ) =>
 								views.includes( v.value )
@@ -71,7 +68,7 @@ export default function Edit( { attributes, setAttributes } ) {
 						}
 					/>
 				</PanelBody>
-				<PanelBody title={ __( 'Filter', 'open-events-calendar' ) }>
+				<PanelBody title={ __( 'Filter', 'openevents' ) }>
 					<CategoryPicker
 						value={ categories }
 						onChange={ ( value ) =>
@@ -79,12 +76,12 @@ export default function Edit( { attributes, setAttributes } ) {
 						}
 					/>
 				</PanelBody>
-				<PanelBody title={ __( 'Display', 'open-events-calendar' ) }>
+				<PanelBody title={ __( 'Display', 'openevents' ) }>
 					<ToggleControl
 						__nextHasNoMarginBottom
 						label={ __(
 							'Show category colour legend',
-							'open-events-calendar'
+							'openevents'
 						) }
 						checked={ showLegend }
 						onChange={ ( value ) =>
@@ -96,12 +93,9 @@ export default function Edit( { attributes, setAttributes } ) {
 						__nextHasNoMarginBottom
 						label={ __(
 							'Events per page (list view)',
-							'open-events-calendar'
+							'openevents'
 						) }
-						help={ __(
-							'0 uses the site setting.',
-							'open-events-calendar'
-						) }
+						help={ __( '0 uses the site setting.', 'openevents' ) }
 						min={ 0 }
 						max={ 50 }
 						value={ perPage }
@@ -112,7 +106,7 @@ export default function Edit( { attributes, setAttributes } ) {
 					<SelectControl
 						__next40pxDefaultSize
 						__nextHasNoMarginBottom
-						label={ __( 'Heading level', 'open-events-calendar' ) }
+						label={ __( 'Heading level', 'openevents' ) }
 						value={ String( headingLevel ) }
 						options={ [ 1, 2, 3, 4, 5, 6 ].map( ( level ) => ( {
 							value: String( level ),
@@ -126,7 +120,7 @@ export default function Edit( { attributes, setAttributes } ) {
 			</InspectorControls>
 			<div inert="">
 				<ServerSideRender
-					block="open-events-calendar/calendar"
+					block="openevents/calendar"
 					attributes={ attributes }
 				/>
 			</div>
