@@ -19,16 +19,23 @@
 	padding: 0;
 	list-style: none;
 
+	// Colour plus weight/underline, never opacity: dimmed text fails contrast.
 	li {
-		opacity: 0.6;
+		color: #50575e; // 7:1 on white.
 
 		&[aria-current="step"] {
-			opacity: 1;
+			color: #1e1e1e;
 			font-weight: 600;
+			text-decoration: underline;
+			text-underline-offset: 0.35em;
 		}
 
 		&.is-complete {
-			opacity: 0.85;
+			color: #1e1e1e;
+		}
+
+		> * {
+			color: inherit;
 		}
 	}
 }

@@ -1,5 +1,5 @@
 /**
- * Editor sidebar panels for events, venues, and organizers.
+ * Editor sidebar panels for events, RSVP, venues, and organizers.
  *
  * Add-ons can add controls to these panels with SlotFill:
  *
@@ -10,9 +10,9 @@
  *     </Fill>
  *   ) } );
  *
- * Slots: OpenEventsEventPanel, OpenEventsVenuePanel,
- * OpenEventsOrganizerPanel. Register your meta with the
- * openevents/meta_fields PHP filter so it saves over REST.
+ * Slots: OpenEventsEventPanel, OpenEventsVenuePanel, OpenEventsOrganizerPanel.
+ * Register your meta with the openevents/meta_fields PHP filter so it saves
+ * over REST.
  */
 import { registerPlugin } from '@wordpress/plugins';
 import { useSelect } from '@wordpress/data';
@@ -24,13 +24,17 @@ import { useEntityProp } from '@wordpress/core-data';
 import { __ } from '@wordpress/i18n';
 import EventPanel from './event-panel';
 import { VenuePanel, OrganizerPanel } from './place-panels';
+import RsvpPanel from './rsvp-panel';
 import './editor.scss';
 
 const config = window.openEvents || {};
 
 function OpenEventsSidebar() {
-	const postType = useSelect(
-		( select ) => select( editorStore ).getCurrentPostType(),
+	const { postType, postId } = useSelect(
+		( select ) => ( {
+			postType: select( editorStore ).getCurrentPostType(),
+			postId: select( editorStore ).getCurrentPostId(),
+		} ),
 		[]
 	);
 	const [ meta, setMetaRaw ] = useEntityProp( 'postType', postType, 'meta' );
@@ -41,20 +45,39 @@ function OpenEventsSidebar() {
 	}
 
 	if ( ( config.eventPostTypes || [] ).includes( postType ) ) {
+		const isDedicated = postType === config.dedicatedType;
+		const isEvent = isDedicated || !! meta._oe_start;
+		const rsvpEnabled = ( config.modules || [] ).includes( 'rsvp' );
 		return (
-			<PluginDocumentSettingPanel
-				name="openevents-event"
-				title={ __( 'Event', 'openevents' ) }
-				className="oe-editor-panel"
-			>
-				<EventPanel
-					meta={ meta }
-					setMeta={ setMeta }
-					postType={ postType }
-					isDedicated={ postType === config.dedicatedType }
-					config={ config }
-				/>
-			</PluginDocumentSettingPanel>
+			<>
+				<PluginDocumentSettingPanel
+					name="openevents-event"
+					title={ __( 'Event', 'openevents' ) }
+					className="oe-editor-panel"
+				>
+					<EventPanel
+						meta={ meta }
+						setMeta={ setMeta }
+						postType={ postType }
+						isDedicated={ isDedicated }
+						config={ config }
+					/>
+				</PluginDocumentSettingPanel>
+				{ rsvpEnabled && isEvent && (
+					<PluginDocumentSettingPanel
+						name="openevents-rsvp"
+						title={ __( 'RSVP', 'openevents' ) }
+						className="oe-editor-panel"
+					>
+						<RsvpPanel
+							meta={ meta }
+							setMeta={ setMeta }
+							postId={ postId }
+							config={ config }
+						/>
+					</PluginDocumentSettingPanel>
+				) }
+			</>
 		);
 	}
 

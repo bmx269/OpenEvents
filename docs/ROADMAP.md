@@ -26,7 +26,7 @@ How the plugin reaches parity with The Events Calendar (TEC), Events Calendar Pr
 
 Priority order, set 2026-10-27. Everything here is free: no paid tier, no platform fees.
 
-1. **RSVP module**
+1. ✅ **RSVP module** (done 2026-10-27; tests in `RsvpTest.php`, `rsvp.spec.js`)
    - Tables: `oe_ticket_types`, `oe_attendees`. Capacity is enforced with one atomic conditional `UPDATE`, so two people can't take the last seat.
    - Configured in the editor's Event panel and saved with the post: capacity, guests per response, deadline, and whether to offer "not going".
    - RSVP form in event details. It works without JavaScript and on cached pages: no nonces, with honeypot, timing, and rate-limit checks instead.
@@ -41,6 +41,12 @@ Priority order, set 2026-10-27. Everything here is free: no paid tier, no platfo
    - Add a calendar by its iCal address (public or secret). No Google API keys or OAuth needed.
    - Scheduled sync. Events are matched by UID, so updates replace rather than duplicate, and removed events are unpublished. Each feed can map to a category.
    - RRULE/EXDATE expansion through `openevents/occurrences/generate`. This is the first piece of the recurrence module.
+
+Queued (requested 2026-10-27), next up after RSVP:
+- **Category colours on event details**: coloured category badges in the details panel (they currently show only on calendars).
+- **Click behaviour**: a setting (site default, overridable per Calendar block) to open an event's page or an accessible popup (`<dialog>`) with date, venue, summary, and a link. Links stay real links without JavaScript.
+- **Calendar filter and search**: category filter and keyword search on the Calendar block (GET params, works without JS, enhanced in place).
+- **Template hierarchy**: a base block template for events usable by every event post type, plus per-category and per-post-type templates (e.g. "Single Event: Workshops") selectable in the Site Editor.
 
 Done in Phase 2 groundwork:
 - ✅ PHPUnit integration suite with query-count budgets; Playwright suite against Playground; GitHub Actions.

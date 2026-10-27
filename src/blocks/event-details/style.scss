@@ -62,3 +62,130 @@
 		font-size: 0.9em;
 	}
 }
+
+// RSVP section (added to event details by the RSVP module).
+.oe-rsvp {
+	margin-block-start: var(--oe-gap);
+	padding-block-start: var(--oe-gap);
+	border-top: 1px solid var(--oe-border);
+
+	&__title {
+		margin: 0 0 0.25em;
+		font-size: 1.1em;
+	}
+
+	&__count {
+		margin: 0 0 0.75em;
+		color: var(--oe-muted);
+	}
+
+	&__notice {
+		margin: 0 0 1em;
+		padding: 0.6em 0.8em;
+		border-inline-start: 4px solid var(--oe-accent);
+		background: var(--oe-surface);
+
+		&.is-error {
+			// 5.9:1 on white; still readable on dark themes via the surface tint.
+			border-color: #b32d2e;
+		}
+
+		&:focus-visible {
+			outline: 2px solid var(--oe-accent);
+			outline-offset: 2px;
+		}
+	}
+
+	&__fields {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+		gap: 0.75em var(--oe-gap);
+	}
+
+	&__field {
+		display: flex;
+		flex-direction: column;
+		gap: 0.25em;
+		margin: 0;
+
+		label {
+			font-weight: 600;
+		}
+
+		input,
+		select {
+			min-height: 2.75em; // 44px-ish touch target.
+			padding: 0.4em 0.6em;
+			border: 1px solid currentColor;
+			border-radius: var(--oe-radius);
+			font: inherit;
+			color: inherit;
+			background: transparent;
+		}
+
+		input[readonly] {
+			border-style: dashed;
+		}
+	}
+
+	&__status {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.5em 1.5em;
+		margin: 1em 0 0;
+		padding: 0;
+		border: 0;
+
+		legend {
+			margin-block-end: 0.4em;
+			padding: 0;
+			font-weight: 600;
+		}
+
+		label {
+			display: inline-flex;
+			align-items: center;
+			gap: 0.4em;
+			min-height: 2.75em;
+		}
+	}
+
+	&__actions {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: var(--oe-gap);
+		margin-block-start: 1em;
+	}
+
+	&__cancel {
+		padding: 0.5em 0;
+		border: 0;
+		background: none;
+		color: inherit;
+		font: inherit;
+		text-decoration: underline;
+		cursor: pointer;
+	}
+
+	button:focus-visible,
+	input:focus-visible,
+	select:focus-visible {
+		outline: 2px solid var(--oe-accent);
+		outline-offset: 2px;
+	}
+
+	button[disabled] {
+		opacity: 0.6;
+		cursor: progress;
+	}
+
+	// Honeypot: off-screen rather than display:none, which some bots detect.
+	&__hp {
+		position: absolute;
+		left: -10000px;
+		width: 1px;
+		height: 1px;
+		overflow: hidden;
+	}
+}

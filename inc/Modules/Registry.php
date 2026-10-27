@@ -29,7 +29,7 @@ final class Registry {
 	 */
 	public function all(): array {
 		if ( null === $this->modules ) {
-			$bundled = array( new ICal\Module() );
+			$bundled = array( new ICal\Module(), new Rsvp\Module() );
 
 			/**
 			 * Filters the available modules. Append your Module instance to add a feature
@@ -51,6 +51,13 @@ final class Registry {
 
 	public function get( string $id ): ?Module {
 		return $this->all()[ $id ] ?? null;
+	}
+
+	/**
+	 * @return string[] Ids of modules that booted this request.
+	 */
+	public function enabled_ids(): array {
+		return $this->booted;
 	}
 
 	public function is_enabled( string $id ): bool {

@@ -22,6 +22,10 @@ define( 'WP_TESTS_PHPUNIT_POLYFILLS_PATH', $openevents_root . '/vendor/yoast/php
 
 require_once $openevents_tests_dir . '/includes/functions.php';
 
+// Enable every bundled module so their tables are created at boot, outside the
+// per-test transactions.
+tests_add_filter( 'pre_option_openevents_modules', static fn() => array( 'ical', 'rsvp' ) );
+
 tests_add_filter(
 	'muplugins_loaded',
 	static function () use ( $openevents_root ): void {

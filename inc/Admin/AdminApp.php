@@ -157,7 +157,21 @@ final class AdminApp {
 	}
 
 	public function enqueue( string $hook ): void {
-		if ( ! in_array( $hook, array( $this->hook_settings, $this->hook_setup ), true ) ) {
+		/**
+		 * Admin pages that load the admin app (page slug => app screen). Modules
+		 * add their own screens here, e.g. the RSVP attendee list.
+		 *
+		 * @param array<string, string> $screens Page slug => screen.
+		 */
+		$screens = apply_filters(
+			'openevents/admin/screens',
+			array(
+				self::SETTINGS_SLUG => 'settings',
+				self::SETUP_SLUG    => 'setup',
+			)
+		);
+		$page    = sanitize_key( wp_unslash( $_GET['page'] ?? '' ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		if ( ! isset( $screens[ $page ] ) ) {
 			return;
 		}
 		$asset_file = PLUGIN_DIR . '/build/admin/index.asset.php';
