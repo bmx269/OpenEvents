@@ -186,6 +186,12 @@ Extend `AbstractModule` and register through the `openevents/modules` filter. En
   - No global typography or colours, only `--oe-accent`, `--oe-border`, `--oe-muted`, `--oe-surface`, and `--oe-radius`, which default to theme.json presets.
   - Category colours are applied with an automatic black-or-white text colour for WCAG contrast.
 - **Block themes** get Site Editor-editable templates (`register_block_template`): `single-oe_event`, `archive-oe_event`, `taxonomy-oe_event_category`.
+- **Template hierarchy for single events** (block and classic themes):
+  `single-{type}-{slug}` → `single-event-category-{category}` (each category, then its parents) → `single-{type}` → `single-event` → `single`.
+  - `single-event` is a plugin template for every event post type. For existing post types it only applies when **Use the event template** is on, so dated posts keep their theme template by default.
+  - The Site Editor offers "Single Event" and "Single Event: {Category}" under **Add template**.
+  - `openevents/single_template_hierarchy` filters the result.
+- **Calendar filter and search:** a GET form (`oe_cat`, `oe_s`) with a labelled category dropdown and keyword box. It respects the block's category restriction, persists through navigation, and is noindexed.
 - **Classic themes** get a PHP archive template, which can be overridden at `your-theme/openevents/archive.php`, and details prepended to the content.
 - **Existing post types** keep their own templates and only gain the details panel. The panel is skipped if the block is already in the content, and can be turned off.
 

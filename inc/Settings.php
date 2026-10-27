@@ -30,6 +30,7 @@ final class Settings {
 			'event_post_types'         => array(), // Existing post types that also carry event data.
 			'events_slug'              => 'events',
 			'append_details'           => true,
+			'event_template'           => false, // Use the Single Event template for events in existing post types.
 			'calendar_page'            => 0,
 			'per_page'                 => 10,
 			'default_view'             => 'month',
@@ -140,6 +141,7 @@ final class Settings {
 			'event_post_types'         => $types,
 			'events_slug'              => '' !== $slug ? $slug : $defaults['events_slug'],
 			'append_details'           => ! empty( $input['append_details'] ),
+			'event_template'           => ! empty( $input['event_template'] ),
 			'calendar_page'            => absint( $input['calendar_page'] ?? 0 ),
 			'per_page'                 => max( 1, min( 100, absint( $input['per_page'] ?? $defaults['per_page'] ) ) ),
 			'default_view'             => in_array( $view, array( 'month', 'list' ), true ) ? $view : $defaults['default_view'],
