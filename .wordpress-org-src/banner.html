@@ -1,0 +1,42 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Banner</title>
+<style>
+@font-face { font-family: Inter; src: url(https://cdn.jsdelivr.net/npm/@fontsource-variable/inter/files/inter-latin-wght-normal.woff2) format('woff2'); font-weight: 100 900; }
+:root { --blue: #1D3A8A; --deep: #16306f; --coral: #FF7A59; --soft: #D7E0F7; --ink: #1E1E1E; }
+* { box-sizing: border-box; margin: 0; }
+html, body { width: 772px; height: 250px; overflow: hidden; background: var(--blue); font-family: Inter, sans-serif; }
+.halo { position: absolute; left: 400px; top: -250px; width: 760px; height: 760px; border-radius: 50%; background: var(--deep); }
+.copy { position: absolute; left: 48px; top: 0; height: 250px; display: flex; flex-direction: column; justify-content: center; }
+.logo { display: flex; align-items: center; gap: 12px; }
+.logo img { width: 52px; height: 52px; }
+h1 { color: #fff; font-weight: 800; font-size: 48px; letter-spacing: -1.6px; line-height: 1; }
+.kicker { margin-top: 12px; color: var(--soft); font-size: 11px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; }
+.kicker b { color: var(--coral); font-weight: 800; }
+p { margin-top: 10px; color: #fff; font-size: 16px; line-height: 22px; font-weight: 600; width: 300px; }
+.card { position: absolute; right: 44px; top: 34px; width: 300px; background: #fff; border-radius: 10px; box-shadow: 0 12px 30px rgba(0,0,0,.25); padding: 14px; transform: rotate(-3deg); }
+.card h3 { font-size: 13px; font-weight: 800; color: var(--ink); margin-bottom: 8px; }
+.grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
+.grid span { height: 22px; border-radius: 3px; background: #EEF2FB; font-size: 8px; color: #5b6170; padding: 2px 3px; }
+.grid span.e { background: var(--coral); color: #fff; font-weight: 700; }
+.grid span.m { background: #7c3aed; color: #fff; font-weight: 700; }
+.grid span.g { background: #059669; color: #fff; font-weight: 700; }
+.ticket { position: absolute; right: 250px; bottom: 26px; background: var(--coral); color: #fff; border-radius: 8px; padding: 8px 12px; font-size: 11px; font-weight: 800; box-shadow: 0 8px 18px rgba(0,0,0,.25); transform: rotate(4deg); }
+</style></head>
+<body>
+<div class="halo"></div>
+<div class="copy">
+	<div class="logo"><img src="icon.svg" alt=""><h1>OpenEvents</h1></div>
+	<div class="kicker">Calendar <b>·</b> RSVP <b>·</b> Tickets</div>
+	<p>Open-source events for WordPress. Fast at any size, no upsells.</p>
+</div>
+<div class="card">
+	<h3>October</h3>
+	<div class="grid">
+		<span>28</span><span>29</span><span>30</span><span>1</span><span>2</span><span class="m">3</span><span>4</span>
+		<span>5</span><span>6</span><span>7</span><span class="e">8</span><span>9</span><span>10</span><span>11</span>
+		<span class="g">12</span><span class="g">13</span><span class="g">14</span><span>15</span><span class="e">16</span><span>17</span><span>18</span>
+		<span>19</span><span class="g">20</span><span>21</span><span>22</span><span>23</span><span>24</span><span class="m">25</span>
+	</div>
+</div>
+<div class="ticket">✓ You're going</div>
+</body></html>
