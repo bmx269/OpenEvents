@@ -22,43 +22,59 @@ How the plugin reaches parity with The Events Calendar (TEC), Events Calendar Pr
 | WP-CLI: rebuild, stats, generate | new |
 | Performance contract: constant query cost at 5,000+ events | TEC pain point #6 |
 
-## Phase 2: TEC parity and migration
+## Phase 2: Free RSVP, ticketing, and Google Calendar (in progress)
+
+Priority order, set 2026-10-27. Everything here is free: no paid tier, no platform fees.
+
+1. **RSVP module**
+   - Tables: `oe_ticket_types`, `oe_attendees`. Capacity is enforced with one atomic conditional `UPDATE`, so two people can't take the last seat.
+   - Configured in the editor's Event panel and saved with the post: capacity, guests per response, deadline, and whether to offer "not going".
+   - RSVP form in event details. It works without JavaScript and on cached pages: no nonces, with honeypot, timing, and rate-limit checks instead.
+   - Responding again with the same email updates the earlier response. Switching to "not going" frees the seats.
+   - Confirmation email with a private link to change or cancel.
+   - Admin attendee list: search, filter by event, CSV export, check-in.
+2. **Tickets module** (requires RSVP)
+   - Several ticket types per event: price, capacity, sale window. `oe_orders` / `oe_order_items`.
+   - Gateway interface. Built-in: "Pay later / at the door" (manual), then Stripe Checkout with webhooks. A WooCommerce adapter later.
+   - Order emails, refunds from the admin, QR check-in.
+3. **Google Calendar import** (iCal feed module)
+   - Add a calendar by its iCal address (public or secret). No Google API keys or OAuth needed.
+   - Scheduled sync. Events are matched by UID, so updates replace rather than duplicate, and removed events are unpublished. Each feed can map to a category.
+   - RRULE/EXDATE expansion through `openevents/occurrences/generate`. This is the first piece of the recurrence module.
+
+Done in Phase 2 groundwork:
+- ✅ PHPUnit integration suite with query-count budgets; Playwright suite against Playground; GitHub Actions.
+- ✅ Playground demo link, screenshots, and WordPress.org assets, rebuilt on every push.
+
+## Phase 3: TEC parity and migration
 
 - **TEC importer** (admin screen and `wp openevents import-tec`), following `docs/research/tec-data-model.md`:
   - Batched and resumable. It runs with Sync suspended, then rebuilds.
   - Idempotent through `_oe_source_tec_id`.
   - Maps category colour term meta.
   - Optional 301 redirects from old permalinks.
+- **Event Tickets importer** (RSVP and Tickets Commerce), following `docs/research/event-tickets-data-model.md`. Keeps security codes.
 - CSV import (TEC column names accepted).
 - Day view; keyword search and category/venue filter bar on the calendar block.
 - Event status: scheduled, cancelled, postponed (with a reason).
 - `Event` JSON-LD with Offer, Place, and Organizer.
 - Venue map embed (OpenStreetMap; Google optional).
-- ✅ PHPUnit integration suite (67 tests: sync, repository, output, REST, abilities, bindings, modules) on WordPress + SQLite, with **query-count budgets** that fail on N+1 regressions.
-- ✅ Playwright suite (15 tests: calendar views, no-JS navigation, phone layout, noindex, event pages, REST lifecycle, setup wizard, settings, editor) against Playground.
-- ✅ GitHub Actions: lint, build, PHPUnit on PHP 8.2–8.4, end-to-end.
 - Add WP trunk and PHP 8.5 to the CI matrix; MySQL job alongside SQLite.
 
-## Phase 3: Recurrence module (free)
+## Phase 4: Recurrence module (free)
 
-- RFC 5545 RRULE editor, RDATE/EXDATE, and a "this / this and following / all" editing scope.
+- Builds on the RRULE expansion from the Google Calendar import.
+- RRULE editor in the Event panel; editing scope: "this / this and following / all".
 - Rolling horizon (default 2 years) extended by cron, so the row count stays bounded.
 - Single-occurrence overrides as detached child posts linked by `_oe_series_parent`.
+- Per-occurrence RSVP and tickets (the tables already carry `occurrence_id`).
 - Import of TEC Pro `_EventRecurrence` rules.
 
-## Phase 4: RSVP module
+## Phase 5: Ticketing extras
 
-- `oe_ticket_types` / `oe_attendees` tables. Capacity is enforced with an atomic conditional update.
-- RSVP form in event details: going/not going, guests, waitlist, opt out of the public list.
-- Emails, admin attendee list (search, CSV export, manual check-in), per-occurrence RSVPs.
-- Event Tickets RSVP importer for v1, v2, and migrated data (`docs/research/event-tickets-data-model.md`), keeping security codes.
-
-## Phase 5: Tickets module
-
-- Paid ticket types, sale windows, attendee fields.
-- Orders tables and a checkout block; the gateway interface with manual, then Stripe, then a WooCommerce adapter. No platform fees.
-- QR tickets, a check-in REST endpoint and screen, refunds from the admin, reports.
-- Tickets Commerce importer.
+- Attendee info fields per ticket type, waitlists, coupons, shared capacity across ticket types.
+- WooCommerce gateway adapter.
+- Check-in screen for door staff (mobile-friendly, works offline-first).
 
 ## Phase 6: Pro views and extras
 
