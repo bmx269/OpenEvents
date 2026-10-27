@@ -1,0 +1,39 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "open-events-calendar/calendar",
+	"title": "Events Calendar",
+	"category": "widgets",
+	"icon": "calendar-alt",
+	"description": "Month and list views of your events, with navigation that works with or without JavaScript.",
+	"keywords": [ "events", "calendar", "month", "agenda" ],
+	"textdomain": "open-events-calendar",
+	"attributes": {
+		"views": {
+			"type": "array",
+			"items": { "type": "string" },
+			"default": [ "month", "list" ]
+		},
+		"defaultView": { "type": "string", "default": "" },
+		"categories": {
+			"type": "array",
+			"items": { "type": "integer" },
+			"default": []
+		},
+		"showLegend": { "type": "boolean", "default": false },
+		"perPage": { "type": "integer", "default": 0 },
+		"headingLevel": { "type": "integer", "default": 2 }
+	},
+	"supports": {
+		"html": false,
+		"align": [ "wide", "full" ],
+		"interactivity": true,
+		"spacing": { "margin": true, "padding": true },
+		"color": { "background": true, "text": true, "link": true },
+		"typography": { "fontSize": true }
+	},
+	"editorScript": "file:./index.js",
+	"style": "file:./style-index.css",
+	"viewScriptModule": "file:./view.js",
+	"render": "file:./render.php"
+}

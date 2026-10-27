@@ -1,0 +1,34 @@
+// The app renders its own page chrome; remove wp-admin's content padding around it.
+.oec-admin {
+	margin-inline-start: -20px;
+
+	@media (max-width: 782px) {
+		margin-inline-start: -10px;
+	}
+}
+
+.oec-admin__body {
+	max-width: 760px;
+}
+
+.oec-setup__steps {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.5rem 1.5rem;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+
+	li {
+		opacity: 0.6;
+
+		&[aria-current="step"] {
+			opacity: 1;
+			font-weight: 600;
+		}
+
+		&.is-complete {
+			opacity: 0.85;
+		}
+	}
+}

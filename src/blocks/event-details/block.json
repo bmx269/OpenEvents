@@ -1,0 +1,33 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "open-events-calendar/event-details",
+	"title": "Event Details",
+	"category": "widgets",
+	"icon": "info-outline",
+	"description": "Date, venue, organizers, cost, and calendar links for the current event.",
+	"keywords": [ "event", "date", "venue" ],
+	"textdomain": "open-events-calendar",
+	"usesContext": [ "postId", "postType" ],
+	"attributes": {
+		"showVenue": { "type": "boolean", "default": true },
+		"showOrganizers": { "type": "boolean", "default": true },
+		"showCost": { "type": "boolean", "default": true },
+		"showLinks": { "type": "boolean", "default": true }
+	},
+	"supports": {
+		"html": false,
+		"spacing": { "margin": true, "padding": true },
+		"color": { "background": true, "text": true, "link": true },
+		"typography": { "fontSize": true },
+		"__experimentalBorder": {
+			"color": true,
+			"radius": true,
+			"style": true,
+			"width": true
+		}
+	},
+	"editorScript": "file:./index.js",
+	"style": "file:./style-index.css",
+	"render": "file:./render.php"
+}

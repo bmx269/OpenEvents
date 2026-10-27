@@ -1,0 +1,64 @@
+@use "../shared/base";
+
+.oe-details {
+	margin-block-end: var(--wp--preset--spacing--40, 1.5rem);
+	padding: var(--oe-gap);
+	border: 1px solid var(--oe-border);
+	border-radius: var(--oe-radius);
+
+	// Rows use subgrid so every label shares one column width.
+	&__list {
+		display: grid;
+		grid-template-columns: max-content 1fr;
+		gap: 0.75em var(--oe-gap);
+		margin: 0;
+	}
+
+	&__row {
+		display: grid;
+		grid-column: 1 / -1;
+		grid-template-columns: subgrid;
+
+		dt {
+			font-weight: 600;
+		}
+
+		dd {
+			margin: 0;
+		}
+
+		@media (max-width: 480px) {
+			grid-template-columns: 1fr;
+			gap: 0.1em;
+		}
+	}
+
+	@media (max-width: 480px) {
+		&__list {
+			grid-template-columns: 1fr;
+		}
+	}
+
+	&__address {
+		color: var(--oe-muted);
+	}
+
+	&__badge {
+		display: inline-block;
+		margin-inline-start: 0.5em;
+		padding: 0 0.5em;
+		border-radius: var(--oe-radius);
+		background: var(--oe-surface);
+		font-size: 0.85em;
+	}
+
+	&__links {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.5em 1.25em;
+		margin: 1em 0 0;
+		padding: 0;
+		list-style: none;
+		font-size: 0.9em;
+	}
+}

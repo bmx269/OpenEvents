@@ -1,0 +1,246 @@
+@use "../shared/base";
+@use "../shared/card";
+
+.oe-calendar {
+	&__header {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--oe-gap);
+		margin-block-end: var(--oe-gap);
+	}
+
+	&__title {
+		margin: 0;
+
+		&:focus {
+			outline: none;
+		}
+
+		&:focus-visible {
+			outline: 2px solid var(--oe-accent);
+			outline-offset: 2px;
+		}
+	}
+
+	&__nav,
+	&__views {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.25rem;
+	}
+
+	&__tools {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--oe-gap);
+		align-items: center;
+	}
+
+	&__nav-link,
+	&__view {
+		display: inline-block;
+		min-width: 2.5em;
+		padding: 0.35em 0.8em;
+		border: 1px solid var(--oe-border);
+		border-radius: var(--oe-radius);
+		text-align: center;
+		text-decoration: none;
+		color: inherit;
+
+		&:hover,
+		&:focus-visible {
+			border-color: currentColor;
+		}
+	}
+
+	&__view[aria-current="page"] {
+		background: var(--oe-accent);
+		border-color: var(--oe-accent);
+		color: var(--oe-on-accent);
+	}
+
+	&__empty {
+		color: var(--oe-muted);
+	}
+
+	&__links {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--oe-gap);
+		margin: var(--oe-gap) 0 0;
+		padding: 0;
+		list-style: none;
+		font-size: 0.875em;
+	}
+}
+
+.oe-month {
+	width: 100%;
+	border-collapse: collapse;
+	table-layout: fixed;
+
+	th {
+		padding: 0.5em 0.25em;
+		font-size: 0.8em;
+		font-weight: 600;
+		text-align: start;
+
+		abbr {
+			text-decoration: none;
+		}
+	}
+
+	&__day {
+		height: 7rem;
+		padding: 0.25rem;
+		vertical-align: top;
+		border: 1px solid var(--oe-border);
+
+		&.is-other-month {
+			background: var(--oe-surface);
+
+			.oe-month__date {
+				color: var(--oe-muted);
+			}
+		}
+
+		&.is-today .oe-month__date time {
+			display: inline-grid;
+			place-items: center;
+			min-width: 1.8em;
+			height: 1.8em;
+			border-radius: 50%;
+			background: var(--oe-accent);
+			color: var(--oe-on-accent);
+		}
+	}
+
+	&__date {
+		display: block;
+		margin-block-end: 0.25em;
+		font-size: 0.85em;
+		font-weight: 600;
+	}
+
+	&__events {
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
+
+	&__event {
+		display: block;
+		margin-block-end: 2px;
+		padding: 0.15em 0.35em;
+		overflow: hidden;
+		border-inline-start: 3px solid var(--oe-event-bg, var(--oe-accent));
+		border-radius: 2px;
+		font-size: 0.8em;
+		line-height: 1.3;
+		text-decoration: none;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		color: inherit;
+
+		&.is-all-day {
+			background: var(--oe-event-bg, var(--oe-accent));
+			color: var(--oe-event-fg, var(--oe-on-accent));
+		}
+
+		&:hover .oe-month__event-title,
+		&:focus-visible .oe-month__event-title {
+			text-decoration: underline;
+		}
+	}
+
+	&__event-time {
+		font-variant-numeric: tabular-nums;
+		opacity: 0.8;
+	}
+
+	&__more {
+		font-size: 0.8em;
+	}
+
+	// Phones: drop the grid and list only days that have events.
+	@media (max-width: 600px) {
+		thead {
+			display: none;
+		}
+
+		&,
+		tbody,
+		tr,
+		td {
+			display: block;
+			width: auto;
+		}
+
+		&__day {
+			height: auto;
+			border-width: 0 0 1px;
+
+			&.is-empty {
+				display: none;
+			}
+		}
+
+		&__event {
+			white-space: normal;
+			font-size: 0.95em;
+		}
+	}
+}
+
+.oe-list {
+	&__group {
+		margin-block: calc(var(--oe-gap) * 1.5) var(--oe-gap);
+		padding-block-end: 0.25em;
+		border-bottom: 1px solid var(--oe-border);
+		font-size: 1em;
+	}
+
+	&__items {
+		display: grid;
+		gap: calc(var(--oe-gap) * 1.25);
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
+}
+
+.oe-pagination {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: var(--oe-gap);
+	margin-block-start: calc(var(--oe-gap) * 1.5);
+
+	&__status {
+		color: var(--oe-muted);
+	}
+}
+
+.oe-legend {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.5rem 1rem;
+	margin: var(--oe-gap) 0 0;
+	padding: 0;
+	list-style: none;
+	font-size: 0.875em;
+
+	li {
+		display: flex;
+		align-items: center;
+		gap: 0.4em;
+	}
+
+	&__swatch {
+		width: 0.9em;
+		height: 0.9em;
+		border-radius: 2px;
+	}
+}

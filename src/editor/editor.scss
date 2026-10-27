@@ -1,0 +1,14 @@
+.oe-editor-panel {
+	&__row > span {
+		flex-shrink: 0;
+	}
+
+	&__picker {
+		padding: 8px;
+		min-width: 260px;
+	}
+
+	&__symbol {
+		max-width: 5em;
+	}
+}

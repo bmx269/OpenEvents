@@ -1,0 +1,26 @@
+{
+	"$schema": "https://playground.wordpress.net/blueprint-schema.json",
+	"landingPage": "/events/",
+	"preferredVersions": {
+		"php": "8.3",
+		"wp": "latest"
+	},
+	"login": true,
+	"steps": [
+		{
+			"step": "setSiteOptions",
+			"options": {
+				"permalink_structure": "/%postname%/",
+				"timezone_string": "America/Vancouver"
+			}
+		},
+		{
+			"step": "activatePlugin",
+			"pluginPath": "open-events-calendar/open-events-calendar.php"
+		},
+		{
+			"step": "runPHP",
+			"code": "<?php require '/wordpress/wp-load.php'; require WP_PLUGIN_DIR . '/open-events-calendar/dev/sample-data.php'; flush_rewrite_rules();"
+		}
+	]
+}

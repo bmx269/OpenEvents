@@ -1,0 +1,34 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "open-events-calendar/upcoming-events",
+	"title": "Upcoming Events",
+	"category": "widgets",
+	"icon": "list-view",
+	"description": "A short list of the next events, for sidebars and landing pages.",
+	"keywords": [ "events", "upcoming", "list" ],
+	"textdomain": "open-events-calendar",
+	"attributes": {
+		"count": { "type": "integer", "default": 5 },
+		"categories": {
+			"type": "array",
+			"items": { "type": "integer" },
+			"default": []
+		},
+		"showImage": { "type": "boolean", "default": false },
+		"showExcerpt": { "type": "boolean", "default": false },
+		"showVenue": { "type": "boolean", "default": true },
+		"showViewAll": { "type": "boolean", "default": true },
+		"headingLevel": { "type": "integer", "default": 3 }
+	},
+	"supports": {
+		"html": false,
+		"align": [ "wide", "full" ],
+		"spacing": { "margin": true, "padding": true },
+		"color": { "background": true, "text": true, "link": true },
+		"typography": { "fontSize": true }
+	},
+	"editorScript": "file:./index.js",
+	"style": "file:./style-index.css",
+	"render": "file:./render.php"
+}

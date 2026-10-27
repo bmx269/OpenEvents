@@ -1,0 +1,62 @@
+# Open Events Calendar
+
+An open-source WordPress events calendar, built as a replacement for The Events Calendar, with room for the features that are usually paid add-ons (recurrence, RSVP, tickets) as built-in modules.
+
+- **Events on any post type.** Use a dedicated Events post type, add event dates to post types you already have, or both. Existing posts are never changed.
+- **Fast at library scale.** Listings read one indexed table and batch-load everything they render. With 5,000 events, a month view costs 2 more queries than a plain page.
+- **Works without JavaScript.** Calendar views are server-rendered links. The Interactivity API upgrades them to in-place navigation.
+- **Theme-friendly.** Blocks inherit your theme.json, the templates are editable in the Site Editor, and classic themes get fallbacks.
+- **Open APIs.** PHP functions, hooks, a module registry, REST, the Abilities API, Block Bindings, and editor SlotFills.
+
+Requires WordPress 7.1+ and PHP 8.2+.
+
+## Status
+
+Phase 1 (core foundation) is done. See [docs/ROADMAP.md](docs/ROADMAP.md) for what comes next.
+
+## Development
+
+```bash
+npm install
+npm run build          # or: npm start (watch)
+npm run playground     # WordPress Playground with the plugin and sample events
+npm run bench          # Playground with 5,000 generated events; add ?oec_bench=1 to a page
+npm run lint:js
+```
+
+The built `build/` directory is not committed. Run `npm run build` after cloning, or use `npm run plugin-zip` to make an installable zip.
+
+### WP-CLI
+
+```bash
+wp open-events rebuild     # rebuild the occurrences table (after bulk imports)
+wp open-events stats       # row counts and EXPLAIN plans for hot queries
+wp open-events generate --count=5000   # load-test data; never on production
+```
+
+## Documentation
+
+- [Architecture](docs/ARCHITECTURE.md): data model, performance contract, extension APIs
+- [Roadmap](docs/ROADMAP.md)
+- Research: [TEC support forum pain points](docs/research/tec-support-forum.md), [TEC data model](docs/research/tec-data-model.md), [Event Tickets data model](docs/research/event-tickets-data-model.md)
+
+## Extending
+
+```php
+// Add a module that site owners can toggle in Events → Settings → Modules.
+add_filter( 'open_events_calendar/modules', function ( array $modules ) {
+	$modules[] = new My_Zoom_Module(); // extends OpenEvents\Modules\AbstractModule
+	return $modules;
+} );
+
+// Query events anywhere.
+foreach ( oec_get_upcoming( 5, array( 'categories' => array( 12 ) ) ) as $occurrence ) {
+	echo esc_html( get_the_title( $occurrence->event_id ) . ': ' . oec_format_range( $occurrence ) );
+}
+```
+
+The full list of hooks and APIs is in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md#extension-apis).
+
+## License
+
+GPL-2.0-or-later

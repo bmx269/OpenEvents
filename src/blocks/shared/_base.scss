@@ -1,0 +1,25 @@
+// Shared tokens. Everything inherits the theme's fonts and colours; override
+// these custom properties in theme.json or CSS instead of fighting selectors.
+:where(.oe-calendar, .oe-upcoming, .oe-details) {
+	// Not currentColor: elements that set a light text colour on the accent would
+	// then paint an invisible light-on-light background.
+	--oe-accent: var(--wp--preset--color--primary, var(--wp--preset--color--contrast, #1e1e1e));
+	--oe-on-accent: var(--wp--preset--color--base, #fff);
+	--oe-border: color-mix(in srgb, currentColor 15%, transparent);
+	--oe-muted: color-mix(in srgb, currentColor 65%, transparent);
+	--oe-surface: color-mix(in srgb, currentColor 4%, transparent);
+	--oe-radius: 4px;
+	--oe-gap: var(--wp--preset--spacing--30, 1rem);
+}
+
+.oe-visually-hidden {
+	position: absolute !important;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	margin: -1px;
+	overflow: hidden;
+	clip: rect(0, 0, 0, 0);
+	white-space: nowrap;
+	border: 0;
+}
