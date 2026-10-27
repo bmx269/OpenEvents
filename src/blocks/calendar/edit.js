@@ -79,6 +79,14 @@ export default function Edit( { attributes, setAttributes } ) {
 				<PanelBody title={ __( 'Display', 'openevents' ) }>
 					<ToggleControl
 						__nextHasNoMarginBottom
+						label={ __( 'Show filter and search', 'openevents' ) }
+						checked={ attributes.showFilters }
+						onChange={ ( value ) =>
+							setAttributes( { showFilters: value } )
+						}
+					/>
+					<ToggleControl
+						__nextHasNoMarginBottom
 						label={ __(
 							'Show category colour legend',
 							'openevents'

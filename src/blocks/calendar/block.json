@@ -21,6 +21,7 @@
 			"default": []
 		},
 		"showLegend": { "type": "boolean", "default": false },
+		"showFilters": { "type": "boolean", "default": true },
 		"perPage": { "type": "integer", "default": 0 },
 		"headingLevel": { "type": "integer", "default": 2 }
 	},

@@ -103,6 +103,65 @@ test.describe( 'Calendar block', () => {
 		).toBeVisible();
 	} );
 
+	test( 'filter by category and search update the calendar in place', async ( {
+		page,
+	} ) => {
+		await page.goto( '/events/?oe_view=month' );
+		await page.evaluate( () => ( window.__noReload = true ) );
+		const calendar = page.locator( '.oe-calendar' );
+
+		await calendar
+			.getByLabel( 'Category', { exact: true } )
+			.selectOption( { label: 'Workshops' } );
+		await calendar.getByRole( 'button', { name: 'Filter' } ).click();
+
+		await expect( page ).toHaveURL( /oe_cat=workshops/ );
+		await expect( calendar.locator( '.oe-calendar__summary' ) ).toHaveText(
+			'Showing Workshops events'
+		);
+		await expect( calendar.getByText( 'Jazz Night' ) ).toHaveCount( 0 );
+		await expect(
+			calendar.locator( '.oe-month__event-title', {
+				hasText: 'Pottery Basics',
+			} )
+		).toBeVisible();
+		await expect( calendar.locator( '.oe-calendar__title' ) ).toBeFocused();
+		expect( await page.evaluate( () => window.__noReload ) ).toBe( true );
+
+		await calendar.getByLabel( 'Search events' ).fill( 'online' );
+		await calendar.getByRole( 'button', { name: 'Filter' } ).click();
+		await expect( calendar.locator( '.oe-calendar__summary' ) ).toHaveText(
+			'Showing Workshops events matching “online”'
+		);
+		await expect( calendar.getByText( 'Pottery Basics' ) ).toHaveCount( 0 );
+
+		await calendar.getByRole( 'link', { name: 'Clear filters' } ).click();
+		await expect( calendar.locator( '.oe-calendar__summary' ) ).toHaveCount(
+			0
+		);
+		await expect(
+			calendar.locator( '.oe-month__event-title', {
+				hasText: 'Jazz Night',
+			} )
+		).toBeVisible();
+	} );
+
+	test( 'filters work without JavaScript', async ( { browser } ) => {
+		const context = await browser.newContext( {
+			javaScriptEnabled: false,
+		} );
+		const page = await context.newPage();
+		await page.goto( '/events/?oe_view=list&oe_past=1' );
+		await page.getByLabel( 'Search events' ).fill( 'choir' );
+		await page.getByRole( 'button', { name: 'Filter' } ).click();
+
+		await expect( page ).toHaveURL( /oe_s=choir/ );
+		await expect( page.locator( '.oe-event-card__title' ) ).toHaveText( [
+			'Choir Practice',
+		] );
+		await context.close();
+	} );
+
 	test.describe( 'on a phone', () => {
 		test.use( { viewport: { width: 390, height: 844 } } );
 

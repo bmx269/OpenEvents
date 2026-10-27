@@ -21,7 +21,7 @@ use OpenEvents\Occurrences\Repository;
  */
 final class CalendarView {
 
-	public const PARAMS = array( 'oe_view', 'oe_month', 'oe_date', 'oe_page', 'oe_past' );
+	public const PARAMS = array( 'oe_view', 'oe_month', 'oe_date', 'oe_page', 'oe_past', 'oe_cat', 'oe_s' );
 
 	/** How far from today month navigation may go, in years. */
 	private const RANGE_YEARS = 5;
@@ -115,7 +115,14 @@ final class CalendarView {
 			'past'       => ! empty( $_GET['oe_past'] ),
 			'categories' => array_map( 'absint', (array) ( $this->attributes['categories'] ?? array() ) ),
 			'enabled'    => $enabled,
+			'category'   => null,
+			'search'     => mb_substr( sanitize_text_field( wp_unslash( $_GET['oe_s'] ?? '' ) ), 0, 100 ),
 		);
+		$state['category'] = $this->requested_category( sanitize_title( wp_unslash( $_GET['oe_cat'] ?? '' ) ), $state['categories'] );
+		if ( $state['category'] ) {
+			// Narrow to the chosen category (children included by the repository).
+			$state['categories'] = array( $state['category']->term_id );
+		}
 		// phpcs:enable
 
 		$region = 'oe-calendar-' . self::$instance;
@@ -135,6 +142,8 @@ final class CalendarView {
 		}
 		// Views place this in their header row, next to their own navigation.
 		$state['switcher'] = $switcher;
+
+		$state['filters'] = ! empty( $this->attributes['showFilters'] ) ? $this->filters( $state ) : '';
 
 		$body = call_user_func( $views[ $state['view'] ], $this, $state );
 
@@ -158,7 +167,7 @@ final class CalendarView {
 			esc_attr( $state['view'] ),
 			esc_attr( $region ),
 			$body,
-			! empty( $this->attributes['showLegend'] ) ? self::legend( $state['categories'] ) : '',
+			! empty( $this->attributes['showLegend'] ) ? self::legend( array_map( 'absint', (array) ( $this->attributes['categories'] ?? array() ) ), ! empty( $this->attributes['showFilters'] ) ) : '',
 			$footer
 		);
 	}
@@ -185,6 +194,7 @@ final class CalendarView {
 				'local_from' => $grid_start->format( 'Y-m-d 00:00:00' ),
 				'local_to'   => $grid_end->format( 'Y-m-d 23:59:59' ),
 				'categories' => $state['categories'],
+				'search'     => $state['search'],
 				'per_page'   => -1,
 				'count'      => false,
 			)
@@ -214,7 +224,7 @@ final class CalendarView {
 		$nav .= $prev >= $min ? self::nav_link( array( 'oe_month' => $prev->format( 'Y-m' ) ), __( 'Previous month', 'openevents' ), '‹' ) : '';
 		$nav .= self::nav_link( array( 'oe_month' => null ), __( 'This month', 'openevents' ), __( 'Today', 'openevents' ), false );
 		$nav .= $next <= $max ? self::nav_link( array( 'oe_month' => $next->format( 'Y-m' ) ), __( 'Next month', 'openevents' ), '›' ) : '';
-		$nav .= '</nav></div></div>';
+		$nav .= '</nav></div></div>' . $state['filters'] . self::summary( $state );
 
 		$today = current_datetime()->format( 'Y-m-d' );
 		$html  = '<table class="oe-month"><caption class="oe-visually-hidden">' . esc_html( $title ) . '</caption><thead><tr>';
@@ -280,7 +290,7 @@ final class CalendarView {
 		$html .= '</tbody></table>';
 
 		if ( ! $result['items'] ) {
-			$html .= '<p class="oe-calendar__empty">' . esc_html__( 'No events scheduled this month.', 'openevents' ) . '</p>';
+			$html .= '<p class="oe-calendar__empty">' . esc_html( self::is_filtered( $state ) ? __( 'No events match these filters this month.', 'openevents' ) : __( 'No events scheduled this month.', 'openevents' ) ) . '</p>';
 		}
 
 		return $nav . $html;
@@ -310,6 +320,7 @@ final class CalendarView {
 		$per_page = (int) ( $view->attributes['perPage'] ?? 0 ) ?: (int) openevents()->settings()->get( 'per_page' );
 		$args     = array(
 			'categories'   => $state['categories'],
+			'search'       => $state['search'],
 			'per_page'     => $per_page,
 			'page'         => $state['page'],
 			'prime_images' => true,
@@ -339,10 +350,10 @@ final class CalendarView {
 		$html .= $state['past']
 			? self::nav_link( array( 'oe_past' => null, 'oe_page' => null ), __( 'Upcoming events', 'openevents' ), __( 'Upcoming', 'openevents' ), false )
 			: self::nav_link( array( 'oe_past' => 1, 'oe_page' => null, 'oe_date' => null ), __( 'Past events', 'openevents' ), __( 'Past', 'openevents' ), false );
-		$html .= '</nav></div></div>';
+		$html .= '</nav></div></div>' . $state['filters'] . self::summary( $state );
 
 		if ( ! $result['items'] ) {
-			return $html . '<p class="oe-calendar__empty">' . esc_html__( 'There are no events to show.', 'openevents' ) . '</p>';
+			return $html . '<p class="oe-calendar__empty">' . esc_html( self::is_filtered( $state ) ? __( 'No events match these filters.', 'openevents' ) : __( 'There are no events to show.', 'openevents' ) ) . '</p>';
 		}
 
 		$current_group = '';
@@ -419,7 +430,7 @@ final class CalendarView {
 	 *
 	 * @param int[] $categories Restrict to these categories.
 	 */
-	private static function legend( array $categories ): string {
+	private static function legend( array $categories, bool $filter_links = false ): string {
 		$terms = CategoryColors::legend_terms( $categories );
 		if ( ! $terms ) {
 			return '';
@@ -427,13 +438,169 @@ final class CalendarView {
 		$html = '<ul class="oe-legend" aria-label="' . esc_attr__( 'Category colours', 'openevents' ) . '">';
 		foreach ( $terms as $term ) {
 			$html .= sprintf(
-				'<li><span class="oe-legend__swatch" style="background:%s" aria-hidden="true"></span><a href="%s">%s</a></li>',
+				'<li><span class="oe-legend__swatch" style="background:%s" aria-hidden="true"></span><a href="%s"' . ( $filter_links ? ' rel="nofollow" data-wp-on--click="actions.navigate"' : '' ) . '>%s</a></li>',
 				esc_attr( CategoryColors::color( $term->term_id ) ),
-				esc_url( get_term_link( $term ) ),
+				esc_url(
+					$filter_links
+						? self::url(
+							array(
+								'oe_cat' => $term->slug,
+								'oe_page' => null,
+							)
+						)
+						: get_term_link( $term )
+				),
 				esc_html( $term->name )
 			);
 		}
 		return $html . '</ul>';
+	}
+
+	/**
+	 * The category chosen in the filter, if it exists and the block allows it.
+	 *
+	 * @param int[] $allowed Block's category restriction (empty for all).
+	 */
+	private function requested_category( string $slug, array $allowed ): ?\WP_Term {
+		if ( '' === $slug ) {
+			return null;
+		}
+		$term = get_term_by( 'slug', $slug, \OpenEvents\Content\PostTypes::CATEGORY );
+		if ( ! $term instanceof \WP_Term ) {
+			return null;
+		}
+		if ( $allowed ) {
+			$ancestors = get_ancestors( $term->term_id, \OpenEvents\Content\PostTypes::CATEGORY, 'taxonomy' );
+			if ( ! array_intersect( array_merge( array( $term->term_id ), $ancestors ), $allowed ) ) {
+				return null;
+			}
+		}
+		return $term;
+	}
+
+	private static function is_filtered( array $state ): bool {
+		return null !== $state['category'] || '' !== $state['search'];
+	}
+
+	/**
+	 * Filter and search form. A plain GET form (works without JavaScript); the
+	 * view script submits it through the router to update in place.
+	 *
+	 * @param array<string, mixed> $state View state.
+	 */
+	private function filters( array $state ): string {
+		$id      = 'oe-filters-' . self::$instance;
+		$allowed = array_map( 'absint', (array) ( $this->attributes['categories'] ?? array() ) );
+		$terms   = get_terms(
+			array(
+				'taxonomy'   => \OpenEvents\Content\PostTypes::CATEGORY,
+				'hide_empty' => true,
+				'orderby'    => 'name',
+			)
+		);
+		$terms   = is_array( $terms ) ? $terms : array();
+		if ( $allowed ) {
+			$terms = array_values(
+				array_filter(
+					$terms,
+					static fn( \WP_Term $t ) => (bool) array_intersect( array_merge( array( $t->term_id ), get_ancestors( $t->term_id, \OpenEvents\Content\PostTypes::CATEGORY, 'taxonomy' ) ), $allowed )
+				)
+			);
+		}
+
+		$html  = sprintf(
+			'<form class="oe-calendar__filters" role="search" aria-label="%s" method="get" action="%s" data-wp-on--submit="actions.filter">',
+			esc_attr__( 'Filter events', 'openevents' ),
+			esc_url( remove_query_arg( self::PARAMS ) )
+		);
+		// Keep the current view, month, date, and past/upcoming; filtering starts again at page 1.
+		$keep = array(
+			'oe_view'  => $state['view'],
+			'oe_month' => isset( $_GET['oe_month'] ) ? $state['month']->format( 'Y-m' ) : '', // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			'oe_date'  => $state['date'] ? $state['date']->format( 'Y-m-d' ) : '',
+			'oe_past'  => $state['past'] ? '1' : '',
+		);
+		foreach ( $keep as $name => $value ) {
+			if ( '' !== $value ) {
+				$html .= '<input type="hidden" name="' . esc_attr( $name ) . '" value="' . esc_attr( $value ) . '">';
+			}
+		}
+		if ( $terms ) {
+			$html .= '<p class="oe-calendar__filter"><label for="' . esc_attr( $id ) . '-cat">' . esc_html__( 'Category', 'openevents' ) . '</label>';
+			$html .= '<select id="' . esc_attr( $id ) . '-cat" name="oe_cat"><option value="">' . esc_html__( 'All categories', 'openevents' ) . '</option>';
+			foreach ( self::ordered_terms( $terms ) as list( $term, $depth ) ) {
+				$html .= sprintf(
+					'<option value="%s"%s>%s%s</option>',
+					esc_attr( $term->slug ),
+					selected( $state['category']?->term_id, $term->term_id, false ),
+					str_repeat( '— ', $depth ),
+					esc_html( $term->name )
+				);
+			}
+			$html .= '</select></p>';
+		}
+		$html .= '<p class="oe-calendar__filter"><label for="' . esc_attr( $id ) . '-s">' . esc_html__( 'Search events', 'openevents' ) . '</label>';
+		$html .= '<input id="' . esc_attr( $id ) . '-s" type="search" name="oe_s" maxlength="100" value="' . esc_attr( $state['search'] ) . '"></p>';
+		$html .= '<p class="oe-calendar__filter-actions"><button type="submit" class="oe-calendar__filter-submit">' . esc_html__( 'Filter', 'openevents' ) . '</button>';
+		if ( self::is_filtered( $state ) ) {
+			$html .= self::nav_link(
+				array(
+					'oe_cat'  => null,
+					'oe_s'    => null,
+					'oe_page' => null,
+				),
+				__( 'Clear filters', 'openevents' ),
+				__( 'Clear filters', 'openevents' ),
+				false
+			);
+		}
+		return $html . '</p></form>';
+	}
+
+	/**
+	 * Terms in parent → child order with depth, for an indented select.
+	 *
+	 * @param \WP_Term[] $terms Terms.
+	 * @return array<int, array{0: \WP_Term, 1: int}>
+	 */
+	private static function ordered_terms( array $terms ): array {
+		$by_parent = array();
+		$ids       = wp_list_pluck( $terms, 'term_id' );
+		foreach ( $terms as $term ) {
+			$parent                 = in_array( $term->parent, $ids, true ) ? $term->parent : 0;
+			$by_parent[ $parent ][] = $term;
+		}
+		$out  = array();
+		$walk = static function ( int $parent, int $depth ) use ( &$walk, &$out, $by_parent ): void {
+			foreach ( $by_parent[ $parent ] ?? array() as $term ) {
+				$out[] = array( $term, $depth );
+				$walk( $term->term_id, $depth + 1 );
+			}
+		};
+		$walk( 0, 0 );
+		return $out;
+	}
+
+	/**
+	 * "Showing Music events matching “jazz”", read with the heading after updates.
+	 *
+	 * @param array<string, mixed> $state View state.
+	 */
+	private static function summary( array $state ): string {
+		if ( ! self::is_filtered( $state ) ) {
+			return '';
+		}
+		if ( $state['category'] && '' !== $state['search'] ) {
+			/* translators: 1: category name, 2: search terms */
+			$text = sprintf( __( 'Showing %1$s events matching “%2$s”', 'openevents' ), $state['category']->name, $state['search'] );
+		} elseif ( $state['category'] ) {
+			/* translators: %s: category name */
+			$text = sprintf( __( 'Showing %s events', 'openevents' ), $state['category']->name );
+		} else {
+			/* translators: %s: search terms */
+			$text = sprintf( __( 'Showing events matching “%s”', 'openevents' ), $state['search'] );
+		}
+		return '<p class="oe-calendar__summary">' . esc_html( $text ) . '</p>';
 	}
 
 	/**
