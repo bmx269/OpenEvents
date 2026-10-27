@@ -7,6 +7,7 @@ const TOGGLES = [
 	[ 'showVenue', __( 'Venue', 'openevents' ) ],
 	[ 'showOrganizers', __( 'Organizers', 'openevents' ) ],
 	[ 'showCost', __( 'Cost', 'openevents' ) ],
+	[ 'showCategories', __( 'Categories', 'openevents' ) ],
 	[ 'showLinks', __( 'Calendar links', 'openevents' ) ],
 ];
 
