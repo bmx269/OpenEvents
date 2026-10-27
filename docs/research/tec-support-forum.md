@@ -2,7 +2,7 @@
 
 Reviewed October 2026: 10 pages of the [TEC support forum](https://wordpress.org/support/plugin/the-events-calendar/) (290 topics), 3 pages of the Event Tickets forum (72 topics), 3 pages each of 1★ and 2★ reviews (about 150), and 26 threads read in full. Counts come from keyword-matching titles and are approximate.
 
-| # | Theme | Topics | Root cause | How Open Events Calendar responds |
+| # | Theme | Topics | Root cause | How OpenEvents responds |
 | --- | --- | --- | --- | --- |
 | 1 | Updates break sites (fatals, "unusable after X.Y") | ~60 TEC, ~20 ET | Shared vendored "common" library and licence code running on free sites. One table name went past MySQL's 64-character limit when the site used a long prefix. | Single plugin, no licence code. Schema changes are idempotent, report through an admin notice, and never fatal (`Installer::schema_notice`). |
 | 2 | Calendar views/navigation don't render | ~50 | Views V2 fetches HTML fragments over REST/AJAX, so caching, security plugins, and a disabled REST API all break it. | Every view is server-rendered with real `<a href>` links. The Interactivity API only enhances those links. Works with JS off, behind page caches, and without REST. |

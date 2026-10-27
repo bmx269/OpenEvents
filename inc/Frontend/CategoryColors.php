@@ -18,20 +18,19 @@ final class CategoryColors {
 	public const META_KEY = 'oe_color';
 
 	public static function register(): void {
-		add_action(
-			'init',
-			static function (): void {
-				register_term_meta(
-					PostTypes::CATEGORY,
-					self::META_KEY,
-					array(
-						'type'              => 'string',
-						'single'            => true,
-						'show_in_rest'      => true,
-						'sanitize_callback' => static fn( $value ) => (string) sanitize_hex_color( (string) $value ),
-					)
-				);
-			}
+		add_action( 'init', array( self::class, 'register_meta' ) );
+	}
+
+	public static function register_meta(): void {
+		register_term_meta(
+			PostTypes::CATEGORY,
+			self::META_KEY,
+			array(
+				'type'              => 'string',
+				'single'            => true,
+				'show_in_rest'      => true,
+				'sanitize_callback' => static fn( $value ) => (string) sanitize_hex_color( (string) $value ),
+			)
 		);
 	}
 

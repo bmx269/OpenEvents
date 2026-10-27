@@ -1,14 +1,14 @@
 <?php
 /**
- * Plugin Name:       Open Events Calendar
- * Description:       An open-source events calendar with venues, organizers, calendar views, and optional modules for iCal, recurrence, RSVP, and tickets.
+ * Plugin Name:       OpenEvents
+ * Description:       Open-source events for WordPress: Calendar, with RSVP, Tickets, and more as modules. Add events to a dedicated post type or the ones you already use.
  * Requires at least: 7.1
  * Requires PHP:      8.2
  * Version:           0.1.0
  * Author:            Affinity Bridge
  * License:           GPL-2.0-or-later
  * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
- * Text Domain:       open-events-calendar
+ * Text Domain:       openevents
  *
  * @package OpenEvents
  */

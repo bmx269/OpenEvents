@@ -12,7 +12,7 @@ const isModifiedClick = ( event ) =>
 	event.shiftKey ||
 	event.defaultPrevented;
 
-store( 'open-events-calendar/calendar', {
+store( 'openevents/calendar', {
 	actions: {
 		navigate: withSyncEvent( function* ( event ) {
 			if ( isModifiedClick( event ) ) {

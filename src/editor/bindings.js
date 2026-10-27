@@ -1,5 +1,5 @@
 /**
- * Editor side of the "open-events-calendar/event" block bindings source:
+ * Editor side of the "openevents/event" block bindings source:
  * previews bound values from the event being edited and lists the fields in
  * the block bindings UI. Values are read-only; edit them in the Event panel.
  */
@@ -9,28 +9,31 @@ import { dateI18n, getSettings } from '@wordpress/date';
 import { __ } from '@wordpress/i18n';
 
 const FIELDS = {
-	date: __( 'Event date and time', 'open-events-calendar' ),
-	start_date: __( 'Start date', 'open-events-calendar' ),
-	start_time: __( 'Start time', 'open-events-calendar' ),
-	end_date: __( 'End date', 'open-events-calendar' ),
-	end_time: __( 'End time', 'open-events-calendar' ),
-	venue: __( 'Venue name', 'open-events-calendar' ),
-	venue_address: __( 'Venue address', 'open-events-calendar' ),
-	venue_url: __( 'Venue link', 'open-events-calendar' ),
-	cost: __( 'Cost', 'open-events-calendar' ),
-	website: __( 'Event website', 'open-events-calendar' ),
+	date: __( 'Event date and time', 'openevents' ),
+	start_date: __( 'Start date', 'openevents' ),
+	start_time: __( 'Start time', 'openevents' ),
+	end_date: __( 'End date', 'openevents' ),
+	end_time: __( 'End time', 'openevents' ),
+	venue: __( 'Venue name', 'openevents' ),
+	venue_address: __( 'Venue address', 'openevents' ),
+	venue_url: __( 'Venue link', 'openevents' ),
+	cost: __( 'Cost', 'openevents' ),
+	website: __( 'Event website', 'openevents' ),
 };
 
+// Stored values are wall-clock times; anchor them to UTC and format in UTC so
+// no timezone conversion shifts them.
 const toDate = ( value ) =>
-	value ? new Date( value.replace( ' ', 'T' ) ) : null;
+	value ? `${ value.replace( ' ', 'T' ) }Z` : null;
 
 function valueFor( key, meta, venue ) {
 	const { formats } = getSettings();
 	const start = toDate( meta._oe_start );
 	const end = toDate( meta._oe_end ) || start;
 	const allDay = !! meta._oe_all_day;
-	const date = ( d ) => ( d ? dateI18n( formats.date, d ) : '' );
-	const time = ( d ) => ( d && ! allDay ? dateI18n( formats.time, d ) : '' );
+	const date = ( d ) => ( d ? dateI18n( formats.date, d, true ) : '' );
+	const time = ( d ) =>
+		d && ! allDay ? dateI18n( formats.time, d, true ) : '';
 
 	switch ( key ) {
 		case 'date': {
@@ -81,8 +84,8 @@ function valueFor( key, meta, venue ) {
 }
 
 registerBlockBindingsSource( {
-	name: 'open-events-calendar/event',
-	label: __( 'Event', 'open-events-calendar' ),
+	name: 'openevents/event',
+	label: __( 'Event', 'openevents' ),
 	usesContext: [ 'postId', 'postType' ],
 	getValues( { select, context, bindings } ) {
 		const values = {};

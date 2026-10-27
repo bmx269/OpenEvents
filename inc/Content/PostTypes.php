@@ -35,7 +35,7 @@ final class PostTypes {
 	 * type menu when it is registered, otherwise the plugin's own top-level page.
 	 */
 	public static function menu_parent( Settings $settings ): string {
-		return $settings->registers_event_type() ? 'edit.php?post_type=' . self::EVENT : 'open-events-calendar';
+		return $settings->registers_event_type() ? 'edit.php?post_type=' . self::EVENT : 'openevents';
 	}
 
 	public function register_types(): void {
@@ -50,12 +50,12 @@ final class PostTypes {
 			self::VENUE,
 			array(
 				'labels'       => array(
-					'name'          => __( 'Venues', 'open-events-calendar' ),
-					'singular_name' => __( 'Venue', 'open-events-calendar' ),
-					'add_new_item'  => __( 'Add New Venue', 'open-events-calendar' ),
-					'edit_item'     => __( 'Edit Venue', 'open-events-calendar' ),
-					'all_items'     => __( 'Venues', 'open-events-calendar' ),
-					'not_found'     => __( 'No venues found.', 'open-events-calendar' ),
+					'name'          => __( 'Venues', 'openevents' ),
+					'singular_name' => __( 'Venue', 'openevents' ),
+					'add_new_item'  => __( 'Add New Venue', 'openevents' ),
+					'edit_item'     => __( 'Edit Venue', 'openevents' ),
+					'all_items'     => __( 'Venues', 'openevents' ),
+					'not_found'     => __( 'No venues found.', 'openevents' ),
 				),
 				'public'       => true,
 				'show_in_rest' => true,
@@ -73,12 +73,12 @@ final class PostTypes {
 			self::ORGANIZER,
 			array(
 				'labels'       => array(
-					'name'          => __( 'Organizers', 'open-events-calendar' ),
-					'singular_name' => __( 'Organizer', 'open-events-calendar' ),
-					'add_new_item'  => __( 'Add New Organizer', 'open-events-calendar' ),
-					'edit_item'     => __( 'Edit Organizer', 'open-events-calendar' ),
-					'all_items'     => __( 'Organizers', 'open-events-calendar' ),
-					'not_found'     => __( 'No organizers found.', 'open-events-calendar' ),
+					'name'          => __( 'Organizers', 'openevents' ),
+					'singular_name' => __( 'Organizer', 'openevents' ),
+					'add_new_item'  => __( 'Add New Organizer', 'openevents' ),
+					'edit_item'     => __( 'Edit Organizer', 'openevents' ),
+					'all_items'     => __( 'Organizers', 'openevents' ),
+					'not_found'     => __( 'No organizers found.', 'openevents' ),
 				),
 				'public'       => true,
 				'show_in_rest' => true,
@@ -97,9 +97,9 @@ final class PostTypes {
 			$this->settings->registers_event_type() ? array( self::EVENT ) : array(),
 			array(
 				'labels'            => array(
-					'name'          => __( 'Event Categories', 'open-events-calendar' ),
-					'singular_name' => __( 'Event Category', 'open-events-calendar' ),
-					'menu_name'     => __( 'Event Categories', 'open-events-calendar' ),
+					'name'          => __( 'Event Categories', 'openevents' ),
+					'singular_name' => __( 'Event Category', 'openevents' ),
+					'menu_name'     => __( 'Event Categories', 'openevents' ),
 				),
 				'hierarchical'      => true,
 				'show_in_rest'      => true,
@@ -118,25 +118,25 @@ final class PostTypes {
 			self::EVENT,
 			array(
 				'labels'        => array(
-					'name'                  => __( 'Events', 'open-events-calendar' ),
-					'singular_name'         => __( 'Event', 'open-events-calendar' ),
-					'add_new_item'          => __( 'Add New Event', 'open-events-calendar' ),
-					'edit_item'             => __( 'Edit Event', 'open-events-calendar' ),
-					'new_item'              => __( 'New Event', 'open-events-calendar' ),
-					'view_item'             => __( 'View Event', 'open-events-calendar' ),
-					'view_items'            => __( 'View Events', 'open-events-calendar' ),
-					'search_items'          => __( 'Search Events', 'open-events-calendar' ),
-					'not_found'             => __( 'No events found.', 'open-events-calendar' ),
-					'not_found_in_trash'    => __( 'No events found in Trash.', 'open-events-calendar' ),
-					'all_items'             => __( 'All Events', 'open-events-calendar' ),
-					'archives'              => __( 'Event Archives', 'open-events-calendar' ),
-					'item_published'        => __( 'Event published.', 'open-events-calendar' ),
-					'item_updated'          => __( 'Event updated.', 'open-events-calendar' ),
-					'item_scheduled'        => __( 'Event scheduled.', 'open-events-calendar' ),
-					'menu_name'             => __( 'Events', 'open-events-calendar' ),
-					'filter_items_list'     => __( 'Filter events list', 'open-events-calendar' ),
-					'items_list_navigation' => __( 'Events list navigation', 'open-events-calendar' ),
-					'items_list'            => __( 'Events list', 'open-events-calendar' ),
+					'name'                  => __( 'Events', 'openevents' ),
+					'singular_name'         => __( 'Event', 'openevents' ),
+					'add_new_item'          => __( 'Add New Event', 'openevents' ),
+					'edit_item'             => __( 'Edit Event', 'openevents' ),
+					'new_item'              => __( 'New Event', 'openevents' ),
+					'view_item'             => __( 'View Event', 'openevents' ),
+					'view_items'            => __( 'View Events', 'openevents' ),
+					'search_items'          => __( 'Search Events', 'openevents' ),
+					'not_found'             => __( 'No events found.', 'openevents' ),
+					'not_found_in_trash'    => __( 'No events found in Trash.', 'openevents' ),
+					'all_items'             => __( 'All Events', 'openevents' ),
+					'archives'              => __( 'Event Archives', 'openevents' ),
+					'item_published'        => __( 'Event published.', 'openevents' ),
+					'item_updated'          => __( 'Event updated.', 'openevents' ),
+					'item_scheduled'        => __( 'Event scheduled.', 'openevents' ),
+					'menu_name'             => __( 'Events', 'openevents' ),
+					'filter_items_list'     => __( 'Filter events list', 'openevents' ),
+					'items_list_navigation' => __( 'Events list navigation', 'openevents' ),
+					'items_list'            => __( 'Events list', 'openevents' ),
 				),
 				'public'        => true,
 				'show_in_rest'  => true,

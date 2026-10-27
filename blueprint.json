@@ -16,11 +16,11 @@
 		},
 		{
 			"step": "activatePlugin",
-			"pluginPath": "open-events-calendar/open-events-calendar.php"
+			"pluginPath": "openevents/openevents.php"
 		},
 		{
 			"step": "runPHP",
-			"code": "<?php require '/wordpress/wp-load.php'; require WP_PLUGIN_DIR . '/open-events-calendar/dev/sample-data.php'; flush_rewrite_rules();"
+			"code": "<?php require '/wordpress/wp-load.php'; require WP_PLUGIN_DIR . '/openevents/dev/sample-data.php'; flush_rewrite_rules();"
 		}
 	]
 }

@@ -1,4 +1,4 @@
-=== Open Events Calendar ===
+=== OpenEvents ===
 Contributors: affinitybridge
 Tags: events, calendar, event calendar, venues, ical
 Requires at least: 7.1
@@ -8,11 +8,11 @@ Stable tag: 0.1.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-A fast, open-source events calendar. Add events to a dedicated post type or to the post types you already use.
+Fast, open-source events: Calendar, with RSVP and Tickets as modules. Add events to a dedicated post type or the ones you already use.
 
 == Description ==
 
-Open Events Calendar adds events, venues, organizers, and calendar views to WordPress.
+OpenEvents adds events, venues, organizers, and calendar views to WordPress. Calendar is the core; RSVP, Tickets, and more are modules you switch on.
 
 * Use a dedicated Events post type, add event dates to existing post types, or both.
 * Month and list views that work without JavaScript and become an agenda list on phones.

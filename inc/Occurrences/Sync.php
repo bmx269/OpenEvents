@@ -26,7 +26,7 @@ use OpenEvents\Installer;
 final class Sync {
 
 	/** Longest occurrence seen, in seconds. Bounds range scans (see Repository). */
-	public const MAX_DURATION_OPTION = 'open_events_calendar_max_duration';
+	public const MAX_DURATION_OPTION = 'openevents_max_duration';
 
 	private static ?Sync $instance = null;
 
@@ -71,7 +71,7 @@ final class Sync {
 	}
 
 	public function register_rest_hooks(): void {
-		foreach ( open_events_calendar()->settings()->event_post_types() as $post_type ) {
+		foreach ( openevents()->settings()->event_post_types() as $post_type ) {
 			add_action( 'rest_after_insert_' . $post_type, array( $this, 'on_rest_insert' ) );
 		}
 	}
@@ -123,7 +123,7 @@ final class Sync {
 
 	/**
 	 * Pauses syncing for bulk imports. Call resume() afterwards, then
-	 * `wp open-events rebuild` (or sync each id) to write the rows.
+	 * `wp openevents rebuild` (or sync each id) to write the rows.
 	 */
 	public function suspend(): void {
 		$this->suspended = true;
@@ -142,7 +142,7 @@ final class Sync {
 		global $wpdb;
 
 		unset( $this->pending[ $event_id ] );
-		open_events_calendar()->occurrences()->forget( $event_id );
+		openevents()->occurrences()->forget( $event_id );
 		$event = Event::get( $event_id );
 		if ( ! $event ) {
 			return;
@@ -197,7 +197,7 @@ final class Sync {
 			 *
 			 * @param int $event_id Event id.
 			 */
-			do_action( 'open_events_calendar/occurrences/synced', $event_id );
+			do_action( 'openevents/occurrences/synced', $event_id );
 		}
 	}
 
@@ -218,7 +218,7 @@ final class Sync {
 	 */
 	public function rebuild_all( int $batch = 500, ?callable $progress = null ): int {
 		global $wpdb;
-		$types = open_events_calendar()->settings()->event_post_types();
+		$types = openevents()->settings()->event_post_types();
 		if ( ! $types ) {
 			return 0;
 		}

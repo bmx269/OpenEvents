@@ -49,7 +49,7 @@ final class Templates {
 			 *
 			 * @param bool $skip Whether to skip.
 			 */
-			&& apply_filters( 'open_events_calendar/skip_archive_query', true )
+			&& apply_filters( 'openevents/skip_archive_query', true )
 		) {
 			$query->found_posts   = 0;
 			$query->max_num_pages = 0;
@@ -59,19 +59,19 @@ final class Templates {
 	}
 
 	public function register_block_templates(): void {
-		if ( ! open_events_calendar()->settings()->registers_event_type() ) {
+		if ( ! openevents()->settings()->registers_event_type() ) {
 			return;
 		}
 		$templates = array(
-			'single-' . PostTypes::EVENT              => __( 'Single Event', 'open-events-calendar' ),
-			'archive-' . PostTypes::EVENT             => __( 'Events Calendar', 'open-events-calendar' ),
-			'taxonomy-' . PostTypes::CATEGORY         => __( 'Event Category', 'open-events-calendar' ),
+			'single-' . PostTypes::EVENT              => __( 'Single Event', 'openevents' ),
+			'archive-' . PostTypes::EVENT             => __( 'Events Calendar', 'openevents' ),
+			'taxonomy-' . PostTypes::CATEGORY         => __( 'Event Category', 'openevents' ),
 		);
 		foreach ( $templates as $slug => $title ) {
 			$file = PLUGIN_DIR . '/templates/' . $slug . '.html';
 			if ( is_readable( $file ) ) {
 				register_block_template(
-					'open-events-calendar//' . $slug,
+					'openevents//' . $slug,
 					array(
 						'title'   => $title,
 						'content' => (string) file_get_contents( $file ), // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
@@ -86,7 +86,7 @@ final class Templates {
 			return $template;
 		}
 		if ( is_post_type_archive( PostTypes::EVENT ) || is_tax( PostTypes::CATEGORY ) ) {
-			$theme = locate_template( array( 'open-events-calendar/archive.php' ) );
+			$theme = locate_template( array( 'openevents/archive.php' ) );
 			return $theme ?: PLUGIN_DIR . '/templates/classic/archive.php';
 		}
 		return $template;
@@ -100,17 +100,17 @@ final class Templates {
 			|| ! in_the_loop()
 			|| ! is_main_query()
 			|| get_queried_object_id() !== $post_id
-			|| ! open_events_calendar()->settings()->get( 'append_details' )
+			|| ! openevents()->settings()->get( 'append_details' )
 			|| EventDetails::was_rendered( $post_id )
-			|| has_block( 'open-events-calendar/event-details', $content )
+			|| has_block( 'openevents/event-details', $content )
 		) {
 			return $content;
 		}
 		$details = EventDetails::render( $post_id );
 		if ( $details ) {
 			// The block isn't on the page, so its stylesheet hasn't been enqueued.
-			wp_enqueue_style( generate_block_asset_handle( 'open-events-calendar/event-details', 'style' ) );
+			wp_enqueue_style( generate_block_asset_handle( 'openevents/event-details', 'style' ) );
 		}
-		return $details ? '<div class="wp-block-open-events-calendar-event-details oe-details">' . $details . '</div>' . $content : $content;
+		return $details ? '<div class="wp-block-openevents-event-details oe-details">' . $details . '</div>' . $content : $content;
 	}
 }

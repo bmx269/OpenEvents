@@ -5,10 +5,10 @@
 	"steps": [
 		{ "step": "defineWpConfigConsts", "consts": { "SAVEQUERIES": true } },
 		{ "step": "setSiteOptions", "options": { "permalink_structure": "/%postname%/", "timezone_string": "America/Vancouver" } },
-		{ "step": "activatePlugin", "pluginPath": "open-events-calendar/open-events-calendar.php" },
+		{ "step": "activatePlugin", "pluginPath": "openevents/openevents.php" },
 		{
 			"step": "runPHP",
-			"code": "<?php require '/wordpress/wp-load.php'; @mkdir( WPMU_PLUGIN_DIR, 0777, true ); copy( WP_PLUGIN_DIR . '/open-events-calendar/dev/bench-mu.php', WPMU_PLUGIN_DIR . '/oec-bench.php' ); require WP_PLUGIN_DIR . '/open-events-calendar/dev/sample-data.php'; OpenEvents\\Cli\\Command::generate_events( 5000, 1460 ); flush_rewrite_rules();"
+			"code": "<?php require '/wordpress/wp-load.php'; @mkdir( WPMU_PLUGIN_DIR, 0777, true ); copy( WP_PLUGIN_DIR . '/openevents/dev/bench-mu.php', WPMU_PLUGIN_DIR . '/openevents-bench.php' ); require WP_PLUGIN_DIR . '/openevents/dev/sample-data.php'; OpenEvents\\Cli\\Command::generate_events( 5000, 1460 ); flush_rewrite_rules();"
 		}
 	]
 }

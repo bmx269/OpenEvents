@@ -8,13 +8,13 @@
 namespace OpenEvents;
 
 /**
- * Reads and sanitises the open_events_calendar_settings option.
+ * Reads and sanitises the openevents_settings option.
  */
 final class Settings {
 
-	public const OPTION         = 'open_events_calendar_settings';
-	public const MODULES_OPTION = 'open_events_calendar_modules';
-	public const SETUP_OPTION   = 'open_events_calendar_setup_complete';
+	public const OPTION         = 'openevents_settings';
+	public const MODULES_OPTION = 'openevents_modules';
+	public const SETUP_OPTION   = 'openevents_setup_complete';
 
 	/** The dedicated post type the plugin can register. */
 	public const EVENT_TYPE = 'oe_event';
@@ -79,7 +79,7 @@ final class Settings {
 		 *
 		 * @param string[] $types Post type names.
 		 */
-		$types = apply_filters( 'open_events_calendar/event_post_types', $types );
+		$types = apply_filters( 'openevents/event_post_types', $types );
 
 		return array_values( array_unique( array_filter( $types, 'is_string' ) ) );
 	}

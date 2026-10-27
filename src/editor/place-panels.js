@@ -22,58 +22,55 @@ export function VenuePanel( { meta, setMeta } ) {
 			<Field
 				{ ...props }
 				metaKey="_oe_address"
-				label={ __( 'Address', 'open-events-calendar' ) }
+				label={ __( 'Address', 'openevents' ) }
 			/>
 			<Field
 				{ ...props }
 				metaKey="_oe_city"
-				label={ __( 'City', 'open-events-calendar' ) }
+				label={ __( 'City', 'openevents' ) }
 			/>
 			<Flex align="flex-start">
 				<Field
 					{ ...props }
 					metaKey="_oe_region"
-					label={ __( 'State / Province', 'open-events-calendar' ) }
+					label={ __( 'State / Province', 'openevents' ) }
 				/>
 				<Field
 					{ ...props }
 					metaKey="_oe_postal_code"
-					label={ __( 'Postal code', 'open-events-calendar' ) }
+					label={ __( 'Postal code', 'openevents' ) }
 				/>
 			</Flex>
 			<Field
 				{ ...props }
 				metaKey="_oe_country"
-				label={ __( 'Country', 'open-events-calendar' ) }
+				label={ __( 'Country', 'openevents' ) }
 			/>
 			<Field
 				{ ...props }
 				metaKey="_oe_phone"
 				type="tel"
-				label={ __( 'Phone', 'open-events-calendar' ) }
+				label={ __( 'Phone', 'openevents' ) }
 			/>
 			<Field
 				{ ...props }
 				metaKey="_oe_website"
 				type="url"
-				label={ __( 'Website', 'open-events-calendar' ) }
+				label={ __( 'Website', 'openevents' ) }
 			/>
 			<Flex align="flex-start">
 				<Field
 					{ ...props }
 					metaKey="_oe_lat"
-					label={ __( 'Latitude', 'open-events-calendar' ) }
+					label={ __( 'Latitude', 'openevents' ) }
 				/>
 				<Field
 					{ ...props }
 					metaKey="_oe_lng"
-					label={ __( 'Longitude', 'open-events-calendar' ) }
+					label={ __( 'Longitude', 'openevents' ) }
 				/>
 			</Flex>
-			<Slot
-				name="OpenEventsCalendarVenuePanel"
-				fillProps={ { meta, setMeta } }
-			/>
+			<Slot name="OpenEventsVenuePanel" fillProps={ { meta, setMeta } } />
 		</Flex>
 	);
 }
@@ -86,22 +83,22 @@ export function OrganizerPanel( { meta, setMeta } ) {
 				{ ...props }
 				metaKey="_oe_email"
 				type="email"
-				label={ __( 'Email', 'open-events-calendar' ) }
+				label={ __( 'Email', 'openevents' ) }
 			/>
 			<Field
 				{ ...props }
 				metaKey="_oe_phone"
 				type="tel"
-				label={ __( 'Phone', 'open-events-calendar' ) }
+				label={ __( 'Phone', 'openevents' ) }
 			/>
 			<Field
 				{ ...props }
 				metaKey="_oe_website"
 				type="url"
-				label={ __( 'Website', 'open-events-calendar' ) }
+				label={ __( 'Website', 'openevents' ) }
 			/>
 			<Slot
-				name="OpenEventsCalendarOrganizerPanel"
+				name="OpenEventsOrganizerPanel"
 				fillProps={ { meta, setMeta } }
 			/>
 		</Flex>

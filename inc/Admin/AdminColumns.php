@@ -27,7 +27,7 @@ final class AdminColumns {
 	}
 
 	public function hook_columns(): void {
-		foreach ( oec_event_post_types() as $post_type ) {
+		foreach ( openevents_event_post_types() as $post_type ) {
 			add_filter( "manage_{$post_type}_posts_columns", array( $this, 'columns' ) );
 			add_action( "manage_{$post_type}_posts_custom_column", array( $this, 'column' ), 10, 2 );
 			add_filter( "manage_edit-{$post_type}_sortable_columns", array( $this, 'sortable' ) );
@@ -43,8 +43,8 @@ final class AdminColumns {
 	 * @return \WP_Post[]
 	 */
 	public function prime_dates( array $posts, \WP_Query $query ): array {
-		if ( $query->is_main_query() && $posts && in_array( $query->get( 'post_type' ), oec_event_post_types(), true ) ) {
-			open_events_calendar()->occurrences()->for_events( wp_list_pluck( $posts, 'ID' ) );
+		if ( $query->is_main_query() && $posts && in_array( $query->get( 'post_type' ), openevents_event_post_types(), true ) ) {
+			openevents()->occurrences()->for_events( wp_list_pluck( $posts, 'ID' ) );
 		}
 		return $posts;
 	}
@@ -93,7 +93,7 @@ final class AdminColumns {
 		foreach ( $columns as $key => $label ) {
 			$out[ $key ] = $label;
 			if ( 'title' === $key ) {
-				$out['oe_event_date'] = __( 'Event date', 'open-events-calendar' );
+				$out['oe_event_date'] = __( 'Event date', 'openevents' );
 			}
 		}
 		return $out;
@@ -103,7 +103,7 @@ final class AdminColumns {
 		if ( 'oe_event_date' !== $column ) {
 			return;
 		}
-		$occurrence = oec_is_event( $post_id ) ? open_events_calendar()->occurrences()->for_event( $post_id ) : null;
+		$occurrence = openevents_is_event( $post_id ) ? openevents()->occurrences()->for_event( $post_id ) : null;
 		echo $occurrence ? esc_html( Formatter::range( $occurrence ) ) : '<span aria-hidden="true">—</span>';
 	}
 
@@ -119,10 +119,10 @@ final class AdminColumns {
 	public function color_field_add(): void {
 		?>
 		<div class="form-field">
-			<label for="oe-color"><?php esc_html_e( 'Colour', 'open-events-calendar' ); ?></label>
+			<label for="oe-color"><?php esc_html_e( 'Colour', 'openevents' ); ?></label>
 			<?php wp_nonce_field( 'oe_category_color', 'oe_category_color_nonce' ); ?>
 			<input type="text" id="oe-color" name="oe_color" class="oe-color-field" value="">
-			<p><?php esc_html_e( 'Background colour for events in this category on the calendar. Text colour is chosen automatically for contrast.', 'open-events-calendar' ); ?></p>
+			<p><?php esc_html_e( 'Background colour for events in this category on the calendar. Text colour is chosen automatically for contrast.', 'openevents' ); ?></p>
 		</div>
 		<?php
 	}
@@ -130,11 +130,11 @@ final class AdminColumns {
 	public function color_field_edit( \WP_Term $term ): void {
 		?>
 		<tr class="form-field">
-			<th scope="row"><label for="oe-color"><?php esc_html_e( 'Colour', 'open-events-calendar' ); ?></label></th>
+			<th scope="row"><label for="oe-color"><?php esc_html_e( 'Colour', 'openevents' ); ?></label></th>
 			<td>
 				<?php wp_nonce_field( 'oe_category_color', 'oe_category_color_nonce' ); ?>
 				<input type="text" id="oe-color" name="oe_color" class="oe-color-field" value="<?php echo esc_attr( CategoryColors::color( $term->term_id ) ); ?>">
-				<p class="description"><?php esc_html_e( 'Background colour for events in this category on the calendar.', 'open-events-calendar' ); ?></p>
+				<p class="description"><?php esc_html_e( 'Background colour for events in this category on the calendar.', 'openevents' ); ?></p>
 			</td>
 		</tr>
 		<?php

@@ -1,6 +1,6 @@
 # Architecture
 
-Open Events Calendar is a single plugin: a core calendar plus optional modules (iCal today; recurrence, RSVP, and tickets planned). Site owners turn modules on and off under **Events → Settings → Modules**, and third-party plugins can register their own.
+OpenEvents is a single plugin: a core calendar plus optional modules (iCal today; recurrence, RSVP, and tickets planned). Site owners turn modules on and off under **Events → Settings → Modules**, and third-party plugins can register their own.
 
 Three priorities drive the design, in this order:
 
@@ -10,10 +10,10 @@ Three priorities drive the design, in this order:
 
 | Item | Value |
 | --- | --- |
-| Slug / text domain | `open-events-calendar` |
+| Slug / text domain | `openevents` |
 | PHP namespace | `OpenEvents\` (PSR-4, `inc/`) |
-| Hook prefix | `open_events_calendar/` |
-| Option prefix | `open_events_calendar_` |
+| Hook prefix | `openevents/` |
+| Option prefix | `openevents_` |
 | DB table | `{$wpdb->prefix}oe_occurrences` |
 | Post type / taxonomy / meta prefix | `oe_` / `_oe_` |
 | Minimum versions | WordPress 7.1, PHP 8.2 |
@@ -21,7 +21,7 @@ Three priorities drive the design, in this order:
 ## Directory layout
 
 ```
-open-events-calendar.php   Bootstrap: constants, autoloader, activation hooks
+openevents.php   Bootstrap: constants, autoloader, activation hooks
 uninstall.php              Opt-in data removal
 inc/
   functions.php            Public PHP API (stable contract)
@@ -30,12 +30,12 @@ inc/
   Settings.php             Typed accessor for options, event post type resolution
   Content/                 Post types, taxonomy, registered meta, Event model
   Occurrences/             Occurrence table: Generator, Sync, Repository, Occurrence
-  Rest/                    /open-events-calendar/v1/occurrences
+  Rest/                    /openevents/v1/occurrences
   Integrations/            Abilities API, Block Bindings source
   Admin/                   React admin app host (settings + setup wizard), list columns
   Frontend/                Blocks, calendar views, templates, formatter, category colours, editor loader
   Modules/                 Module contract, registry, bundled modules
-  Cli/                     wp open-events rebuild | stats | generate
+  Cli/                     wp openevents rebuild | stats | generate
 src/
   admin/                   Settings + setup wizard (@wordpress/ui, @wordpress/admin-ui)
   editor/                  Editor sidebar panels, block bindings editor source
@@ -58,7 +58,7 @@ A post in an enabled type **is an event only once it has a start date**. Enablin
 - no markup is injected
 - their templates are untouched
 
-The editor shows an "This is an event" toggle on those types. Event categories, the meta fields, and the "Event date" admin column are attached to every enabled type. `Settings::event_post_types()` (filterable through `open_events_calendar/event_post_types`) is the single source of truth.
+The editor shows an "This is an event" toggle on those types. Event categories, the meta fields, and the "Event date" admin column are attached to every enabled type. `Settings::event_post_types()` (filterable through `openevents/event_post_types`) is the single source of truth.
 
 Venues (`oe_venue`), organizers (`oe_organizer`), and event categories (`oe_event_category`, hierarchical, with a colour per term) are shared by all event types.
 
@@ -88,9 +88,9 @@ post_type, status                            denormalised from wp_posts so listi
 KEY (status, start_local)  KEY (status, end_utc)  KEY (status, start_utc)
 ```
 
-- **Recurrence is a generator.** The recurrence module will hook `open_events_calendar/occurrences/generate` and return N rows. Views, REST, iCal, and attendees don't change.
+- **Recurrence is a generator.** The recurrence module will hook `openevents/occurrences/generate` and return N rows. Views, REST, iCal, and attendees don't change.
 - **Stable IDs.** `Sync` diffs rows by `sequence` and updates in place, so moving an event's time keeps its occurrence ID (verified: id 5012 survives a move). Attendees will reference occurrence IDs.
-- **Derived, never canonical.** The table can always be rebuilt from posts and meta (`wp open-events rebuild`), so a failed migration never loses data. That fixes a major TEC pain point.
+- **Derived, never canonical.** The table can always be rebuilt from posts and meta (`wp openevents rebuild`), so a failed migration never loses data. That fixes a major TEC pain point.
 
 ### Sync
 
@@ -131,7 +131,7 @@ How the plugin gets there:
    - The "Event date" column sorts through the occurrences index.
 6. **Front-end weight.** Server-rendered HTML; the only JS is a 683-byte view module that lazy-loads the core router. Block styles are about 5 KB.
 
-`wp open-events stats` prints row counts and `EXPLAIN` plans for the hot queries. `dev/bench-blueprint.json` plus `dev/bench-mu.php` reproduce the numbers above (an `?oec_bench=1` HTML comment with query count and timings).
+`wp openevents stats` prints row counts and `EXPLAIN` plans for the hot queries. `dev/bench-blueprint.json` plus `dev/bench-mu.php` reproduce the numbers above (an `?openevents_bench=1` HTML comment with query count and timings).
 
 ## Module system
 
@@ -147,7 +147,7 @@ interface OpenEvents\Modules\Module {
 }
 ```
 
-Extend `AbstractModule` and register through the `open_events_calendar/modules` filter. Enabled IDs are stored in `open_events_calendar_modules`, and dependencies are resolved on save and at boot. Modules boot at `plugins_loaded:20`, so add-ons that load after core can still register. Core never references a module class.
+Extend `AbstractModule` and register through the `openevents/modules` filter. Enabled IDs are stored in `openevents_modules`, and dependencies are resolved on save and at boot. Modules boot at `plugins_loaded:20`, so add-ons that load after core can still register. Core never references a module class.
 
 ## Front end
 
@@ -163,7 +163,7 @@ Extend `AbstractModule` and register through the `open_events_calendar/modules` 
   - No global typography or colours, only `--oe-accent`, `--oe-border`, `--oe-muted`, `--oe-surface`, and `--oe-radius`, which default to theme.json presets.
   - Category colours are applied with an automatic black-or-white text colour for WCAG contrast.
 - **Block themes** get Site Editor-editable templates (`register_block_template`): `single-oe_event`, `archive-oe_event`, `taxonomy-oe_event_category`.
-- **Classic themes** get a PHP archive template, which can be overridden at `your-theme/open-events-calendar/archive.php`, and details prepended to the content.
+- **Classic themes** get a PHP archive template, which can be overridden at `your-theme/openevents/archive.php`, and details prepended to the content.
 - **Existing post types** keep their own templates and only gain the details panel. The panel is skipped if the block is already in the content, and can be turned off.
 
 ## Admin
@@ -180,20 +180,20 @@ Extend `AbstractModule` and register through the `open_events_calendar/modules` 
 
 | Surface | What add-ons do with it |
 | --- | --- |
-| **PHP API** (`inc/functions.php`) | `open_events_calendar()`, `oec_get_event()`, `oec_is_event()`, `oec_get_occurrences()`, `oec_get_upcoming()`, `oec_format_range()`, `oec_calendar_url()`, `oec_event_post_types()`, `oec_is_module_enabled()` |
-| **Modules** | `open_events_calendar/modules` |
-| **Meta** | `open_events_calendar/meta_fields` (registered with REST and sanitisation) |
+| **PHP API** (`inc/functions.php`) | `openevents()`, `openevents_get_event()`, `openevents_is_event()`, `openevents_get_occurrences()`, `openevents_get_upcoming()`, `openevents_format_range()`, `openevents_calendar_url()`, `openevents_event_post_types()`, `openevents_is_module_enabled()` |
+| **Modules** | `openevents/modules` |
+| **Meta** | `openevents/meta_fields` (registered with REST and sanitisation) |
 | **Occurrences** | `…/occurrences/generate`, `…/occurrences/synced`, `…/occurrences/query_args`; `Sync::suspend()`, `resume()`, `rebuild_all()` |
 | **Views** | `…/calendar/views` (register a renderer), `…/calendar/links`, `…/calendar/cache` |
 | **Event details** | `…/event_details/rows`, `…/event_details/links`, `…/event_details/sections` (RSVP form, tickets) |
 | **Formatting** | `…/format_range` |
-| **REST** | `GET /open-events-calendar/v1/occurrences`; `…/rest/occurrence` filter; core `/wp/v2/events`, `/venues`, `/organizers`, `/event-categories` with meta |
-| **Abilities API** | `open-events-calendar/list-events` (read-only), `open-events-calendar/create-event`, exposed at `/wp-abilities/v1` for AI and automation clients |
-| **Block Bindings** | source `open-events-calendar/event` with keys `date`, `start_date`, `start_time`, `end_date`, `end_time`, `venue`, `venue_address`, `venue_url`, `cost`, `website`. Core Paragraph, Heading, and Button blocks can show event data. `…/block_bindings/value` filter for custom keys. |
-| **Editor SlotFill** | `OpenEventsCalendarEventPanel`, `OpenEventsCalendarVenuePanel`, `OpenEventsCalendarOrganizerPanel`; the fill receives `{ meta, setMeta, postType }` |
+| **REST** | `GET /openevents/v1/occurrences`; `…/rest/occurrence` filter; core `/wp/v2/events`, `/venues`, `/organizers`, `/event-categories` with meta |
+| **Abilities API** | `openevents/list-events` (read-only), `openevents/create-event`, exposed at `/wp-abilities/v1` for AI and automation clients |
+| **Block Bindings** | source `openevents/event` with keys `date`, `start_date`, `start_time`, `end_date`, `end_time`, `venue`, `venue_address`, `venue_url`, `cost`, `website`. Core Paragraph, Heading, and Button blocks can show event data. `…/block_bindings/value` filter for custom keys. |
+| **Editor SlotFill** | `OpenEventsEventPanel`, `OpenEventsVenuePanel`, `OpenEventsOrganizerPanel`; the fill receives `{ meta, setMeta, postType }` |
 | **Templates** | Site Editor templates; classic override path; `…/skip_archive_query` |
-| **WP-CLI** | `wp open-events rebuild`, `stats`, `generate` |
-| **Lifecycle** | `open_events_calendar/loaded`, `…/modules_booted`, `…/uninstall` |
+| **WP-CLI** | `wp openevents rebuild`, `stats`, `generate` |
+| **Lifecycle** | `openevents/loaded`, `…/modules_booted`, `…/uninstall` |
 
 ## Planned: RSVP, tickets, and payments
 
@@ -225,6 +225,6 @@ oe_attendees      id, uuid, order_id NULL, ticket_type_id, event_id, occurrence_
   }
   ```
 
-  Planned order: manual/offline, then Stripe, then a WooCommerce adapter. Gateways register through `open_events_calendar/tickets/gateways`, and the site's default is an explicit choice. There are no platform fees.
+  Planned order: manual/offline, then Stripe, then a WooCommerce adapter. Gateways register through `openevents/tickets/gateways`, and the site's default is an explicit choice. There are no platform fees.
 - Order state lives in tables, never transients; Event Tickets' object-cache checkout bug came from transients.
 - Check-in uses QR codes containing an HMAC-signed attendee UUID. Imported security codes are kept.

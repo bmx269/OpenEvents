@@ -13,7 +13,7 @@ import {
 } from '@wordpress/components';
 import { useDispatch, useSelect } from '@wordpress/data';
 import { store as coreStore } from '@wordpress/core-data';
-import { dateI18n, getSettings } from '@wordpress/date';
+import { date as formatDate, dateI18n, getSettings } from '@wordpress/date';
 import { useMemo, useState } from '@wordpress/element';
 
 /** Meta stores "Y-m-d H:i:s" wall-clock time; the picker uses ISO "Y-m-dTH:i:s". */
@@ -25,31 +25,46 @@ const toPicker = ( value ) => ( value ? value.replace( ' ', 'T' ) : null );
 const fromPicker = ( value ) =>
 	value ? value.slice( 0, 19 ).replace( 'T', ' ' ) : '';
 
+/*
+ * Stored times are wall-clock times in the event's timezone, with no offset.
+ * Treat them as UTC internally so neither the browser's nor the site's timezone
+ * shifts them (and DST in the browser cannot skew durations).
+ */
 const parse = ( value ) =>
-	value ? new Date( value.replace( ' ', 'T' ) ) : null;
+	value ? new Date( `${ value.replace( ' ', 'T' ) }Z` ) : null;
 const pad = ( n ) => String( n ).padStart( 2, '0' );
 const format = ( date ) =>
-	`${ date.getFullYear() }-${ pad( date.getMonth() + 1 ) }-${ pad(
-		date.getDate()
-	) } ${ pad( date.getHours() ) }:${ pad( date.getMinutes() ) }:00`;
+	`${ date.getUTCFullYear() }-${ pad( date.getUTCMonth() + 1 ) }-${ pad(
+		date.getUTCDate()
+	) } ${ pad( date.getUTCHours() ) }:${ pad( date.getUTCMinutes() ) }:00`;
+/**
+ * Localised display of a stored wall-clock value, without timezone conversion.
+ *
+ * @param {string} fmt   PHP-style date format.
+ * @param {string} value Stored "Y-m-d H:i:s" value.
+ * @return {string} Formatted date.
+ */
+const display = ( fmt, value ) =>
+	dateI18n( fmt, `${ value.replace( ' ', 'T' ) }Z`, true );
 
+/** The next full hour in the site's timezone, as a wall-clock Date (see parse). */
 function nextHour() {
-	const date = new Date();
-	date.setMinutes( 0, 0, 0 );
-	date.setHours( date.getHours() + 1 );
-	return date;
+	const now = parse( formatDate( 'Y-m-d H:i:s' ) );
+	now.setUTCMinutes( 0, 0, 0 );
+	now.setUTCHours( now.getUTCHours() + 1 );
+	return now;
 }
 
 function DateField( { label, value, onChange, allDay, is12Hour } ) {
 	const settings = getSettings();
-	const display = value
-		? dateI18n(
+	const labelText = value
+		? display(
 				allDay
 					? settings.formats.date
 					: `${ settings.formats.date } ${ settings.formats.time }`,
-				parse( value )
+				value
 		  )
-		: __( 'Not set', 'open-events-calendar' );
+		: __( 'Not set', 'openevents' );
 
 	return (
 		<Flex justify="space-between" className="oe-editor-panel__row">
@@ -63,12 +78,12 @@ function DateField( { label, value, onChange, allDay, is12Hour } ) {
 						aria-expanded={ isOpen }
 						aria-label={ sprintf(
 							/* translators: 1: field label, 2: current value */
-							__( '%1$s: %2$s', 'open-events-calendar' ),
+							__( '%1$s: %2$s', 'openevents' ),
 							label,
-							display
+							labelText
 						) }
 					>
-						{ display }
+						{ labelText }
 					</Button>
 				) }
 				renderContent={ () => (
@@ -130,7 +145,7 @@ function VenueField( { value, onChange } ) {
 			<ComboboxControl
 				__next40pxDefaultSize
 				__nextHasNoMarginBottom
-				label={ __( 'Venue', 'open-events-calendar' ) }
+				label={ __( 'Venue', 'openevents' ) }
 				value={ value ? String( value ) : null }
 				options={ options }
 				onChange={ ( id ) => onChange( id ? Number( id ) : 0 ) }
@@ -149,7 +164,7 @@ function VenueField( { value, onChange } ) {
 				>
 					{ sprintf(
 						/* translators: %s: venue name */
-						__( 'Add “%s” as a new venue', 'open-events-calendar' ),
+						__( 'Add “%s” as a new venue', 'openevents' ),
 						typed.trim()
 					) }
 				</Button>
@@ -190,7 +205,7 @@ function OrganizersField( { value, onChange } ) {
 		<FormTokenField
 			__next40pxDefaultSize
 			__nextHasNoMarginBottom
-			label={ __( 'Organizers', 'open-events-calendar' ) }
+			label={ __( 'Organizers', 'openevents' ) }
 			value={ ( value || [] )
 				.map( ( id ) => byId.get( id ) )
 				.filter( Boolean ) }
@@ -200,7 +215,7 @@ function OrganizersField( { value, onChange } ) {
 			__experimentalShowHowTo={ false }
 			help={ __(
 				'Type a new name to create an organizer.',
-				'open-events-calendar'
+				'openevents'
 			) }
 		/>
 	);
@@ -224,7 +239,7 @@ export default function EventPanel( {
 				value: '',
 				label: sprintf(
 					/* translators: %s: site timezone */
-					__( 'Site timezone (%s)', 'open-events-calendar' ),
+					__( 'Site timezone (%s)', 'openevents' ),
 					config.siteTimezone || 'UTC'
 				),
 			},
@@ -260,10 +275,10 @@ export default function EventPanel( {
 		return (
 			<ToggleControl
 				__nextHasNoMarginBottom
-				label={ __( 'This is an event', 'open-events-calendar' ) }
+				label={ __( 'This is an event', 'openevents' ) }
 				help={ __(
 					'Adds a date so this item shows on the calendar.',
-					'open-events-calendar'
+					'openevents'
 				) }
 				checked={ false }
 				onChange={ () => {
@@ -282,26 +297,26 @@ export default function EventPanel( {
 			{ ! isDedicated && (
 				<ToggleControl
 					__nextHasNoMarginBottom
-					label={ __( 'This is an event', 'open-events-calendar' ) }
+					label={ __( 'This is an event', 'openevents' ) }
 					checked
 					onChange={ () => setMeta( { _oe_start: '', _oe_end: '' } ) }
 				/>
 			) }
 			<ToggleControl
 				__nextHasNoMarginBottom
-				label={ __( 'All day', 'open-events-calendar' ) }
+				label={ __( 'All day', 'openevents' ) }
 				checked={ allDay }
 				onChange={ ( value ) => setMeta( { _oe_all_day: value } ) }
 			/>
 			<DateField
-				label={ __( 'Starts', 'open-events-calendar' ) }
+				label={ __( 'Starts', 'openevents' ) }
 				value={ start }
 				onChange={ changeStart }
 				allDay={ allDay }
 				is12Hour={ config.timeFormat12h }
 			/>
 			<DateField
-				label={ __( 'Ends', 'open-events-calendar' ) }
+				label={ __( 'Ends', 'openevents' ) }
 				value={ end }
 				onChange={ ( value ) => setMeta( { _oe_end: value } ) }
 				allDay={ allDay }
@@ -311,7 +326,7 @@ export default function EventPanel( {
 				<Notice status="warning" isDismissible={ false }>
 					{ __(
 						'The end is before the start. The event will be saved as ending when it starts.',
-						'open-events-calendar'
+						'openevents'
 					) }
 				</Notice>
 			) }
@@ -319,7 +334,7 @@ export default function EventPanel( {
 				<ComboboxControl
 					__next40pxDefaultSize
 					__nextHasNoMarginBottom
-					label={ __( 'Timezone', 'open-events-calendar' ) }
+					label={ __( 'Timezone', 'openevents' ) }
 					value={ meta._oe_timezone || '' }
 					options={ timezoneOptions }
 					onChange={ ( value ) =>
@@ -339,15 +354,15 @@ export default function EventPanel( {
 				<TextControl
 					__next40pxDefaultSize
 					__nextHasNoMarginBottom
-					label={ __( 'Cost', 'open-events-calendar' ) }
-					help={ __( '0 shows “Free”.', 'open-events-calendar' ) }
+					label={ __( 'Cost', 'openevents' ) }
+					help={ __( '0 shows “Free”.', 'openevents' ) }
 					value={ meta._oe_cost || '' }
 					onChange={ ( value ) => setMeta( { _oe_cost: value } ) }
 				/>
 				<TextControl
 					__next40pxDefaultSize
 					__nextHasNoMarginBottom
-					label={ __( 'Symbol', 'open-events-calendar' ) }
+					label={ __( 'Symbol', 'openevents' ) }
 					value={ meta._oe_currency_symbol || '' }
 					onChange={ ( value ) =>
 						setMeta( { _oe_currency_symbol: value } )
@@ -359,33 +374,27 @@ export default function EventPanel( {
 				__next40pxDefaultSize
 				__nextHasNoMarginBottom
 				type="url"
-				label={ __( 'Event website', 'open-events-calendar' ) }
+				label={ __( 'Event website', 'openevents' ) }
 				value={ meta._oe_url || '' }
 				onChange={ ( value ) => setMeta( { _oe_url: value } ) }
 			/>
 			<ToggleControl
 				__nextHasNoMarginBottom
-				label={ __( 'Featured event', 'open-events-calendar' ) }
+				label={ __( 'Featured event', 'openevents' ) }
 				checked={ !! meta._oe_featured }
 				onChange={ ( value ) => setMeta( { _oe_featured: value } ) }
 			/>
 			<ToggleControl
 				__nextHasNoMarginBottom
-				label={ __(
-					'Hide from event listings',
-					'open-events-calendar'
-				) }
-				help={ __(
-					'Still reachable by its link.',
-					'open-events-calendar'
-				) }
+				label={ __( 'Hide from event listings', 'openevents' ) }
+				help={ __( 'Still reachable by its link.', 'openevents' ) }
 				checked={ !! meta._oe_hide_from_listings }
 				onChange={ ( value ) =>
 					setMeta( { _oe_hide_from_listings: value } )
 				}
 			/>
 			<Slot
-				name="OpenEventsCalendarEventPanel"
+				name="OpenEventsEventPanel"
 				fillProps={ { meta, setMeta, postType } }
 			/>
 		</Flex>

@@ -19,9 +19,9 @@ use OpenEvents\Content\PostTypes;
 final class Installer {
 
 	public const DB_VERSION        = '2';
-	public const DB_VERSION_OPTION = 'open_events_calendar_db_version';
-	public const FLUSH_OPTION      = 'open_events_calendar_flush_rewrite';
-	public const ERROR_OPTION      = 'open_events_calendar_schema_error';
+	public const DB_VERSION_OPTION = 'openevents_db_version';
+	public const FLUSH_OPTION      = 'openevents_flush_rewrite';
+	public const ERROR_OPTION      = 'openevents_schema_error';
 
 	public static function register(): void {
 		add_action( 'init', array( self::class, 'maybe_upgrade' ), 1 );
@@ -39,8 +39,8 @@ final class Installer {
 		if ( $error && current_user_can( 'manage_options' ) ) {
 			printf(
 				'<div class="notice notice-error"><p><strong>%s</strong> %s</p><p><code>%s</code></p></div>',
-				esc_html__( 'Open Events Calendar could not create its database table.', 'open-events-calendar' ),
-				esc_html__( 'Events will not appear on calendars until this is fixed. It will retry automatically on the next page load.', 'open-events-calendar' ),
+				esc_html__( 'OpenEvents could not create its database table.', 'openevents' ),
+				esc_html__( 'Events will not appear on calendars until this is fixed. It will retry automatically on the next page load.', 'openevents' ),
 				esc_html( (string) $error )
 			);
 		}
@@ -178,7 +178,7 @@ final class Installer {
 			self::ERROR_OPTION,
 			Occurrences\Sync::MAX_DURATION_OPTION,
 			Admin\AdminApp::REDIRECT_OPTION,
-			'open_events_calendar_module_versions',
+			'openevents_module_versions',
 		);
 		foreach ( $options as $option ) {
 			delete_option( $option );
@@ -187,6 +187,6 @@ final class Installer {
 		/**
 		 * Lets modules remove their own tables and options.
 		 */
-		do_action( 'open_events_calendar/uninstall' );
+		do_action( 'openevents/uninstall' );
 	}
 }

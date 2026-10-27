@@ -16,14 +16,14 @@ use WP_REST_Response;
 use WP_REST_Server;
 
 /**
- * GET /open-events-calendar/v1/occurrences
+ * GET /openevents/v1/occurrences
  *
  * Dated, published event instances for calendars, apps, and integrations. Event
  * content and meta are editable through the core routes (/wp/v2/events etc.).
  */
 final class OccurrencesController {
 
-	public const NAMESPACE = 'open-events-calendar/v1';
+	public const NAMESPACE = 'openevents/v1';
 
 	public function __construct( private Repository $repository ) {}
 
@@ -41,17 +41,17 @@ final class OccurrencesController {
 				'permission_callback' => '__return_true', // Only published events are returned.
 				'args'                => array(
 					'start'      => array(
-						'description' => __( 'Local date (Y-m-d). Returns occurrences overlapping [start, end]. Defaults to upcoming.', 'open-events-calendar' ),
+						'description' => __( 'Local date (Y-m-d). Returns occurrences overlapping [start, end]. Defaults to upcoming.', 'openevents' ),
 						'type'        => 'string',
 						'format'      => 'date',
 					),
 					'end'        => array(
-						'description' => __( 'Local date (Y-m-d), inclusive.', 'open-events-calendar' ),
+						'description' => __( 'Local date (Y-m-d), inclusive.', 'openevents' ),
 						'type'        => 'string',
 						'format'      => 'date',
 					),
 					'past'       => array(
-						'description' => __( 'Return past occurrences, newest first.', 'open-events-calendar' ),
+						'description' => __( 'Return past occurrences, newest first.', 'openevents' ),
 						'type'        => 'boolean',
 						'default'     => false,
 					),
@@ -65,7 +65,7 @@ final class OccurrencesController {
 						'default' => 0,
 					),
 					'event'      => array(
-						'description' => __( 'Limit to one event id.', 'open-events-calendar' ),
+						'description' => __( 'Limit to one event id.', 'openevents' ),
 						'type'        => 'integer',
 						'default'     => 0,
 					),
@@ -74,7 +74,7 @@ final class OccurrencesController {
 						'default' => '',
 					),
 					'post_type'  => array(
-						'description' => __( 'Limit to event-enabled post types.', 'open-events-calendar' ),
+						'description' => __( 'Limit to event-enabled post types.', 'openevents' ),
 						'type'        => 'array',
 						'items'       => array( 'type' => 'string' ),
 						'default'     => array(),
@@ -101,7 +101,7 @@ final class OccurrencesController {
 			'venue'      => $request['venue'],
 			'event_ids'  => $request['event'] ? array( $request['event'] ) : array(),
 			'search'     => $request['search'],
-			'post_types' => array_values( array_intersect( (array) $request['post_type'], open_events_calendar()->settings()->event_post_types() ) ),
+			'post_types' => array_values( array_intersect( (array) $request['post_type'], openevents()->settings()->event_post_types() ) ),
 			'per_page'     => $request['per_page'],
 			'page'         => $request['page'],
 			'prime_images' => true,
@@ -162,6 +162,6 @@ final class OccurrencesController {
 		 * @param array      $data       Response data.
 		 * @param Occurrence $occurrence Occurrence.
 		 */
-		return apply_filters( 'open_events_calendar/rest/occurrence', $data, $occurrence );
+		return apply_filters( 'openevents/rest/occurrence', $data, $occurrence );
 	}
 }

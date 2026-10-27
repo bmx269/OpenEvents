@@ -24,8 +24,8 @@ use OpenEvents\Rest\OccurrencesController;
 /**
  * Holds the shared service instances and registers their hooks.
  *
- * Add-ons reach services through open_events_calendar(), e.g.
- * open_events_calendar()->occurrences()->query( [ ... ] ).
+ * Add-ons reach services through openevents(), e.g.
+ * openevents()->occurrences()->query( [ ... ] ).
  */
 final class Plugin {
 
@@ -51,7 +51,7 @@ final class Plugin {
 		 *
 		 * @param Plugin $plugin Plugin instance.
 		 */
-		do_action( 'open_events_calendar/loaded', $plugin );
+		do_action( 'openevents/loaded', $plugin );
 	}
 
 	private function __construct() {
@@ -79,7 +79,7 @@ final class Plugin {
 		}
 
 		if ( defined( 'WP_CLI' ) && WP_CLI ) {
-			\WP_CLI::add_command( 'open-events', Cli\Command::class );
+			\WP_CLI::add_command( 'openevents', Cli\Command::class );
 		}
 
 		$this->modules->boot();

@@ -14,7 +14,7 @@ use OpenEvents\Settings;
  */
 final class Registry {
 
-	private const VERSIONS_OPTION = 'open_events_calendar_module_versions';
+	private const VERSIONS_OPTION = 'openevents_module_versions';
 
 	/** @var array<string, Module>|null */
 	private ?array $modules = null;
@@ -37,7 +37,7 @@ final class Registry {
 			 *
 			 * @param Module[] $modules Modules.
 			 */
-			$modules = apply_filters( 'open_events_calendar/modules', $bundled );
+			$modules = apply_filters( 'openevents/modules', $bundled );
 
 			$this->modules = array();
 			foreach ( $modules as $module ) {
@@ -107,6 +107,6 @@ final class Registry {
 		 *
 		 * @param string[] $booted Booted module ids.
 		 */
-		do_action( 'open_events_calendar/modules_booted', $this->booted );
+		do_action( 'openevents/modules_booted', $this->booted );
 	}
 }

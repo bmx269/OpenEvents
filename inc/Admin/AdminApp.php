@@ -22,9 +22,9 @@ use const OpenEvents\PLUGIN_FILE;
  */
 final class AdminApp {
 
-	public const SETTINGS_SLUG   = 'open-events-calendar-settings';
-	public const SETUP_SLUG      = 'open-events-calendar-setup';
-	public const REDIRECT_OPTION = 'open_events_calendar_setup_redirect';
+	public const SETTINGS_SLUG   = 'openevents-settings';
+	public const SETUP_SLUG      = 'openevents-setup';
+	public const REDIRECT_OPTION = 'openevents_setup_redirect';
 
 	private string $hook_settings = '';
 	private string $hook_setup    = '';
@@ -47,7 +47,7 @@ final class AdminApp {
 	}
 
 	public static function settings_url(): string {
-		$parent = PostTypes::menu_parent( open_events_calendar()->settings() );
+		$parent = PostTypes::menu_parent( openevents()->settings() );
 		$base   = str_starts_with( $parent, 'edit.php' ) ? admin_url( $parent ) : admin_url( 'admin.php' );
 		return add_query_arg( 'page', self::SETTINGS_SLUG, $base );
 	}
@@ -58,7 +58,7 @@ final class AdminApp {
 
 	public function register_settings(): void {
 		register_setting(
-			'open_events_calendar',
+			'openevents',
 			Settings::OPTION,
 			array(
 				'type'              => 'object',
@@ -91,7 +91,7 @@ final class AdminApp {
 		);
 
 		register_setting(
-			'open_events_calendar',
+			'openevents',
 			Settings::MODULES_OPTION,
 			array(
 				'type'              => 'array',
@@ -107,7 +107,7 @@ final class AdminApp {
 		);
 
 		register_setting(
-			'open_events_calendar',
+			'openevents',
 			Settings::SETUP_OPTION,
 			array(
 				'type'         => 'boolean',
@@ -122,22 +122,22 @@ final class AdminApp {
 
 		// Without the Events post type there is no Events menu to hang off, so add one.
 		if ( ! $this->settings->registers_event_type() ) {
-			add_menu_page( __( 'Events', 'open-events-calendar' ), __( 'Events', 'open-events-calendar' ), 'edit_posts', $parent, array( $this, 'render_overview' ), 'dashicons-calendar-alt', 6 );
-			add_submenu_page( $parent, __( 'Events', 'open-events-calendar' ), __( 'Overview', 'open-events-calendar' ), 'edit_posts', $parent, array( $this, 'render_overview' ) );
-			add_submenu_page( $parent, __( 'Event Categories', 'open-events-calendar' ), __( 'Event Categories', 'open-events-calendar' ), 'manage_categories', 'edit-tags.php?taxonomy=' . PostTypes::CATEGORY );
+			add_menu_page( __( 'Events', 'openevents' ), __( 'Events', 'openevents' ), 'edit_posts', $parent, array( $this, 'render_overview' ), 'dashicons-calendar-alt', 6 );
+			add_submenu_page( $parent, __( 'Events', 'openevents' ), __( 'Overview', 'openevents' ), 'edit_posts', $parent, array( $this, 'render_overview' ) );
+			add_submenu_page( $parent, __( 'Event Categories', 'openevents' ), __( 'Event Categories', 'openevents' ), 'manage_categories', 'edit-tags.php?taxonomy=' . PostTypes::CATEGORY );
 		}
 
-		$this->hook_settings = (string) add_submenu_page( $parent, __( 'Event Settings', 'open-events-calendar' ), __( 'Settings', 'open-events-calendar' ), 'manage_options', self::SETTINGS_SLUG, array( $this, 'render_app' ) );
+		$this->hook_settings = (string) add_submenu_page( $parent, __( 'OpenEvents Settings', 'openevents' ), __( 'Settings', 'openevents' ), 'manage_options', self::SETTINGS_SLUG, array( $this, 'render_app' ) );
 		// Registered under options.php so it has a screen but no menu entry.
-		$this->hook_setup = (string) add_submenu_page( 'options.php', __( 'Events setup', 'open-events-calendar' ), __( 'Events setup', 'open-events-calendar' ), 'manage_options', self::SETUP_SLUG, array( $this, 'render_app' ) );
+		$this->hook_setup = (string) add_submenu_page( 'options.php', __( 'OpenEvents setup', 'openevents' ), __( 'OpenEvents setup', 'openevents' ), 'manage_options', self::SETUP_SLUG, array( $this, 'render_app' ) );
 	}
 
 	public function render_app(): void {
 		$screen = self::SETUP_SLUG === ( $_GET['page'] ?? '' ) ? 'setup' : 'settings'; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		printf(
-			'<div id="open-events-calendar-admin" class="oec-admin" data-screen="%s"><noscript>%s</noscript></div>',
+			'<div id="openevents-admin" class="openevents-admin" data-screen="%s"><noscript>%s</noscript></div>',
 			esc_attr( $screen ),
-			esc_html__( 'Event settings need JavaScript.', 'open-events-calendar' )
+			esc_html__( 'Event settings need JavaScript.', 'openevents' )
 		);
 	}
 
@@ -145,15 +145,15 @@ final class AdminApp {
 	 * Landing page when events live on existing post types only.
 	 */
 	public function render_overview(): void {
-		echo '<div class="wrap"><h1>' . esc_html__( 'Events', 'open-events-calendar' ) . '</h1>';
-		echo '<p>' . esc_html__( 'Events are added to these post types. Open an item and set a date in the Event panel of the editor sidebar.', 'open-events-calendar' ) . '</p><ul class="ul-disc">';
+		echo '<div class="wrap"><h1>' . esc_html__( 'Events', 'openevents' ) . '</h1>';
+		echo '<p>' . esc_html__( 'Events are added to these post types. Open an item and set a date in the Event panel of the editor sidebar.', 'openevents' ) . '</p><ul class="ul-disc">';
 		foreach ( $this->settings->event_post_types() as $type ) {
 			$object = get_post_type_object( $type );
 			if ( $object ) {
 				printf( '<li><a href="%s">%s</a></li>', esc_url( admin_url( 'edit.php?post_type=' . $type ) ), esc_html( $object->labels->name ) );
 			}
 		}
-		echo '</ul><p><a class="button" href="' . esc_url( oec_calendar_url() ) . '">' . esc_html__( 'View calendar', 'open-events-calendar' ) . '</a></p></div>';
+		echo '</ul><p><a class="button" href="' . esc_url( openevents_calendar_url() ) . '">' . esc_html__( 'View calendar', 'openevents' ) . '</a></p></div>';
 	}
 
 	public function enqueue( string $hook ): void {
@@ -166,13 +166,13 @@ final class AdminApp {
 		}
 		$asset = require $asset_file;
 
-		wp_enqueue_script( 'open-events-calendar-admin', plugins_url( 'build/admin/index.js', PLUGIN_FILE ), $asset['dependencies'], $asset['version'], true );
-		wp_set_script_translations( 'open-events-calendar-admin', 'open-events-calendar' );
+		wp_enqueue_script( 'openevents-admin', plugins_url( 'build/admin/index.js', PLUGIN_FILE ), $asset['dependencies'], $asset['version'], true );
+		wp_set_script_translations( 'openevents-admin', 'openevents' );
 		if ( is_readable( PLUGIN_DIR . '/build/admin/index.css' ) ) {
-			wp_enqueue_style( 'open-events-calendar-admin', plugins_url( 'build/admin/index.css', PLUGIN_FILE ), array(), $asset['version'] );
+			wp_enqueue_style( 'openevents-admin', plugins_url( 'build/admin/index.css', PLUGIN_FILE ), array(), $asset['version'] );
 		}
 
-		wp_add_inline_script( 'open-events-calendar-admin', 'window.openEventsCalendarAdmin = ' . wp_json_encode( $this->app_config() ) . ';', 'before' );
+		wp_add_inline_script( 'openevents-admin', 'window.openEventsAdmin = ' . wp_json_encode( $this->app_config() ) . ';', 'before' );
 	}
 
 	/**
@@ -219,7 +219,7 @@ final class AdminApp {
 			'homeUrl'      => home_url( '/' ),
 			'adminUrl'     => admin_url( '/' ),
 			'settingsUrl'  => self::settings_url(),
-			'calendarUrl'  => oec_calendar_url(),
+			'calendarUrl'  => openevents_calendar_url(),
 			'siteFormats'  => array(
 				'date' => (string) get_option( 'date_format' ),
 				'time' => (string) get_option( 'time_format' ),
@@ -244,14 +244,14 @@ final class AdminApp {
 
 	public function setup_notice(): void {
 		$screen = get_current_screen();
-		if ( $this->settings->is_setup_complete() || ! current_user_can( 'manage_options' ) || ( $screen && str_contains( (string) $screen->id, 'open-events-calendar' ) ) ) {
+		if ( $this->settings->is_setup_complete() || ! current_user_can( 'manage_options' ) || ( $screen && str_contains( (string) $screen->id, 'openevents' ) ) ) {
 			return;
 		}
 		printf(
 			'<div class="notice notice-info"><p>%s <a class="button button-primary" href="%s">%s</a></p></div>',
-			esc_html__( 'Open Events Calendar is active. Answer a few questions to set it up for your site.', 'open-events-calendar' ),
+			esc_html__( 'OpenEvents is active. Answer a few questions to set it up for your site.', 'openevents' ),
 			esc_url( self::setup_url() ),
-			esc_html__( 'Run setup', 'open-events-calendar' )
+			esc_html__( 'Run setup', 'openevents' )
 		);
 	}
 
@@ -260,7 +260,7 @@ final class AdminApp {
 	 * @return string[]
 	 */
 	public function action_links( array $links ): array {
-		array_unshift( $links, sprintf( '<a href="%s">%s</a>', esc_url( self::settings_url() ), esc_html__( 'Settings', 'open-events-calendar' ) ) );
+		array_unshift( $links, sprintf( '<a href="%s">%s</a>', esc_url( self::settings_url() ), esc_html__( 'Settings', 'openevents' ) ) );
 		return $links;
 	}
 }

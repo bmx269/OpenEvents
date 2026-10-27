@@ -14,7 +14,7 @@ use OpenEvents\Occurrences\Sync;
 use WP_CLI;
 
 /**
- * Manage Open Events Calendar data.
+ * Manage OpenEvents data.
  */
 final class Command {
 
@@ -33,7 +33,7 @@ final class Command {
 	 *
 	 * ## EXAMPLES
 	 *
-	 *     wp open-events rebuild --batch=1000
+	 *     wp openevents rebuild --batch=1000
 	 *
 	 * @param string[]             $args       Positional args.
 	 * @param array<string, mixed> $assoc_args Options.
@@ -52,7 +52,7 @@ final class Command {
 	 *
 	 * ## EXAMPLES
 	 *
-	 *     wp open-events stats
+	 *     wp openevents stats
 	 */
 	public function stats(): void {
 		global $wpdb;

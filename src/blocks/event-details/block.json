@@ -1,13 +1,13 @@
 {
 	"$schema": "https://schemas.wp.org/trunk/block.json",
 	"apiVersion": 3,
-	"name": "open-events-calendar/event-details",
+	"name": "openevents/event-details",
 	"title": "Event Details",
-	"category": "widgets",
+	"category": "openevents",
 	"icon": "info-outline",
 	"description": "Date, venue, organizers, cost, and calendar links for the current event.",
 	"keywords": [ "event", "date", "venue" ],
-	"textdomain": "open-events-calendar",
+	"textdomain": "openevents",
 	"usesContext": [ "postId", "postType" ],
 	"attributes": {
 		"showVenue": { "type": "boolean", "default": true },
