@@ -112,4 +112,20 @@ final class CalendarFilterTest extends TestCase {
 		$html = $this->render( array( 'showLegend' => true ) );
 		$this->assertMatchesRegularExpression( '/<ul class="oe-legend"[^>]*>.*href="[^"]*oe_cat=music[^"]*" rel="nofollow" data-wp-on--click="actions.navigate">Music</s', $html );
 	}
+
+	public function test_popup_mode_adds_dialog_and_keeps_real_links(): void {
+		$page = $this->render();
+		$this->assertStringNotContainsString( '<dialog', $page, 'Default: links go to the event page.' );
+
+		$html = $this->render( array( 'clickAction' => 'popup' ) );
+		$this->assertStringContainsString( '<dialog class="oe-popup" aria-labelledby="', $html );
+		$this->assertMatchesRegularExpression( '/<a class="oe-month__event" href="http[^"]+" aria-haspopup="dialog" data-wp-on--click="actions.openEvent" data-wp-context="[^"]*Big Band Night/', $html, 'Links keep their href for no-JS and modifier clicks.' );
+		$this->assertStringContainsString( '<span class="oe-visually-hidden">Close</span>', $html );
+	}
+
+	public function test_site_setting_sets_the_default_click_action(): void {
+		$this->settings( array( 'click_action' => 'popup' ) );
+		$this->assertStringContainsString( '<dialog', $this->render() );
+		$this->assertStringNotContainsString( '<dialog', $this->render( array( 'clickAction' => 'page' ) ), 'Blocks can override.' );
+	}
 }

@@ -34,6 +34,7 @@ final class Settings {
 			'calendar_page'            => 0,
 			'per_page'                 => 10,
 			'default_view'             => 'month',
+			'click_action'             => 'page', // "page" or "popup".
 			'date_format'              => '',
 			'time_format'              => '',
 			'remove_data_on_uninstall' => false,
@@ -145,6 +146,7 @@ final class Settings {
 			'calendar_page'            => absint( $input['calendar_page'] ?? 0 ),
 			'per_page'                 => max( 1, min( 100, absint( $input['per_page'] ?? $defaults['per_page'] ) ) ),
 			'default_view'             => in_array( $view, array( 'month', 'list' ), true ) ? $view : $defaults['default_view'],
+			'click_action'             => 'popup' === ( $input['click_action'] ?? '' ) ? 'popup' : 'page',
 			'date_format'              => sanitize_text_field( (string) ( $input['date_format'] ?? '' ) ),
 			'time_format'              => sanitize_text_field( (string) ( $input['time_format'] ?? '' ) ),
 			'remove_data_on_uninstall' => ! empty( $input['remove_data_on_uninstall'] ),

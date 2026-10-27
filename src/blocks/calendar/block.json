@@ -22,6 +22,11 @@
 		},
 		"showLegend": { "type": "boolean", "default": false },
 		"showFilters": { "type": "boolean", "default": true },
+		"clickAction": {
+			"type": "string",
+			"enum": [ "", "page", "popup" ],
+			"default": ""
+		},
 		"perPage": { "type": "integer", "default": 0 },
 		"headingLevel": { "type": "integer", "default": 2 }
 	},

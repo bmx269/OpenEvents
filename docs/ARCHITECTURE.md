@@ -191,6 +191,9 @@ Extend `AbstractModule` and register through the `openevents/modules` filter. En
   - `single-event` is a plugin template for every event post type. For existing post types it only applies when **Use the event template** is on, so dated posts keep their theme template by default.
   - The Site Editor offers "Single Event" and "Single Event: {Category}" under **Add template**.
   - `openevents/single_template_hierarchy` filters the result.
+- **Click behaviour:** a site setting (`click_action`), overridable per Calendar block (`clickAction`), chooses between going to the event page and a summary popup.
+  - The popup is a native modal `<dialog>`: focus is contained, Escape and backdrop clicks close it, and focus returns to the opener. The title is the dialog's accessible name.
+  - It's filled from data on the link itself (no extra request). Links keep their `href`, so the popup degrades to navigation without JavaScript or with a modifier key.
 - **Calendar filter and search:** a GET form (`oe_cat`, `oe_s`) with a labelled category dropdown and keyword box. It respects the block's category restriction, persists through navigation, and is noindexed.
 - **Classic themes** get a PHP archive template, which can be overridden at `your-theme/openevents/archive.php`, and details prepended to the content.
 - **Existing post types** keep their own templates and only gain the details panel. The panel is skipped if the block is already in the content, and can be turned off.

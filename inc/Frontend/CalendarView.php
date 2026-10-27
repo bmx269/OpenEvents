@@ -144,6 +144,7 @@ final class CalendarView {
 		$state['switcher'] = $switcher;
 
 		$state['filters'] = ! empty( $this->attributes['showFilters'] ) ? $this->filters( $state ) : '';
+		$state['popup']   = 'popup' === ( (string) ( $this->attributes['clickAction'] ?? '' ) ?: (string) openevents()->settings()->get( 'click_action' ) );
 
 		$body = call_user_func( $views[ $state['view'] ], $this, $state );
 
@@ -163,12 +164,14 @@ final class CalendarView {
 		}
 
 		return sprintf(
-			'<div class="oe-calendar oe-calendar--%1$s" data-wp-interactive="openevents/calendar" data-wp-router-region="%2$s" id="%2$s">%3$s%4$s%5$s</div>',
+			'<div class="oe-calendar oe-calendar--%1$s" data-wp-interactive="openevents/calendar" data-wp-router-region="%2$s" id="%2$s"%6$s>%3$s%4$s%5$s%7$s</div>',
 			esc_attr( $state['view'] ),
 			esc_attr( $region ),
 			$body,
 			! empty( $this->attributes['showLegend'] ) ? self::legend( array_map( 'absint', (array) ( $this->attributes['categories'] ?? array() ) ), ! empty( $this->attributes['showFilters'] ) ) : '',
-			$footer
+			$footer,
+			$state['popup'] ? ' data-wp-context="' . esc_attr( (string) wp_json_encode( array( 'popup' => array(), 'popupOpen' => false ) ) ) . '"' : '',
+			$state['popup'] ? self::dialog( $region ) : ''
 		);
 	}
 
@@ -263,7 +266,7 @@ final class CalendarView {
 			if ( $events ) {
 				$html .= '<ul class="oe-month__events">';
 				foreach ( array_slice( $events, 0, $max_per_day ) as $occurrence ) {
-					$html .= '<li>' . self::month_item( $occurrence, $key ) . '</li>';
+					$html .= '<li>' . self::month_item( $occurrence, $key, $state['popup'] ) . '</li>';
 				}
 				$html .= '</ul>';
 				if ( count( $events ) > $max_per_day ) {
@@ -296,7 +299,7 @@ final class CalendarView {
 		return $nav . $html;
 	}
 
-	private static function month_item( Occurrence $occurrence, string $day ): string {
+	private static function month_item( Occurrence $occurrence, string $day, bool $popup = false ): string {
 		$event = $occurrence->event();
 		if ( ! $event ) {
 			return '';
@@ -304,9 +307,10 @@ final class CalendarView {
 		$starts_today = $occurrence->start->format( 'Y-m-d' ) === $day;
 		$time         = ( ! $occurrence->all_day && $starts_today ) ? Formatter::time( $occurrence->start ) . ' ' : '';
 		return sprintf(
-			'<a class="oe-month__event%s" href="%s" style="%s">%s<span class="oe-month__event-title">%s</span></a>',
+			'<a class="oe-month__event%s" href="%s"%s style="%s">%s<span class="oe-month__event-title">%s</span></a>',
 			$occurrence->all_day || $occurrence->is_multi_day() ? ' is-all-day' : '',
 			esc_url( get_permalink( $event->post ) ),
+			$popup ? self::popup_attributes( $occurrence ) : '',
 			esc_attr( CategoryColors::style_for( $event->id() ) ),
 			$time ? '<span class="oe-month__event-time">' . esc_html( $time ) . '</span>' : '',
 			esc_html( get_the_title( $event->post ) )
@@ -365,7 +369,7 @@ final class CalendarView {
 				$html         .= ( $current_group ? '</ol>' : '' ) . sprintf( '<%1$s class="oe-list__group">%2$s</%1$s><ol class="oe-list__items">', $sub_tag, esc_html( $group ) );
 				$current_group = $group;
 			}
-			$html .= '<li>' . self::list_item( $occurrence, $sub_tag ) . '</li>';
+			$html .= '<li>' . self::list_item( $occurrence, $sub_tag, array( 'popup' => $state['popup'] ) ) . '</li>';
 		}
 		$html .= '</ol></div>';
 
@@ -399,6 +403,7 @@ final class CalendarView {
 				'image'   => true,
 				'excerpt' => true,
 				'venue'   => true,
+				'popup'   => false,
 			)
 		);
 
@@ -412,7 +417,7 @@ final class CalendarView {
 			esc_html( wp_date( 'j', $occurrence->start->getTimestamp(), $occurrence->start->getTimezone() ) )
 		);
 		$html .= '<div class="oe-event-card__body">';
-		$html .= sprintf( '<%1$s class="oe-event-card__title"><a href="%2$s">%3$s</a></%1$s>', tag_escape( $title_tag ), esc_url( get_permalink( $event->post ) ), esc_html( get_the_title( $event->post ) ) );
+		$html .= sprintf( '<%1$s class="oe-event-card__title"><a href="%2$s"%4$s>%3$s</a></%1$s>', tag_escape( $title_tag ), esc_url( get_permalink( $event->post ) ), esc_html( get_the_title( $event->post ) ), $options['popup'] ? self::popup_attributes( $occurrence ) : '' );
 		$html .= sprintf( '<p class="oe-event-card__when"><time datetime="%s">%s</time></p>', esc_attr( Formatter::iso( $occurrence->start, $occurrence->all_day ) ), esc_html( Formatter::range( $occurrence ) ) );
 		if ( $venue ) {
 			$html .= '<p class="oe-event-card__venue">' . esc_html( get_the_title( $venue ) ) . '</p>';
@@ -423,6 +428,42 @@ final class CalendarView {
 		$html .= '</div>' . $image . '</article>';
 
 		return $html;
+	}
+
+	/**
+	 * Context and click handler that open the summary popup. The link keeps its
+	 * href, so without JavaScript (or with a modifier key) it opens the page.
+	 */
+	private static function popup_attributes( Occurrence $occurrence ): string {
+		$event = $occurrence->event();
+		$venue = $event?->venue();
+		$data  = array(
+			'event' => array(
+				'title'   => html_entity_decode( get_the_title( $event->post ), ENT_QUOTES ),
+				'when'    => Formatter::range( $occurrence ),
+				'venue'   => $venue ? html_entity_decode( get_the_title( $venue ), ENT_QUOTES ) : '',
+				'excerpt' => wp_trim_words( wp_strip_all_tags( get_the_excerpt( $event->post ) ), 30 ),
+				'url'     => get_permalink( $event->post ),
+			),
+		);
+		return ' aria-haspopup="dialog" data-wp-on--click="actions.openEvent" data-wp-context="' . esc_attr( (string) wp_json_encode( $data ) ) . '"';
+	}
+
+	/**
+	 * The summary popup: a native modal <dialog> (focus containment, Escape to
+	 * close) filled from the clicked event's context.
+	 */
+	private static function dialog( string $region ): string {
+		$title = $region . '-popup-title';
+		return '<dialog class="oe-popup" aria-labelledby="' . esc_attr( $title ) . '" data-wp-watch="callbacks.syncDialog" data-wp-on--close="actions.dialogClosed" data-wp-on--click="actions.dialogBackdrop">'
+			. '<div class="oe-popup__inner">'
+			. '<button type="button" class="oe-popup__close" data-wp-on--click="actions.closePopup"><span aria-hidden="true">×</span><span class="oe-visually-hidden">' . esc_html__( 'Close', 'openevents' ) . '</span></button>'
+			. '<h2 class="oe-popup__title" id="' . esc_attr( $title ) . '" data-wp-text="context.popup.title"></h2>'
+			. '<p class="oe-popup__when" data-wp-text="context.popup.when"></p>'
+			. '<p class="oe-popup__venue" data-wp-text="context.popup.venue" data-wp-bind--hidden="!context.popup.venue"></p>'
+			. '<p class="oe-popup__excerpt" data-wp-text="context.popup.excerpt" data-wp-bind--hidden="!context.popup.excerpt"></p>'
+			. '<p class="oe-popup__actions"><a class="oe-popup__link" data-wp-bind--href="context.popup.url">' . esc_html__( 'View event', 'openevents' ) . '</a></p>'
+			. '</div></dialog>';
 	}
 
 	/**

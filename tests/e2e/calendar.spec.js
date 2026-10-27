@@ -1,4 +1,6 @@
 const { test, expect } = require( '@playwright/test' );
+const AxeBuilder = require( '@axe-core/playwright' ).default;
+const { rest } = require( './helpers' );
 
 test.describe( 'Calendar block', () => {
 	test( 'month grid shows sample events with category colours and legend', async ( {
@@ -160,6 +162,69 @@ test.describe( 'Calendar block', () => {
 			'Choir Practice',
 		] );
 		await context.close();
+	} );
+
+	test( 'popup mode: an accessible summary dialog instead of navigating', async ( {
+		page,
+	} ) => {
+		const { openevents_settings: original } = (
+			await rest( page, '/wp/v2/settings' )
+		).body;
+		await rest( page, '/wp/v2/settings', {
+			method: 'POST',
+			data: {
+				openevents_settings: { ...original, click_action: 'popup' },
+			},
+		} );
+
+		await page.goto( '/events/?oe_view=month' );
+		const link = page.locator( '.oe-month__event', {
+			hasText: 'Jazz Night',
+		} );
+		await link.click();
+
+		const dialog = page.getByRole( 'dialog', { name: 'Jazz Night' } );
+		await expect( dialog ).toBeVisible();
+		await expect( dialog ).toContainText( 'The Commodore Ballroom' );
+		await expect(
+			dialog.getByRole( 'link', { name: 'View event' } )
+		).toHaveAttribute( 'href', /\/events\/jazz-night\/$/ );
+		// Focus moved into the dialog.
+		await expect( dialog.locator( ':focus' ) ).toHaveCount( 1 );
+		await expect( page ).toHaveURL( /\/events\/\?oe_view=month$/ );
+
+		// No violations with the dialog open.
+		const { violations } = await new AxeBuilder( { page } )
+			.withTags( [ 'wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa' ] )
+			.include( '.oe-popup' )
+			.analyze();
+		expect( violations.map( ( v ) => v.id ) ).toEqual( [] );
+
+		await page.keyboard.press( 'Escape' );
+		await expect( dialog ).toBeHidden();
+		await expect( link ).toBeFocused();
+
+		await link.click();
+		await expect( dialog ).toBeVisible();
+		await page.mouse.click( 5, 5 ); // Backdrop.
+		await expect( dialog ).toBeHidden();
+
+		// Modifier clicks still open the page.
+		const [ popup ] = await Promise.all( [
+			page.context().waitForEvent( 'page' ),
+			link.click( {
+				modifiers: [
+					process.platform === 'darwin' ? 'Meta' : 'Control',
+				],
+			} ),
+		] );
+		await expect( popup ).toHaveURL( /jazz-night/ );
+		await popup.close();
+
+		await rest( page, '/wp/v2/settings', {
+			method: 'POST',
+			data: { openevents_settings: original },
+		} );
 	} );
 
 	test.describe( 'on a phone', () => {
