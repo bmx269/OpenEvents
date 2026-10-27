@@ -91,6 +91,36 @@ test.describe( 'Event pages', () => {
 		expect( await occurrences() ).toEqual( [] );
 	} );
 
+	test( 'a category template applies to events in that category', async ( {
+		page,
+	} ) => {
+		const created = await rest( page, '/wp/v2/templates', {
+			method: 'POST',
+			data: {
+				slug: 'single-event-category-workshops',
+				title: 'Single Event: Workshops',
+				content:
+					'<!-- wp:paragraph --><p>Workshop template in use</p><!-- /wp:paragraph --><!-- wp:post-title /--><!-- wp:openevents/event-details /-->',
+			},
+		} );
+		expect( created.status ).toBe( 201 );
+
+		await page.goto( '/events/pottery-basics/' );
+		await expect(
+			page.getByText( 'Workshop template in use' )
+		).toBeVisible();
+		await expect( page.locator( '.oe-details' ) ).toBeVisible();
+
+		await page.goto( '/events/jazz-night/' );
+		await expect(
+			page.getByText( 'Workshop template in use' )
+		).toHaveCount( 0 );
+
+		await rest( page, `/wp/v2/templates/${ created.body.id }?force=true`, {
+			method: 'DELETE',
+		} );
+	} );
+
 	test( 'abilities are exposed to authenticated clients', async ( {
 		page,
 	} ) => {

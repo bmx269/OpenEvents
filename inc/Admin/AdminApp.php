@@ -75,6 +75,7 @@ final class AdminApp {
 							),
 							'events_slug'              => array( 'type' => 'string' ),
 							'append_details'           => array( 'type' => 'boolean' ),
+							'event_template'           => array( 'type' => 'boolean' ),
 							'calendar_page'            => array( 'type' => 'integer' ),
 							'per_page'                 => array( 'type' => 'integer' ),
 							'default_view'             => array(

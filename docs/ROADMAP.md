@@ -43,10 +43,10 @@ Priority order, set 2026-10-27. Everything here is free: no paid tier, no platfo
    - RRULE/EXDATE expansion through `openevents/occurrences/generate`. This is the first piece of the recurrence module.
 
 Queued (requested 2026-10-27), next up after RSVP:
-- **Category colours on event details**: coloured category badges in the details panel (they currently show only on calendars).
+- ✅ **Category colours on event details**: coloured category badges in the details panel (they currently show only on calendars).
 - **Click behaviour**: a setting (site default, overridable per Calendar block) to open an event's page or an accessible popup (`<dialog>`) with date, venue, summary, and a link. Links stay real links without JavaScript.
-- **Calendar filter and search**: category filter and keyword search on the Calendar block (GET params, works without JS, enhanced in place).
-- **Template hierarchy**: a base block template for events usable by every event post type, plus per-category and per-post-type templates (e.g. "Single Event: Workshops") selectable in the Site Editor.
+- ✅ **Calendar filter and search**: category filter and keyword search on the Calendar block (GET params, works without JS, enhanced in place).
+- ✅ **Template hierarchy**: a base block template for events usable by every event post type, plus per-category and per-post-type templates (e.g. "Single Event: Workshops") selectable in the Site Editor.
 
 Done in Phase 2 groundwork:
 - ✅ PHPUnit integration suite with query-count budgets; Playwright suite against Playground; GitHub Actions.

@@ -59,6 +59,22 @@ export function EventContentFields( { settings, update } ) {
 					}
 				/>
 			) }
+			{ ( settings.event_post_types || [] ).length > 0 && (
+				<SwitchControl
+					label={ __(
+						'Use the event template for events in existing post types',
+						'openevents'
+					) }
+					description={ __(
+						'Dated posts in the types below display with the Single Event template instead of their usual one. Off by default so existing posts keep their look.',
+						'openevents'
+					) }
+					checked={ !! settings.event_template }
+					onCheckedChange={ ( checked ) =>
+						update( { event_template: checked } )
+					}
+				/>
+			) }
 			{ config.postTypes?.length > 0 && (
 				<Stack direction="column" gap="sm">
 					<Text variant="heading-sm">
