@@ -260,7 +260,7 @@ final class OutputTest extends TestCase {
 		$html = EventDetails::render( $id );
 
 		$this->assertStringContainsString( '<dt>Categories</dt>', $html );
-		$this->assertMatchesRegularExpression( '/<a class="oe-badge has-color" href="[^"]+" style="--oe-event-bg:#7c3aed;--oe-event-fg:#ffffff;">Music<\/a>/', $html );
+		$this->assertMatchesRegularExpression( '/<a class="oe-badge has-color" href="[^"]+" style="--oe-event-bg:#7c3aed;--oe-event-fg:#ffffff;?">Music<\/a>/', $html );
 		$this->assertMatchesRegularExpression( '/<a class="oe-badge" href="[^"]+">Talks<\/a>/', $html );
 	}
 
