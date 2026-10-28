@@ -58,7 +58,7 @@ final class Module extends AbstractModule {
 
 		if ( is_singular( openevents()->settings()->event_post_types() ) ) {
 			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only.
-			$date     = sanitize_text_field( wp_unslash( $_GET['oe_date'] ?? '' ) );
+			$date     = sanitize_text_field( wp_unslash( $_GET['oe_occurrence'] ?? '' ) );
 			$one      = $date ? $repository->on_date( get_queried_object_id(), $date ) : null;
 			$result   = $one ? array( 'items' => array( $one ) ) : $repository->query(
 				array(

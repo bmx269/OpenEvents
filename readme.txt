@@ -17,6 +17,7 @@ OpenEvents adds events, venues, organizers, and calendar views to WordPress. Cal
 * Use a dedicated Events post type, add event dates to existing post types, or both.
 * Month and list views that work without JavaScript and become an agenda list on phones.
 * Category colours with a legend.
+* Recurring events: daily, weekly, monthly, or yearly, with skipped and extra dates.
 * Free RSVP and tickets: capacity limits, guests, waitlists, pay at the door, Stripe, or PayPal, with no platform fees.
 * iCal feeds and "Add to Google Calendar" links.
 * Site Editor templates for block themes and fallbacks for classic themes.

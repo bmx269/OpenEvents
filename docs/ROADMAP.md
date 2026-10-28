@@ -69,14 +69,14 @@ Done in Phase 2 groundwork:
 - Venue map embed (OpenStreetMap; Google optional).
 - Add WP trunk and PHP 8.5 to the CI matrix; MySQL job alongside SQLite.
 
-## Phase 4: Recurrence module (free)
+## Phase 4: Recurrence module (free) (in progress, moved ahead of the TEC importer for WVML)
 
-- Builds on the RRULE expansion from the Google Calendar import.
-- RRULE editor in the Event panel; editing scope: "this / this and following / all".
-- Rolling horizon (default 2 years) extended by cron, so the row count stays bounded.
-- Single-occurrence overrides as detached child posts linked by `_oe_series_parent`.
+- ✅ RRULE engine (RFC 5545 subset), RDATE/EXDATE, expansion into occurrences with stable ids, rolling two-year horizon extended by cron (done 2026-10-28; tests in `RuleTest.php`, `RecurrenceTest.php`, `recurrence.spec.js`).
+- ✅ Repeat panel in the editor with a live preview; editing scope "this date / this and following / all" (detach and split into new events linked by `_oe_series_parent`); skip and add dates.
+- ✅ Per-date links (`?oe_occurrence=`), event pages showing the requested date, the rule in words, and the next dates; REST preview and date actions.
 - Per-occurrence RSVP and tickets (the tables already carry `occurrence_id`).
-- Import of TEC Pro `_EventRecurrence` rules.
+- Import of TEC Pro `_EventRecurrence` rules (with the TEC importer).
+- RRULE export in iCal feeds (dates are exported expanded today).
 
 ## Phase 5: Ticketing extras
 

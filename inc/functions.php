@@ -78,13 +78,13 @@ function openevents_format_range( Occurrence $occurrence ): string {
 }
 
 /**
- * Link to one occurrence. Later dates of a repeating event add ?oe_date= so the
+ * Link to one occurrence. Later dates of a repeating event add ?oe_occurrence= so the
  * event page shows the date that was clicked; the first date uses the plain
  * permalink, which stays the canonical URL.
  */
 function openevents_occurrence_url( Occurrence $occurrence ): string {
 	$url = (string) get_permalink( $occurrence->event_id );
-	return 0 === $occurrence->sequence ? $url : add_query_arg( 'oe_date', $occurrence->start->format( 'Y-m-d' ), $url );
+	return 0 === $occurrence->sequence ? $url : add_query_arg( 'oe_occurrence', $occurrence->start->format( 'Y-m-d' ), $url );
 }
 
 function openevents_is_module_enabled( string $id ): bool {

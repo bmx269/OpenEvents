@@ -25,7 +25,7 @@ final class RecurrenceTest extends TestCase {
 
 	public function tear_down(): void {
 		remove_filter( 'openevents/calendar/cache', '__return_false' );
-		unset( $_GET['oe_date'] );
+		unset( $_GET['oe_occurrence'] );
 		parent::tear_down();
 	}
 
@@ -155,21 +155,21 @@ final class RecurrenceTest extends TestCase {
 
 		$this->assertCount( 3, $items );
 		$this->assertSame( get_permalink( $id ), openevents_occurrence_url( $items[0] ) );
-		$this->assertSame( add_query_arg( 'oe_date', $items[1]->start->format( 'Y-m-d' ), get_permalink( $id ) ), openevents_occurrence_url( $items[1] ) );
+		$this->assertSame( add_query_arg( 'oe_occurrence', $items[1]->start->format( 'Y-m-d' ), get_permalink( $id ) ), openevents_occurrence_url( $items[1] ) );
 	}
 
 	public function test_event_page_shows_the_requested_date_and_the_rule(): void {
 		$id    = $this->series( array( 'rrule' => 'FREQ=WEEKLY;COUNT=3' ) );
 		$items = openevents_get_upcoming( 10, array( 'event_ids' => array( $id ) ) );
 
-		$_GET['oe_date'] = $items[1]->start->format( 'Y-m-d' );
+		$_GET['oe_occurrence'] = $items[1]->start->format( 'Y-m-d' );
 		$html            = EventDetails::render( $id );
 
 		$this->assertStringContainsString( 'datetime="' . $items[1]->start->format( 'Y-m-d\TH:i' ), $html );
 		$this->assertStringContainsString( 'Every week on ' . $items[0]->start->format( 'l' ) . ', 3 times', $html );
 		// The other dates are listed, not the one shown.
-		$this->assertStringContainsString( 'oe_date=' . $items[2]->start->format( 'Y-m-d' ), $html );
-		$this->assertStringNotContainsString( 'oe_date=' . $items[1]->start->format( 'Y-m-d' ) . '"', $html );
+		$this->assertStringContainsString( 'oe_occurrence=' . $items[2]->start->format( 'Y-m-d' ), $html );
+		$this->assertStringNotContainsString( 'oe_occurrence=' . $items[1]->start->format( 'Y-m-d' ) . '"', $html );
 	}
 
 	public function test_detach_makes_one_date_its_own_event(): void {
