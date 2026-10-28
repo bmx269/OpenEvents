@@ -37,20 +37,41 @@ final class Form {
 					'busy'     => false,
 					'countText'     => $counts ? self::count_text( $counts['going'], $type->remaining() ) : '',
 					'fallbackError' => __( 'Something went wrong. Please check your connection and try again.', 'openevents' ),
+					'leaveEndpoint' => rest_url( 'openevents/v1/waitlist/leave' ),
 				)
 			)
 		) . '">';
 		$html .= '<h3 class="oe-rsvp__title" id="oe-rsvp-title-' . esc_attr( (string) $event_id ) . '">' . esc_html__( 'RSVP', 'openevents' ) . '</h3>';
 
+		$waitlist_on = \OpenEvents\Attendance\WaitlistService::enabled( $type );
 		if ( $counts ) {
-			$html .= '<p class="oe-rsvp__count" data-wp-text="context.countText">' . esc_html( self::count_text( $counts['going'], $type->remaining() ) ) . '</p>';
+			$count_text = self::count_text( $counts['going'], $type->remaining() );
+			$waiting    = $waitlist_on ? ( new \OpenEvents\Attendance\Waitlist() )->waiting_count( $type->id ) : 0;
+			if ( $waiting ) {
+				/* translators: %d: people on the waitlist */
+				$count_text .= ' · ' . sprintf( _n( '%d waiting', '%d waiting', $waiting, 'openevents' ), $waiting );
+			}
+			$html .= '<p class="oe-rsvp__count" data-wp-text="context.countText">' . esc_html( $count_text ) . '</p>';
+		}
+
+		// Behind a private waitlist link: their place in line, and a way out.
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$wl_token = sanitize_text_field( wp_unslash( $_GET['oe_waitlist'] ?? '' ) );
+		$wl_entry = '' !== $wl_token ? ( new \OpenEvents\Attendance\Waitlist() )->by_token( $wl_token ) : null;
+		if ( $wl_entry && $wl_entry->ticket_type_id === $type->id ) {
+			$html .= \OpenEvents\Attendance\WaitlistController::leave_form( $wl_entry, $wl_token, 'rsvp' );
+		}
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$wl_result = sanitize_key( wp_unslash( $_GET['oe_waitlist_result'] ?? '' ) );
+		if ( $wl_result ) {
+			$html .= '<p class="oe-rsvp__notice" role="status" tabindex="-1">' . esc_html( \OpenEvents\Attendance\WaitlistController::result_text( $wl_result ) ) . '</p>';
 		}
 
 		// Outcome of a no-JS submission.
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		$outcome = sanitize_key( wp_unslash( $_GET['oe_rsvp'] ?? '' ) );
 		if ( $outcome ) {
-			$ok    = in_array( $outcome, array( 'going', 'not_going', 'exists', 'cancelled' ), true );
+			$ok    = in_array( $outcome, array( 'going', 'not_going', 'exists', 'cancelled', 'waitlisted' ), true );
 			$html .= sprintf( '<p class="oe-rsvp__notice%s" role="%s" tabindex="-1">%s</p>', $ok ? '' : ' is-error', $ok ? 'status' : 'alert', esc_html( self::outcome_text( $outcome ) ) );
 		}
 		$html .= '<p class="oe-rsvp__notice oe-rsvp__live" role="status" aria-live="polite" tabindex="-1" data-wp-text="context.message" data-wp-class--is-error="context.error" data-wp-bind--hidden="!context.message" hidden></p>';
@@ -60,6 +81,9 @@ final class Form {
 		}
 		if ( $type->is_full() && ! $existing ) {
 			$html .= '<p class="oe-rsvp__closed">' . esc_html__( 'This event is full.', 'openevents' ) . '</p>';
+			if ( $waitlist_on ) {
+				return $html . self::waitlist_form( $event_id, $type ) . '</section>';
+			}
 			if ( ! $type->setting( 'allow_not_going', true ) ) {
 				return $html . '</section>';
 			}
@@ -128,6 +152,31 @@ final class Form {
 		return $html;
 	}
 
+	/**
+	 * "Join the waitlist" for a full event: same endpoint as RSVPs, status "waitlist".
+	 */
+	private static function waitlist_form( int $event_id, TicketType $type ): string {
+		$id   = 'oe-rsvp-wl-' . $event_id;
+		$max  = (int) $type->setting( 'max_per_response', 1 );
+		$html = '<form class="oe-rsvp__form oe-waitlist" method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" data-wp-on--submit="actions.submit" data-wp-bind--hidden="context.done">';
+		$html .= '<p class="oe-waitlist__intro">' . esc_html__( 'Join the waitlist and we’ll confirm you automatically if a spot opens up.', 'openevents' ) . '</p>';
+		$html .= '<input type="hidden" name="action" value="openevents_rsvp"><input type="hidden" name="event_id" value="' . esc_attr( (string) $event_id ) . '">';
+		$html .= '<input type="hidden" name="status" value="waitlist"><input type="hidden" name="ts" value="' . esc_attr( Service::sign_timestamp() ) . '">';
+		$html .= '<div class="oe-rsvp__hp" aria-hidden="true"><label>' . esc_html__( 'Website', 'openevents' ) . ' <input type="text" name="website" tabindex="-1" autocomplete="off"></label></div>';
+		$html .= '<div class="oe-rsvp__fields">';
+		$html .= self::field( $id . '-name', __( 'Name', 'openevents' ), '<input id="' . $id . '-name" type="text" name="name" required maxlength="200" autocomplete="name">' );
+		$html .= self::field( $id . '-email', __( 'Email', 'openevents' ), '<input id="' . $id . '-email" type="email" name="email" required autocomplete="email">' );
+		if ( $max > 1 ) {
+			$options = '';
+			for ( $n = 1; $n <= $max; $n++ ) {
+				$options .= sprintf( '<option value="%1$d">%1$d</option>', $n );
+			}
+			$html .= self::field( $id . '-qty', __( 'People', 'openevents' ), '<select id="' . $id . '-qty" name="quantity">' . $options . '</select>' );
+		}
+		$html .= '</div><div class="oe-rsvp__actions"><button type="submit" class="oe-rsvp__submit wp-element-button" data-wp-bind--disabled="context.busy">' . esc_html__( 'Join the waitlist', 'openevents' ) . '</button></div></form>';
+		return $html;
+	}
+
 	private static function field( string $id, string $label, string $control ): string {
 		return '<p class="oe-rsvp__field"><label for="' . esc_attr( $id ) . '">' . esc_html( $label ) . '</label>' . $control . '</p>';
 	}
@@ -150,6 +199,7 @@ final class Form {
 			'not_going'    => __( 'Thanks for letting us know you can’t make it.', 'openevents' ),
 			'exists'       => __( 'You’ve already responded. We’ve emailed you a link to change your RSVP.', 'openevents' ),
 			'cancelled'    => __( 'Your RSVP has been cancelled.', 'openevents' ),
+			'waitlisted'   => __( 'You’re on the waitlist. We’ll confirm you automatically if a spot opens up.', 'openevents' ),
 			'full'         => __( 'Sorry, there aren’t enough spots left.', 'openevents' ),
 			'closed'       => __( 'RSVPs for this event are closed.', 'openevents' ),
 			'rate_limited' => __( 'Too many responses from your connection. Please try again later.', 'openevents' ),

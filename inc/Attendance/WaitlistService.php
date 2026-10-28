@@ -45,6 +45,7 @@ final class WaitlistService {
 			return;
 		}
 		self::$registered = true;
+		WaitlistController::register();
 		add_action( 'openevents/seats_released', array( self::class, 'on_seats_released' ) );
 		add_filter( 'cron_schedules', array( self::class, 'cron_schedule' ) ); // phpcs:ignore WordPress.WP.CronInterval.CronSchedulesInterval
 		add_action( self::CRON_HOOK, static fn() => ( new self() )->expire_offers() );

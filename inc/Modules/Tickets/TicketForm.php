@@ -39,6 +39,8 @@ final class TicketForm {
 					'busy'          => false,
 					'total'         => '',
 					'currency'      => $currency,
+					'waitlistEndpoint' => rest_url( 'openevents/v1/events/' . $event->id() . '/waitlist' ),
+					'leaveEndpoint' => rest_url( 'openevents/v1/waitlist/leave' ),
 					'locale'        => str_replace( '_', '-', get_locale() ),
 					'decimals'      => Money::decimals( $currency ),
 					'fallbackError' => __( 'Something went wrong. Please check your connection and try again.', 'openevents' ),
@@ -53,6 +55,22 @@ final class TicketForm {
 			$html .= self::order_summary( $order );
 		}
 		$html .= self::outcome_notice();
+
+		// Behind a private waitlist link: claim held tickets, or see your place in line.
+		// phpcs:disable WordPress.Security.NonceVerification.Recommended
+		$wl_token  = sanitize_text_field( wp_unslash( $_GET['oe_waitlist'] ?? '' ) );
+		$wl_result = sanitize_key( wp_unslash( $_GET['oe_waitlist_result'] ?? '' ) );
+		// phpcs:enable
+		if ( $wl_result ) {
+			$html .= '<p class="oe-tickets__notice" role="status" tabindex="-1">' . esc_html( \OpenEvents\Attendance\WaitlistController::result_text( $wl_result ) ) . '</p>';
+		}
+		$wl_entry = '' !== $wl_token ? ( new \OpenEvents\Attendance\Waitlist() )->by_token( $wl_token ) : null;
+		if ( $wl_entry && $wl_entry->event_id === $event->id() && isset( $types[ $wl_entry->ticket_type_id ] ) ) {
+			if ( $wl_entry->offer_is_live() ) {
+				return $html . self::claim_form( $event, $types[ $wl_entry->ticket_type_id ], $wl_entry, $wl_token ) . '</section>';
+			}
+			$html .= \OpenEvents\Attendance\WaitlistController::leave_form( $wl_entry, $wl_token, 'tickets' );
+		}
 		$html .= '<p class="oe-tickets__notice oe-tickets__live" role="status" aria-live="polite" tabindex="-1" data-wp-text="context.message" data-wp-class--is-error="context.error" data-wp-bind--hidden="!context.message" hidden></p>';
 
 		$on_sale = array_filter( $types, static fn( TicketType $t ) => null === $checkout->sale_state( $t ) );
@@ -100,8 +118,9 @@ final class TicketForm {
 		}
 		$html .= '</tbody></table>';
 
+		$waitlist = self::waitlist_form( $event, $types, $checkout );
 		if ( ! $on_sale ) {
-			return $html . '</form></section>';
+			return $html . '</form>' . $waitlist . '</section>';
 		}
 
 		$html .= '<p class="oe-tickets__total" data-wp-bind--hidden="!context.total" hidden>' . esc_html__( 'Total:', 'openevents' ) . ' <strong data-wp-text="context.total"></strong></p>';
@@ -132,7 +151,88 @@ final class TicketForm {
 		}
 
 		$html .= '<p class="oe-tickets__actions"><button type="submit" class="oe-tickets__submit wp-element-button" data-wp-bind--disabled="context.busy">' . esc_html__( 'Get tickets', 'openevents' ) . '</button></p>';
-		return $html . '</form></section>';
+		return $html . '</form>' . $waitlist . '</section>';
+	}
+
+	/**
+	 * Waitlist for sold-out ticket types that allow one.
+	 *
+	 * @param TicketType[] $types Ticket types.
+	 */
+	private static function waitlist_form( Event $event, array $types, Checkout $checkout ): string {
+		$eligible = array_filter( $types, static fn( TicketType $t ) => 'sold_out' === $checkout->sale_state( $t ) && \OpenEvents\Attendance\WaitlistService::enabled( $t ) );
+		if ( ! $eligible ) {
+			return '';
+		}
+		$id   = 'oe-tickets-wl-' . $event->id();
+		$wl   = new \OpenEvents\Attendance\Waitlist();
+		$html = '<form class="oe-tickets__form oe-waitlist" method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" data-wp-on--submit="actions.joinWaitlist" aria-labelledby="' . esc_attr( $id ) . '-title">';
+		$html .= '<h4 id="' . esc_attr( $id ) . '-title">' . esc_html__( 'Join the waitlist', 'openevents' ) . '</h4>';
+		/* translators: %d: hours */
+		$html .= '<p class="oe-waitlist__intro">' . esc_html( sprintf( _n( 'If tickets open up, we’ll hold them for you and email you a link. You’ll have %d hour to buy them.', 'If tickets open up, we’ll hold them for you and email you a link. You’ll have %d hours to buy them.', \OpenEvents\Attendance\WaitlistService::offer_hours(), 'openevents' ), \OpenEvents\Attendance\WaitlistService::offer_hours() ) ) . '</p>';
+		$html .= '<input type="hidden" name="action" value="openevents_waitlist"><input type="hidden" name="event_id" value="' . esc_attr( (string) $event->id() ) . '">';
+		$html .= '<input type="hidden" name="ts" value="' . esc_attr( Guard::sign_timestamp() ) . '">';
+		$html .= '<div class="oe-tickets__hp" aria-hidden="true"><label>' . esc_html__( 'Website', 'openevents' ) . ' <input type="text" name="website" tabindex="-1" autocomplete="off"></label></div>';
+		$html .= '<div class="oe-tickets__fields">';
+		if ( count( $eligible ) > 1 ) {
+			$html .= '<p class="oe-tickets__field"><label for="' . esc_attr( $id ) . '-type">' . esc_html__( 'Ticket', 'openevents' ) . '</label><select id="' . esc_attr( $id ) . '-type" name="ticket_type_id">';
+			foreach ( $eligible as $type ) {
+				/* translators: 1: ticket name, 2: people waiting */
+				$html .= '<option value="' . esc_attr( (string) $type->id ) . '">' . esc_html( sprintf( __( '%1$s (%2$d waiting)', 'openevents' ), $type->name, $wl->waiting_count( $type->id ) ) ) . '</option>';
+			}
+			$html .= '</select></p>';
+		} else {
+			$only  = reset( $eligible );
+			$html .= '<input type="hidden" name="ticket_type_id" value="' . esc_attr( (string) $only->id ) . '">';
+		}
+		$max     = max( array_map( static fn( TicketType $t ) => (int) $t->setting( 'max_per_order', 10 ), $eligible ) );
+		$options = '';
+		for ( $n = 1; $n <= $max; $n++ ) {
+			$options .= sprintf( '<option value="%1$d">%1$d</option>', $n );
+		}
+		$html .= '<p class="oe-tickets__field"><label for="' . esc_attr( $id ) . '-qty">' . esc_html__( 'Tickets', 'openevents' ) . '</label><select id="' . esc_attr( $id ) . '-qty" name="quantity">' . $options . '</select></p>';
+		$html .= '<p class="oe-tickets__field"><label for="' . esc_attr( $id ) . '-name">' . esc_html__( 'Name', 'openevents' ) . '</label><input id="' . esc_attr( $id ) . '-name" type="text" name="name" required maxlength="200" autocomplete="name"></p>';
+		$html .= '<p class="oe-tickets__field"><label for="' . esc_attr( $id ) . '-email">' . esc_html__( 'Email', 'openevents' ) . '</label><input id="' . esc_attr( $id ) . '-email" type="email" name="email" required autocomplete="email"></p>';
+		$html .= '</div><p class="oe-tickets__actions"><button type="submit" class="oe-tickets__submit wp-element-button" data-wp-bind--disabled="context.busy">' . esc_html__( 'Join the waitlist', 'openevents' ) . '</button></p></form>';
+		return $html;
+	}
+
+	/**
+	 * Checkout for tickets held by a waitlist offer: exactly those tickets.
+	 */
+	private static function claim_form( Event $event, TicketType $type, \OpenEvents\Attendance\WaitlistEntry $entry, string $token ): string {
+		$id       = 'oe-tickets-claim-' . $event->id();
+		$currency = Checkout::currency();
+		$price    = (int) $type->setting( 'price_minor', 0 );
+		$deadline = wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), strtotime( $entry->offer_expires_utc . ' UTC' ) );
+
+		$html  = '<div class="oe-tickets__order oe-waitlist__offer" role="status" tabindex="-1"><h4>' . esc_html__( 'Your tickets are being held', 'openevents' ) . '</h4>';
+		/* translators: 1: quantity, 2: ticket name, 3: total, 4: deadline */
+		$html .= '<p>' . esc_html( sprintf( __( '%1$d × %2$s (%3$s) are held for you until %4$s.', 'openevents' ), $entry->quantity, $type->name, Money::format( $price * $entry->quantity, $currency ), $deadline ) ) . '</p></div>';
+
+		$html .= '<form class="oe-tickets__form" method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" data-wp-on--submit="actions.submit">';
+		$html .= '<input type="hidden" name="action" value="openevents_checkout"><input type="hidden" name="event_id" value="' . esc_attr( (string) $event->id() ) . '">';
+		$html .= '<input type="hidden" name="ts" value="' . esc_attr( Guard::sign_timestamp( time() - Guard::MIN_FILL ) ) . '">';
+		$html .= '<input type="hidden" name="waitlist_token" value="' . esc_attr( $token ) . '">';
+		$html .= '<input type="hidden" name="tickets[' . esc_attr( (string) $type->id ) . ']" value="' . esc_attr( (string) $entry->quantity ) . '">';
+		$html .= '<div class="oe-tickets__hp" aria-hidden="true"><label>' . esc_html__( 'Website', 'openevents' ) . ' <input type="text" name="website" tabindex="-1" autocomplete="off"></label></div>';
+		$html .= '<div class="oe-tickets__fields">';
+		$html .= '<p class="oe-tickets__field"><label for="' . esc_attr( $id ) . '-name">' . esc_html__( 'Name', 'openevents' ) . '</label><input id="' . esc_attr( $id ) . '-name" type="text" name="name" required maxlength="200" autocomplete="name" value="' . esc_attr( $entry->name ) . '"></p>';
+		$html .= '<p class="oe-tickets__field"><label for="' . esc_attr( $id ) . '-email">' . esc_html__( 'Email', 'openevents' ) . '</label><input id="' . esc_attr( $id ) . '-email" type="email" name="email" required autocomplete="email" value="' . esc_attr( $entry->email ) . '"></p>';
+		$html .= '</div>';
+		if ( $price > 0 ) {
+			$gateways = Gateways::available( $currency );
+			$html    .= '<fieldset class="oe-tickets__gateways"><legend>' . esc_html__( 'Payment', 'openevents' ) . '</legend>';
+			$first    = true;
+			foreach ( $gateways as $gateway ) {
+				$gid   = $id . '-gw-' . $gateway->id();
+				$html .= '<p class="oe-tickets__gateway"><input type="radio" id="' . esc_attr( $gid ) . '" name="gateway" value="' . esc_attr( $gateway->id() ) . '"' . checked( $first, true, false ) . '> <label for="' . esc_attr( $gid ) . '">' . esc_html( $gateway->label() ) . '</label></p>';
+				$first = false;
+			}
+			$html .= '</fieldset>';
+		}
+		$html .= '<p class="oe-tickets__actions"><button type="submit" class="oe-tickets__submit wp-element-button" data-wp-bind--disabled="context.busy">' . esc_html__( 'Claim tickets', 'openevents' ) . '</button></p></form>';
+		return $html . \OpenEvents\Attendance\WaitlistController::leave_form( $entry, $token, 'tickets' );
 	}
 
 	private static function availability( TicketType $type, ?string $state ): string {

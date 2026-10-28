@@ -19,6 +19,7 @@ const DEFAULTS = {
 	deadline: '',
 	allow_not_going: true,
 	show_count: true,
+	waitlist: false,
 };
 
 /**
@@ -160,6 +161,16 @@ export default function RsvpPanel( { meta, setMeta, postId, config } ) {
 						onChange={ ( value ) =>
 							update( { show_count: value } )
 						}
+					/>
+					<ToggleControl
+						__nextHasNoMarginBottom
+						label={ __( 'Waitlist when full', 'openevents' ) }
+						help={ __(
+							'People join a queue and are confirmed automatically when a spot opens up.',
+							'openevents'
+						) }
+						checked={ !! rsvp.waitlist }
+						onChange={ ( value ) => update( { waitlist: value } ) }
 					/>
 					<Summary postId={ postId } config={ config } />
 				</>

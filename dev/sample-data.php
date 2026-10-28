@@ -142,6 +142,21 @@ OpenEvents\Modules\Tickets\Module::sync( $concert );
 OpenEvents\Modules\Tickets\Gateways::reset();
 $adult = ( new OpenEvents\Attendance\TicketTypes() )->find( $concert, 'tkt-adult' );
 ( new OpenEvents\Modules\Tickets\Checkout() )->place( $concert, array( 'name' => 'Grace Hopper', 'email' => 'grace@example.com', 'tickets' => array( $adult->id => 2 ), 'gateway' => 'manual', 'ts' => OpenEvents\Attendance\Guard::sign_timestamp( time() - 60 ), 'ip' => '192.0.2.20' ) );
+
+// Waitlists: a full talk (RSVP) and a sold-out front row (tickets).
+$talk_day = current_datetime()->modify( '+8 days' )->format( 'Y-m-d' );
+$talk     = $make( 'Author Talk (full)', "{$talk_day} 18:00:00", "{$talk_day} 19:00:00", array( '_oe_cost' => '0' ), 'Community' );
+update_post_meta( $talk, '_oe_rsvp', array( 'enabled' => true, 'capacity' => 2, 'max_per_response' => 2, 'waitlist' => true ) );
+$rsvp->sync( $talk );
+foreach ( array( array( 'Mary Jackson', 'mary@example.com' ), array( 'Dorothy Vaughan', 'dorothy@example.com' ) ) as $i => $person ) {
+	$rsvp->respond( $talk, array( 'name' => $person[0], 'email' => $person[1], 'status' => 'going', 'quantity' => 1, 'ts' => OpenEvents\Attendance\Guard::sign_timestamp( time() - 60 ), 'ip' => '192.0.2.3' . $i ) );
+}
+$tickets_meta   = get_post_meta( $concert, '_oe_tickets', true );
+$tickets_meta[] = array( 'key' => 'front', 'name' => 'Front Row', 'price' => '60', 'capacity' => 2, 'max_per_order' => 2, 'waitlist' => true );
+update_post_meta( $concert, '_oe_tickets', $tickets_meta );
+OpenEvents\Modules\Tickets\Module::sync( $concert );
+$front = ( new OpenEvents\Attendance\TicketTypes() )->find( $concert, 'tkt-front' );
+( new OpenEvents\Modules\Tickets\Checkout() )->place( $concert, array( 'name' => 'Alan Turing', 'email' => 'alan@example.com', 'tickets' => array( $front->id => 2 ), 'gateway' => 'manual', 'ts' => OpenEvents\Attendance\Guard::sign_timestamp( time() - 60 ), 'ip' => '192.0.2.40' ) );
 remove_filter( 'pre_wp_mail', '__return_true' );
 
 update_option( 'openevents_sample_data', 1 );
