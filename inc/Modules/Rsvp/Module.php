@@ -220,13 +220,6 @@ final class Module extends AbstractModule {
 	}
 
 	public static function client_ip(): string {
-		$ip = sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ?? '' ) );
-
-		/**
-		 * Filters the visitor IP used for rate limiting (e.g. behind a proxy).
-		 *
-		 * @param string $ip IP address.
-		 */
-		return (string) apply_filters( 'openevents/client_ip', $ip );
+		return \OpenEvents\Attendance\Guard::client_ip();
 	}
 }

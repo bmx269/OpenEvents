@@ -39,24 +39,30 @@ final class Admin {
 
 	public function enqueue(): void {
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		if ( self::SLUG !== sanitize_key( wp_unslash( $_GET['page'] ?? '' ) ) ) {
-			return;
+		if ( self::SLUG === sanitize_key( wp_unslash( $_GET['page'] ?? '' ) ) ) {
+			self::enqueue_bundle();
 		}
-		$asset_file = \OpenEvents\PLUGIN_DIR . '/build/admin/attendees.asset.php';
+	}
+
+	/**
+	 * Loads the attendance admin bundle (attendee and order screens).
+	 */
+	public static function enqueue_bundle(): void {
+		$asset_file = \OpenEvents\PLUGIN_DIR . '/build/admin/attendance.asset.php';
 		if ( ! is_readable( $asset_file ) ) {
 			return;
 		}
 		$asset = require $asset_file;
-		wp_enqueue_script( 'openevents-attendees', plugins_url( 'build/admin/attendees.js', \OpenEvents\PLUGIN_FILE ), $asset['dependencies'], $asset['version'], true );
-		wp_set_script_translations( 'openevents-attendees', 'openevents' );
-		wp_enqueue_style( 'openevents-attendees', plugins_url( 'build/admin/attendees.css', \OpenEvents\PLUGIN_FILE ), array( 'wp-components' ), $asset['version'] );
+		wp_enqueue_script( 'openevents-attendance', plugins_url( 'build/admin/attendance.js', \OpenEvents\PLUGIN_FILE ), $asset['dependencies'], $asset['version'], true );
+		wp_set_script_translations( 'openevents-attendance', 'openevents' );
+		wp_enqueue_style( 'openevents-attendance', plugins_url( 'build/admin/attendance.css', \OpenEvents\PLUGIN_FILE ), array( 'wp-components' ), $asset['version'] );
 	}
 
 	public function render(): void {
 		printf(
-			'<div id="openevents-attendees" class="openevents-admin" data-csv="%s" data-events="%s" data-event="%d"><noscript>%s</noscript></div>',
+			'<div id="openevents-attendance" class="openevents-admin" data-screen="attendees" data-csv="%s" data-events="%s" data-event="%d"><noscript>%s</noscript></div>',
 			esc_attr( wp_nonce_url( admin_url( 'admin-post.php?action=openevents_attendees_csv' ), 'openevents_attendees_csv' ) ),
-			esc_attr( (string) wp_json_encode( $this->events() ) ),
+			esc_attr( (string) wp_json_encode( self::events() ) ),
 			absint( $_GET['event'] ?? 0 ), // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 			esc_html__( 'The attendee list needs JavaScript. You can still download it as CSV.', 'openevents' )
 		);
@@ -67,7 +73,7 @@ final class Admin {
 	 *
 	 * @return array<int, array{value: int, label: string}>
 	 */
-	private function events(): array {
+	public static function events(): array {
 		global $wpdb;
 		$table = \OpenEvents\Attendance\Schema::ticket_types();
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared

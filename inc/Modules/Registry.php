@@ -29,7 +29,7 @@ final class Registry {
 	 */
 	public function all(): array {
 		if ( null === $this->modules ) {
-			$bundled = array( new ICal\Module(), new Rsvp\Module() );
+			$bundled = array( new ICal\Module(), new Rsvp\Module(), new Tickets\Module() );
 
 			/**
 			 * Filters the available modules. Append your Module instance to add a feature

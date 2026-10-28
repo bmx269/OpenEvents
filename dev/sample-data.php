@@ -111,7 +111,7 @@ $rsvp_events = array(
 	$gala     => array( 'enabled' => true, 'capacity' => 120, 'max_per_response' => 4 ),
 	$workshop => array( 'enabled' => true, 'capacity' => 3, 'max_per_response' => 2 ),
 );
-update_option( 'openevents_modules', array( 'ical', 'rsvp' ) );
+update_option( 'openevents_modules', array( 'ical', 'rsvp', 'tickets' ) );
 OpenEvents\Attendance\Schema::install();
 $rsvp = new OpenEvents\Modules\Rsvp\Service();
 foreach ( $rsvp_events as $event_id => $config ) {
@@ -124,6 +124,24 @@ foreach ( array( array( 'Grace Hopper', 'grace@example.com', 2 ), array( 'Alan T
 	$rsvp->respond( $gala, array( 'name' => $person[0], 'email' => $person[1], 'status' => 'going', 'quantity' => $person[2], 'ts' => OpenEvents\Modules\Rsvp\Service::sign_timestamp( time() - 60 ), 'ip' => '192.0.2.' . ( $i + 1 ) ) );
 }
 $rsvp->respond( $workshop, array( 'name' => 'Ada Lovelace', 'email' => 'ada@example.com', 'status' => 'going', 'quantity' => 2, 'ts' => OpenEvents\Modules\Rsvp\Service::sign_timestamp( time() - 60 ), 'ip' => '192.0.2.9' ) );
+
+// Tickets: a concert with paid and free ticket types, payable at the door.
+update_option( 'openevents_gateways', array( 'manual' => array( 'enabled' => true ) ), false );
+$concert_day = current_datetime()->modify( '+12 days' )->format( 'Y-m-d' );
+$concert     = $make( 'Spring Concert', "{$concert_day} 19:30:00", "{$concert_day} 21:30:00", array( '_oe_cost' => '' ), 'Music' );
+update_post_meta(
+	$concert,
+	'_oe_tickets',
+	array(
+		array( 'key' => 'adult', 'name' => 'Adult', 'price' => '25', 'capacity' => 100, 'max_per_order' => 8 ),
+		array( 'key' => 'student', 'name' => 'Student', 'price' => '10', 'capacity' => 40, 'max_per_order' => 8, 'description' => 'Bring student ID.' ),
+		array( 'key' => 'kids', 'name' => 'Under 12', 'price' => '0', 'capacity' => 30, 'max_per_order' => 6 ),
+	)
+);
+OpenEvents\Modules\Tickets\Module::sync( $concert );
+OpenEvents\Modules\Tickets\Gateways::reset();
+$adult = ( new OpenEvents\Attendance\TicketTypes() )->find( $concert, 'tkt-adult' );
+( new OpenEvents\Modules\Tickets\Checkout() )->place( $concert, array( 'name' => 'Grace Hopper', 'email' => 'grace@example.com', 'tickets' => array( $adult->id => 2 ), 'gateway' => 'manual', 'ts' => OpenEvents\Attendance\Guard::sign_timestamp( time() - 60 ), 'ip' => '192.0.2.20' ) );
 remove_filter( 'pre_wp_mail', '__return_true' );
 
 update_option( 'openevents_sample_data', 1 );

@@ -30,6 +30,7 @@ const PAGES = [
 	[ 'past events', '/events/?oe_view=list&oe_past=1', [ '.oe-calendar' ] ],
 	[ 'event details', '/events/jazz-night/', [ '.oe-details' ] ],
 	[ 'RSVP form', '/events/next-month-gala/', [ '.oe-details' ] ],
+	[ 'ticket checkout', '/events/spring-concert/', [ '.oe-details' ] ],
 	[ 'existing post as event', '/blog-post-book-launch/', [ '.oe-details' ] ],
 ];
 
@@ -63,11 +64,28 @@ test.describe( 'Accessibility (WCAG 2.2 AA)', () => {
 		await scan( page, [ '#openevents-admin' ] );
 	} );
 
+	test( 'admin: orders', async ( { page } ) => {
+		await page.goto(
+			'/wp-admin/edit.php?post_type=oe_event&page=openevents-orders'
+		);
+		await page.waitForSelector( '.dataviews-view-table' );
+		await scan( page, [ '#openevents-attendance' ] );
+	} );
+
+	test( 'admin: tickets settings', async ( { page } ) => {
+		await page.goto(
+			'/wp-admin/edit.php?post_type=oe_event&page=openevents-settings'
+		);
+		await page.getByRole( 'tab', { name: 'Tickets' } ).click();
+		await page.waitForSelector( 'text=Card (Stripe)' );
+		await scan( page, [ '#openevents-admin' ] );
+	} );
+
 	test( 'admin: attendees', async ( { page } ) => {
 		await page.goto(
 			'/wp-admin/edit.php?post_type=oe_event&page=openevents-attendees'
 		);
 		await page.waitForSelector( '.dataviews-view-table' );
-		await scan( page, [ '#openevents-attendees' ] );
+		await scan( page, [ '#openevents-attendance' ] );
 	} );
 } );

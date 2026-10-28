@@ -84,7 +84,7 @@ test.describe( 'RSVP', () => {
 		).toBeVisible();
 		const table = page.locator( '.dataviews-view-table' );
 		await expect(
-			table.getByText( 'Grace Hopper', { exact: true } )
+			table.getByText( 'Grace Hopper', { exact: true } ).first()
 		).toBeVisible();
 
 		const row = table.locator( 'tr' ).filter( {

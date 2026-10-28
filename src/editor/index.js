@@ -25,6 +25,7 @@ import { __ } from '@wordpress/i18n';
 import EventPanel from './event-panel';
 import { VenuePanel, OrganizerPanel } from './place-panels';
 import RsvpPanel from './rsvp-panel';
+import TicketsPanel from './tickets-panel';
 import './editor.scss';
 
 const config = window.openEvents || {};
@@ -48,6 +49,7 @@ function OpenEventsSidebar() {
 		const isDedicated = postType === config.dedicatedType;
 		const isEvent = isDedicated || !! meta._oe_start;
 		const rsvpEnabled = ( config.modules || [] ).includes( 'rsvp' );
+		const ticketsEnabled = ( config.modules || [] ).includes( 'tickets' );
 		return (
 			<>
 				<PluginDocumentSettingPanel
@@ -70,6 +72,20 @@ function OpenEventsSidebar() {
 						className="oe-editor-panel"
 					>
 						<RsvpPanel
+							meta={ meta }
+							setMeta={ setMeta }
+							postId={ postId }
+							config={ config }
+						/>
+					</PluginDocumentSettingPanel>
+				) }
+				{ ticketsEnabled && isEvent && (
+					<PluginDocumentSettingPanel
+						name="openevents-tickets"
+						title={ __( 'Tickets', 'openevents' ) }
+						className="oe-editor-panel"
+					>
+						<TicketsPanel
 							meta={ meta }
 							setMeta={ setMeta }
 							postId={ postId }

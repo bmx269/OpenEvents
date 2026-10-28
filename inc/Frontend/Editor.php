@@ -58,6 +58,8 @@ final class Editor {
 					'timeFormat12h'   => (bool) preg_match( '/[aAgh]/', (string) get_option( 'time_format' ) ),
 					'modules'         => openevents()->modules()->enabled_ids(),
 					'attendeesUrl'    => admin_url( 'admin.php?page=openevents-attendees' ),
+					'ordersUrl'       => admin_url( 'admin.php?page=openevents-orders' ),
+					'currency'        => strtoupper( (string) ( $settings->get( 'currency' ) ?: 'USD' ) ),
 				)
 			) . ';',
 			'before'
