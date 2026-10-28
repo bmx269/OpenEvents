@@ -8,7 +8,7 @@
 		{ "step": "activatePlugin", "pluginPath": "openevents/openevents.php" },
 		{
 			"step": "runPHP",
-			"code": "<?php require '/wordpress/wp-load.php'; @mkdir( WPMU_PLUGIN_DIR, 0777, true ); copy( WP_PLUGIN_DIR . '/openevents/dev/bench-mu.php', WPMU_PLUGIN_DIR . '/openevents-bench.php' ); require WP_PLUGIN_DIR . '/openevents/dev/sample-data.php'; OpenEvents\\Cli\\Command::generate_events( 5000, 1460 ); flush_rewrite_rules();"
+			"code": "<?php require '/wordpress/wp-load.php'; foreach ( array( 'auth', 'secure_auth', 'logged_in', 'nonce' ) as $scheme ) { wp_salt( $scheme ); } @mkdir( WPMU_PLUGIN_DIR, 0777, true ); copy( WP_PLUGIN_DIR . '/openevents/dev/bench-mu.php', WPMU_PLUGIN_DIR . '/openevents-bench.php' ); require WP_PLUGIN_DIR . '/openevents/dev/sample-data.php'; OpenEvents\\Cli\\Command::generate_events( 5000, 1460 ); flush_rewrite_rules();"
 		}
 	]
 }
