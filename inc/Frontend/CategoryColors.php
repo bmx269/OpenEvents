@@ -43,7 +43,7 @@ final class CategoryColors {
 	 */
 	public static function style_for_term( int $term_id ): string {
 		$color = self::color( $term_id );
-		return $color ? sprintf( '--oe-event-bg:%s;--oe-event-fg:%s;', $color, self::contrast( $color ) ) : '';
+		return $color ? self::style( $color ) : '';
 	}
 
 	/**
@@ -57,7 +57,7 @@ final class CategoryColors {
 		foreach ( $terms as $term ) {
 			$color = self::color( $term->term_id );
 			if ( $color ) {
-				return sprintf( '--oe-event-bg:%s;--oe-event-fg:%s;', $color, self::contrast( $color ) );
+				return self::style( $color );
 			}
 		}
 		return '';
@@ -88,19 +88,66 @@ final class CategoryColors {
 	}
 
 	/**
-	 * Black or white, whichever has higher WCAG contrast against the colour.
+	 * Fill colour for labels in a category's colour. Light colours keep black
+	 * text. Others get white text and are darkened, keeping the hue, until
+	 * white reaches 4.5:1. WCAG 2 rates black on mid-tones (e.g. #059669, 5.6:1)
+	 * as passing, but at small sizes it reads as muddy, so mid-tones go dark.
+	 */
+	public static function fill( string $hex ): string {
+		$rgb = self::rgb( $hex );
+		for ( $step = 0; $step <= 20; $step++ ) {
+			$mixed = array_map( static fn( int $c ): int => (int) round( $c * ( 1 - $step / 20 ) ), $rgb );
+			if ( 0 === $step && self::ratio( self::luminance( $mixed ), 0.0 ) >= self::LIGHT ) {
+				break;
+			}
+			if ( self::ratio( 1.0, self::luminance( $mixed ) ) >= 4.5 ) {
+				$rgb = $mixed;
+				break;
+			}
+		}
+		return vsprintf( '#%02x%02x%02x', $rgb );
+	}
+
+	/**
+	 * Text colour for a fill() colour: black on light colours, otherwise white.
 	 */
 	public static function contrast( string $hex ): string {
+		return self::ratio( self::luminance( self::rgb( $hex ) ), 0.0 ) >= self::LIGHT ? '#000000' : '#ffffff';
+	}
+
+	/**
+	 * Black-text contrast at or above which a colour counts as light.
+	 */
+	private const LIGHT = 8.0;
+
+	private static function style( string $color ): string {
+		$fill = self::fill( $color );
+		return sprintf( '--oe-event-bg:%s;--oe-event-fg:%s;', $fill, self::contrast( $fill ) );
+	}
+
+	/**
+	 * @return int[] Red, green, blue (0-255).
+	 */
+	private static function rgb( string $hex ): array {
 		$hex = ltrim( $hex, '#' );
 		if ( 3 === strlen( $hex ) ) {
 			$hex = $hex[0] . $hex[0] . $hex[1] . $hex[1] . $hex[2] . $hex[2];
 		}
-		$channel = static function ( string $pair ): float {
-			$c = hexdec( $pair ) / 255;
+		return array_map( 'hexdec', str_split( substr( $hex, 0, 6 ), 2 ) );
+	}
+
+	/**
+	 * @param int[] $rgb Red, green, blue (0-255).
+	 */
+	private static function luminance( array $rgb ): float {
+		$channel = static function ( int $value ): float {
+			$c = $value / 255;
 			return $c <= 0.03928 ? $c / 12.92 : ( ( $c + 0.055 ) / 1.055 ) ** 2.4;
 		};
-		$luminance = 0.2126 * $channel( substr( $hex, 0, 2 ) ) + 0.7152 * $channel( substr( $hex, 2, 2 ) ) + 0.0722 * $channel( substr( $hex, 4, 2 ) );
-		// Contrast with black is (L + 0.05) / 0.05; with white 1.05 / (L + 0.05). Equal at L ≈ 0.179.
-		return $luminance > 0.179 ? '#000000' : '#ffffff';
+		return 0.2126 * $channel( $rgb[0] ) + 0.7152 * $channel( $rgb[1] ) + 0.0722 * $channel( $rgb[2] );
+	}
+
+	private static function ratio( float $lighter, float $darker ): float {
+		return ( max( $lighter, $darker ) + 0.05 ) / ( min( $lighter, $darker ) + 0.05 );
 	}
 }

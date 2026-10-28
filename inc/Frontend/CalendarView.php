@@ -480,7 +480,7 @@ final class CalendarView {
 		foreach ( $terms as $term ) {
 			$html .= sprintf(
 				'<li><span class="oe-legend__swatch" style="background:%s" aria-hidden="true"></span><a href="%s"' . ( $filter_links ? ' rel="nofollow" data-wp-on--click="actions.navigate"' : '' ) . '>%s</a></li>',
-				esc_attr( CategoryColors::color( $term->term_id ) ),
+				esc_attr( CategoryColors::fill( CategoryColors::color( $term->term_id ) ) ),
 				esc_url(
 					$filter_links
 						? self::url(
