@@ -44,7 +44,7 @@ const format = ( date ) =>
  * @param {string} value Stored "Y-m-d H:i:s" value.
  * @return {string} Formatted date.
  */
-const display = ( fmt, value ) =>
+export const display = ( fmt, value ) =>
 	dateI18n( fmt, `${ value.replace( ' ', 'T' ) }Z`, true );
 
 /** The next full hour in the site's timezone, as a wall-clock Date (see parse). */
