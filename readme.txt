@@ -17,6 +17,7 @@ OpenEvents adds events, venues, organizers, and calendar views to WordPress. Cal
 * Use a dedicated Events post type, add event dates to existing post types, or both.
 * Month and list views that work without JavaScript and become an agenda list on phones.
 * Category colours with a legend.
+* Free RSVP and tickets: capacity limits, guests, waitlists, pay at the door, Stripe, or PayPal, with no platform fees.
 * iCal feeds and "Add to Google Calendar" links.
 * Site Editor templates for block themes and fallbacks for classic themes.
 * REST API, Abilities API, Block Bindings, and hooks for developers.
@@ -36,6 +37,9 @@ Built for sites with thousands of events: listings run indexed queries against a
 4. Event panel in the block editor sidebar.
 5. Setup wizard: choose where events live.
 6. Module settings.
+7. RSVP form on an event page.
+8. Ticket types on an event page.
+9. A full event offering its waitlist.
 
 == Changelog ==
 

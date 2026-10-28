@@ -27,12 +27,25 @@ Requires WordPress 7.1+ and PHP 8.2+.
 | Event details: date, venue with map link, organizer, cost, and Add to Google Calendar / .ics | List view, grouped by month, with past and upcoming events |
 | ![Event panel in the block editor sidebar](.wordpress-org/screenshot-4.png) | ![Setup wizard asking where events should live](.wordpress-org/screenshot-5.png) |
 | Event panel in the editor: dates, timezone, venue and organizers (type a name to create one), cost | Setup wizard: a dedicated Events post type, existing post types, or both |
-| ![Module settings](.wordpress-org/screenshot-6.png) | |
-| Settings, built on the WordPress Design System; modules switch features on and off | |
+| ![Module settings](.wordpress-org/screenshot-6.png) | ![RSVP form on an event page](.wordpress-org/screenshot-7.png) |
+| Settings, built on the WordPress Design System; modules switch features on and off | RSVP: places left, guests, and a "not going" option. Works without JavaScript and on cached pages |
+| ![Ticket types on an event page](.wordpress-org/screenshot-8.png) | ![A full event offering its waitlist](.wordpress-org/screenshot-9.png) |
+| Tickets: several types per event with price, capacity, and sale window; pay at the door, Stripe, or PayPal | Waitlist: a full event takes names and confirms them automatically when a place frees up |
 
 ## Status
 
-Phase 1 (core foundation) is done. See [docs/ROADMAP.md](docs/ROADMAP.md) for what comes next.
+| Area | Status |
+| --- | --- |
+| **Phase 1: core foundation** (events on any post type, venues, organizers, category colours, month/list calendar, templates, REST, Abilities, iCal, WP-CLI) | ✅ Done |
+| **RSVP**: capacity, guests, deadlines, private change/cancel links, attendee list with CSV export and check-in | ✅ Done |
+| **Tickets**: several ticket types per event, pay at the door, Stripe, PayPal, refunds, order emails | ✅ Done |
+| **Waitlists** for RSVPs (automatic promotion) and ticket types (time-limited offers), with an organiser screen | ✅ Done |
+| Calendar filter and search, event popups, category badges, per-category and per-post-type templates | ✅ Done |
+| **TEC and Event Tickets importer** (events, venues, organizers, categories, RSVPs, tickets, attendees) | 🚧 In progress |
+| Google Calendar import (iCal feeds) | Next |
+| Recurring events, ticket QR codes and door check-in, Pro views (week, photo, map) | Planned |
+
+Details and the order of work are in [docs/ROADMAP.md](docs/ROADMAP.md).
 
 ## Development
 

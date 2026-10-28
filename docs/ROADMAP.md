@@ -54,7 +54,7 @@ Done in Phase 2 groundwork:
 - ✅ PHPUnit integration suite with query-count budgets; Playwright suite against Playground; GitHub Actions.
 - ✅ Playground demo link, screenshots, and WordPress.org assets, rebuilt on every push.
 
-## Phase 3: TEC parity and migration
+## Phase 3: TEC parity and migration (importer in progress)
 
 - **TEC importer** (admin screen and `wp openevents import-tec`), following `docs/research/tec-data-model.md`:
   - Batched and resumable. It runs with Sync suspended, then rebuilds.
@@ -63,7 +63,7 @@ Done in Phase 2 groundwork:
   - Optional 301 redirects from old permalinks.
 - **Event Tickets importer** (RSVP and Tickets Commerce), following `docs/research/event-tickets-data-model.md`. Keeps security codes.
 - CSV import (TEC column names accepted).
-- Day view; keyword search and category/venue filter bar on the calendar block.
+- Day view; venue filter on the calendar block (category filter and keyword search are done).
 - Event status: scheduled, cancelled, postponed (with a reason).
 - `Event` JSON-LD with Offer, Place, and Organizer.
 - Venue map embed (OpenStreetMap; Google optional).

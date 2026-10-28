@@ -57,7 +57,7 @@ await shot( 'editor', '/wp-admin/edit.php?post_type=oe_event', {
 		if ( ( await toggle.getAttribute( 'aria-expanded' ) ) === 'false' ) {
 			await toggle.click();
 		}
-		await page.locator( '.oe-editor-panel' ).scrollIntoViewIfNeeded();
+		await page.locator( '.oe-editor-panel' ).first().scrollIntoViewIfNeeded();
 		await page.locator( '.interface-complementary-area' ).evaluate( ( el ) => el.scrollTo( 0, 430 ) );
 		await page.waitForTimeout( 500 );
 	},
@@ -71,5 +71,8 @@ await shot( 'settings', '/wp-admin/edit.php?post_type=oe_event&page=openevents-s
 		await page.getByRole( 'tab', { name: 'Modules' } ).click();
 	},
 } );
+await shot( 'rsvp', '/events/intro-to-bookbinding-3-places/', { hideAdminBar: true, prepare: scrollTo( '.oe-rsvp' ) } );
+await shot( 'tickets', '/events/spring-concert/', { hideAdminBar: true, prepare: scrollTo( '.oe-tickets' ) } );
+await shot( 'waitlist', '/events/author-talk-full/', { hideAdminBar: true, prepare: scrollTo( '.oe-rsvp' ) } );
 
 await browser.close();
