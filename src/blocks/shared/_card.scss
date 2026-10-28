@@ -1,3 +1,5 @@
+@use "base";
+
 .oe-event-card {
 	display: grid;
 	grid-template-columns: 3.5rem 1fr;
@@ -14,7 +16,7 @@
 		align-items: center;
 		padding-block: 0.35em;
 		border-radius: var(--oe-radius);
-		border-top: 4px solid var(--oe-event-bg, var(--oe-accent));
+		border-top: 4px solid base.$event-line;
 		background: var(--oe-surface);
 		line-height: 1.1;
 	}

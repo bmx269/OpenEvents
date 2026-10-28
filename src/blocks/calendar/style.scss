@@ -203,8 +203,9 @@
 		margin-block-end: 2px;
 		padding: 0.15em 0.35em;
 		overflow: hidden;
-		border-inline-start: 3px solid var(--oe-event-bg, var(--oe-accent));
+		border-inline-start: 4px solid base.$event-line;
 		border-radius: 2px;
+		background: color-mix(in srgb, var(--oe-event-bg, transparent) 10%, transparent);
 		font-size: 0.8em;
 		line-height: 1.3;
 		text-decoration: none;
@@ -213,6 +214,7 @@
 		color: inherit;
 
 		&.is-all-day {
+			border-inline-start-color: var(--oe-event-bg, var(--oe-accent));
 			background: var(--oe-event-bg, var(--oe-accent));
 			color: var(--oe-event-fg, var(--oe-on-accent));
 		}
@@ -225,7 +227,6 @@
 
 	&__event-time {
 		font-variant-numeric: tabular-nums;
-		opacity: 0.8;
 	}
 
 	&__more {

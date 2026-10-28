@@ -23,3 +23,9 @@
 	white-space: nowrap;
 	border: 0;
 }
+
+// Category stripes are the only sign of the category, so they need 3:1
+// (WCAG 1.4.11). Mixing toward the text colour gets there for light colours
+// like amber, in light and dark themes alike. Used where --oe-event-bg is set,
+// since a custom property would resolve it on the container instead.
+$event-line: color-mix(in srgb, var(--oe-event-bg, var(--oe-accent)) 60%, currentcolor);
