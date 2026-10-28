@@ -87,6 +87,7 @@ final class AdminApp {
 								'enum' => array( 'page', 'popup' ),
 							),
 							'currency'                 => array( 'type' => 'string' ),
+							'waitlist_offer_hours'     => array( 'type' => 'integer' ),
 							'date_format'              => array( 'type' => 'string' ),
 							'time_format'              => array( 'type' => 'string' ),
 							'remove_data_on_uninstall' => array( 'type' => 'boolean' ),

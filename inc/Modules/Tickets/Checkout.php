@@ -120,6 +120,16 @@ final class Checkout {
 		$types    = $this->ticket_types( $event_id );
 		$currency = self::currency();
 		$lines    = array();
+
+		// Claiming a waitlist offer: exactly the held tickets, whose seats are already reserved.
+		$offer = null;
+		if ( '' !== (string) ( $input['waitlist_token'] ?? '' ) ) {
+			$offer = ( new \OpenEvents\Attendance\WaitlistService() )->offer_for_token( (string) $input['waitlist_token'] );
+			if ( ! $offer || $offer->event_id !== $event_id || ! isset( $types[ $offer->ticket_type_id ] ) ) {
+				return CheckoutResult::error( 'invalid', __( 'This waitlist offer has expired or was already used.', 'openevents' ) );
+			}
+			$input['tickets'] = array( $offer->ticket_type_id => $offer->quantity );
+		}
 		$count    = 0;
 		$total    = 0;
 		foreach ( (array) ( $input['tickets'] ?? array() ) as $type_id => $quantity ) {
@@ -136,7 +146,7 @@ final class Checkout {
 				/* translators: %s: ticket name */
 				return CheckoutResult::error( 'closed', sprintf( __( '“%s” tickets aren’t on sale.', 'openevents' ), $type->name ) );
 			}
-			$max = (int) $type->setting( 'max_per_order', 10 );
+			$max = $offer ? $offer->quantity : (int) $type->setting( 'max_per_order', 10 );
 			if ( $quantity > $max ) {
 				/* translators: 1: maximum, 2: ticket name */
 				return CheckoutResult::error( 'invalid', sprintf( __( 'You can buy up to %1$d “%2$s” tickets per order.', 'openevents' ), $max, $type->name ) );
@@ -169,6 +179,9 @@ final class Checkout {
 		// Hold every line's seats, or none.
 		$held = array();
 		foreach ( $lines as $line ) {
+			if ( $offer ) {
+				break; // Seats were reserved when the offer was made.
+			}
 			if ( ! $this->types->reserve( $line['type']->id, $line['quantity'] ) ) {
 				foreach ( $held as $h ) {
 					$this->types->release( $h['type']->id, $h['quantity'] );
@@ -223,6 +236,10 @@ final class Checkout {
 				$order->uuid,
 				true
 			);
+		}
+
+		if ( $offer ) {
+			( new \OpenEvents\Attendance\WaitlistService() )->mark_claimed( $offer, $order->id );
 		}
 
 		if ( ! $gateway ) {

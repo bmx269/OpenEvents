@@ -47,6 +47,7 @@ final class Module extends AbstractModule {
 
 	public function boot(): void {
 		Schema::maybe_install();
+		\OpenEvents\Attendance\WaitlistService::register();
 
 		add_filter( 'openevents/meta_fields', array( $this, 'meta_fields' ), 10, 2 );
 		add_action( 'added_post_meta', array( $this, 'on_meta_change' ), 10, 3 );
@@ -125,6 +126,7 @@ final class Module extends AbstractModule {
 							'max_per_order' => array( 'type' => 'integer' ),
 							'sale_start'    => array( 'type' => 'string' ),
 							'sale_end'      => array( 'type' => 'string' ),
+							'waitlist'      => array( 'type' => 'boolean' ),
 						),
 						'additionalProperties' => false,
 					),
@@ -165,6 +167,7 @@ final class Module extends AbstractModule {
 				'max_per_order' => max( 1, min( 50, (int) ( $type['max_per_order'] ?? 10 ) ) ),
 				'sale_start'    => Meta::sanitize_datetime( $type['sale_start'] ?? '' ),
 				'sale_end'      => Meta::sanitize_datetime( $type['sale_end'] ?? '' ),
+				'waitlist'      => ! empty( $type['waitlist'] ),
 			);
 		}
 		return $out;
@@ -223,6 +226,7 @@ final class Module extends AbstractModule {
 						'price_minor'    => Money::to_minor( (string) $type['price'], $currency ),
 						'max_per_order'  => (int) $type['max_per_order'],
 						'sale_start_utc' => (string) $to_utc( (string) ( $type['sale_start'] ?? '' ) ),
+						'waitlist'       => ! empty( $type['waitlist'] ),
 					),
 				)
 			);
@@ -280,6 +284,7 @@ final class Module extends AbstractModule {
 				'email'   => wp_unslash( $_POST['email'] ?? '' ),
 				'tickets' => array_map( 'absint', (array) wp_unslash( $_POST['tickets'] ?? array() ) ),
 				'gateway' => sanitize_key( wp_unslash( $_POST['gateway'] ?? '' ) ),
+				'waitlist_token' => sanitize_text_field( wp_unslash( $_POST['waitlist_token'] ?? '' ) ),
 				'website' => wp_unslash( $_POST['website'] ?? '' ),
 				'ts'      => sanitize_text_field( wp_unslash( $_POST['ts'] ?? '' ) ),
 				'ip'      => \OpenEvents\Attendance\Guard::client_ip(),

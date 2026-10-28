@@ -13,7 +13,7 @@ namespace OpenEvents\Attendance;
  */
 final class Schema {
 
-	public const VERSION        = '2';
+	public const VERSION        = '3';
 	public const VERSION_OPTION = 'openevents_attendance_db_version';
 
 	public static function ticket_types(): string {
@@ -29,6 +29,11 @@ final class Schema {
 	public static function orders(): string {
 		global $wpdb;
 		return $wpdb->prefix . 'oe_orders';
+	}
+
+	public static function waitlist(): string {
+		global $wpdb;
+		return $wpdb->prefix . 'oe_waitlist';
 	}
 
 	public static function order_items(): string {
@@ -145,12 +150,40 @@ final class Schema {
 ) {$charset};"
 		);
 
+		// First come, first served: the queue is ordered by id. An "offered"
+		// entry holds seats (counted in ticket_types.sold) until offer_expires_utc.
+		dbDelta(
+			'CREATE TABLE ' . self::waitlist() . " (
+  id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  uuid char(36) NOT NULL,
+  ticket_type_id bigint(20) unsigned NOT NULL,
+  event_id bigint(20) unsigned NOT NULL,
+  name varchar(200) NOT NULL DEFAULT '',
+  email varchar(200) NOT NULL DEFAULT '',
+  quantity int(10) unsigned NOT NULL DEFAULT 1,
+  status varchar(20) NOT NULL DEFAULT 'waiting',
+  token_hash char(64) NOT NULL DEFAULT '',
+  ip_hash char(64) NOT NULL DEFAULT '',
+  order_id bigint(20) unsigned NOT NULL DEFAULT 0,
+  offer_expires_utc datetime DEFAULT NULL,
+  created_utc datetime NOT NULL,
+  updated_utc datetime NOT NULL,
+  PRIMARY KEY  (id),
+  UNIQUE KEY uuid (uuid),
+  KEY type_status (ticket_type_id,status,id),
+  KEY status_expires (status,offer_expires_utc),
+  KEY token_hash (token_hash),
+  KEY email (email(100))
+) {$charset};"
+		);
+
 		update_option( self::VERSION_OPTION, self::VERSION );
 	}
 
 	public static function uninstall(): void {
 		global $wpdb;
 		// phpcs:disable WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.NotPrepared
+		$wpdb->query( 'DROP TABLE IF EXISTS ' . self::waitlist() );
 		$wpdb->query( 'DROP TABLE IF EXISTS ' . self::order_items() );
 		$wpdb->query( 'DROP TABLE IF EXISTS ' . self::orders() );
 		$wpdb->query( 'DROP TABLE IF EXISTS ' . self::attendees() );

@@ -49,6 +49,7 @@ final class Service {
 			'deadline'         => '',    // Local "Y-m-d H:i:s"; empty = when the event starts.
 			'allow_not_going'  => true,
 			'show_count'       => true,
+			'waitlist'         => false, // When full, let people queue for a spot.
 		);
 	}
 
@@ -98,6 +99,7 @@ final class Service {
 					'max_per_response' => max( 1, min( 20, (int) $config['max_per_response'] ) ),
 					'allow_not_going'  => (bool) $config['allow_not_going'],
 					'show_count'       => (bool) $config['show_count'],
+					'waitlist'         => (bool) $config['waitlist'],
 				),
 			)
 		);
@@ -154,6 +156,15 @@ final class Service {
 		$people = $group ? $this->attendees->group( $group ) : array();
 		if ( $group && ( ! $people || $people[0]->ticket_type_id !== $type->id ) ) {
 			return Result::error( 'invalid', __( 'That link is no longer valid.', 'openevents' ) );
+		}
+
+		// Full event with a waitlist: queue instead of booking.
+		if ( 'waitlist' === ( $input['status'] ?? '' ) && ! $group ) {
+			if ( $this->closed_reason( $event_id, $type ) ) {
+				return Result::error( 'closed', __( 'RSVPs for this event are closed.', 'openevents' ) );
+			}
+			$joined = ( new \OpenEvents\Attendance\WaitlistService() )->join( $type, $input );
+			return $joined->ok ? Result::ok( $joined->code, $joined->message ) : Result::error( 'available' === $joined->code ? 'invalid' : $joined->code, $joined->message );
 		}
 
 		$name   = sanitize_text_field( (string) ( $input['name'] ?? ( $people[0]->name ?? '' ) ) );
