@@ -97,7 +97,7 @@ test.describe( 'Recurring events', () => {
 		expect( ( starts[ 1 ] - starts[ 0 ] ) / 864e5 ).toBe( 7 );
 		expect( ( starts[ 2 ] - starts[ 1 ] ) / 864e5 ).toBe( 7 );
 		const secondDate = occurrences[ 1 ].start.slice( 0, 10 );
-		expect( occurrences[ 1 ].link ).toContain( `oe_date=${ secondDate }` );
+		expect( occurrences[ 1 ].link ).toContain( `oe_occurrence=${ secondDate }` );
 
 		// Each date's link opens the page for that date.
 		await page.goto( occurrences[ 1 ].link );
@@ -126,7 +126,7 @@ test.describe( 'Recurring events', () => {
 			.locator( '.oe-month a', { hasText: 'Weekly Storytime' } )
 			.nth( 1 )
 			.click();
-		await expect( page ).toHaveURL( /oe_date=\d{4}-\d{2}-\d{2}/ );
+		await expect( page ).toHaveURL( /oe_occurrence=\d{4}-\d{2}-\d{2}/ );
 		const details = page.locator( '.oe-details' );
 		await expect(
 			details.locator( '.oe-details__row--repeats' )

@@ -14,6 +14,7 @@ Open-source events for WordPress, built to replace The Events Calendar and its p
 - **Fast at library scale.** Listings read one indexed table and batch-load everything they render. With 5,000 events, a month view costs 2 more queries than a plain page.
 - **Works without JavaScript.** Calendar views are server-rendered links. The Interactivity API upgrades them to in-place navigation.
 - **Theme-friendly.** Blocks inherit your theme.json, the templates are editable in the Site Editor, and classic themes get fallbacks.
+- **Recurring events.** Daily, weekly, monthly, or yearly rules (standard iCal RRULE), skipped and extra dates, and editing one date or the rest of a series.
 - **Free RSVP and tickets.** Capacity limits, guests, waitlists, pay at the door, Stripe, or PayPal, with no platform fees. See [docs/payments.md](docs/payments.md).
 - **Open APIs.** PHP functions, hooks, a module registry, REST, the Abilities API, Block Bindings, and editor SlotFills.
 
@@ -40,10 +41,12 @@ Requires WordPress 7.1+ and PHP 8.2+.
 | **RSVP**: capacity, guests, deadlines, private change/cancel links, attendee list with CSV export and check-in | ✅ Done |
 | **Tickets**: several ticket types per event, pay at the door, Stripe, PayPal, refunds, order emails | ✅ Done |
 | **Waitlists** for RSVPs (automatic promotion) and ticket types (time-limited offers), with an organiser screen | ✅ Done |
+| **Recurring events**: daily to yearly rules (iCal RRULE), skipped and extra dates, edit one date or the rest of a series | ✅ Done |
+| Per-date RSVP and tickets for recurring events | 🚧 In progress |
 | Calendar filter and search, event popups, category badges, per-category and per-post-type templates | ✅ Done |
 | **TEC and Event Tickets importer** (events, venues, organizers, categories, RSVPs, tickets, attendees) | 🚧 In progress |
 | Google Calendar import (iCal feeds) | Next |
-| Recurring events, ticket QR codes and door check-in, Pro views (week, photo, map) | Planned |
+| Ticket QR codes and door check-in, Pro views (week, photo, map) | Planned |
 
 Details and the order of work are in [docs/ROADMAP.md](docs/ROADMAP.md).
 
