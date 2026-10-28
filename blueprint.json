@@ -20,7 +20,7 @@
 		},
 		{
 			"step": "runPHP",
-			"code": "<?php require '/wordpress/wp-load.php'; require WP_PLUGIN_DIR . '/openevents/dev/sample-data.php'; flush_rewrite_rules();"
+			"code": "<?php require '/wordpress/wp-load.php'; foreach ( array( 'auth', 'secure_auth', 'logged_in', 'nonce' ) as $scheme ) { wp_salt( $scheme ); } require WP_PLUGIN_DIR . '/openevents/dev/sample-data.php'; flush_rewrite_rules();"
 		}
 	]
 }
