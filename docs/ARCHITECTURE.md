@@ -227,36 +227,32 @@ Extend `AbstractModule` and register through the `openevents/modules` filter. En
 | **WP-CLI** | `wp openevents rebuild`, `stats`, `generate` |
 | **Lifecycle** | `openevents/loaded`, `…/modules_booted`, `…/uninstall` |
 
-## Planned: RSVP, tickets, and payments
+## Tickets module
 
-Data contracts are fixed now so core won't change later. Research on Event Tickets' data model is in `docs/research/event-tickets-data-model.md`.
+Built on the same attendance tables as RSVP, plus orders:
 
 ```
-oe_ticket_types   id, event_id, occurrence_id NULL (= all dates), kind ('rsvp'|'paid'),
-                  name, description, price_minor, currency, capacity NULL, sold,
-                  sale_start_utc, sale_end_utc, settings JSON
-oe_orders         id, uuid, status, gateway, gateway_ref, email, name,
-                  total_minor, currency, created_utc, meta JSON
-oe_order_items    id, order_id, ticket_type_id, quantity, unit_price_minor
-oe_attendees      id, uuid, order_id NULL, ticket_type_id, event_id, occurrence_id,
-                  name, email, status, security_code, checked_in_utc NULL, fields JSON
+oe_ticket_types   (shared with RSVP) kind 'paid', price in settings.price_minor, capacity, sold
+oe_orders         id, uuid, event_id, status, gateway, gateway_ref, gateway_txn, name, email,
+                  total_minor, currency, token_hash, ip_hash, expires_utc, created_utc, meta
+oe_order_items    order_id, ticket_type_id, quantity, unit_price_minor
+oe_attendees      (shared) one row per ticket; group_uuid = order uuid
 ```
 
-- RSVP is a free ticket type with no order, so attendee lists, exports, emails, and check-in are written once.
-- **Capacity:** `UPDATE … SET sold = sold + n WHERE id = ? AND (capacity IS NULL OR sold + n <= capacity)`. If no row changes, the type is sold out. This is atomic, unlike Event Tickets' read-modify-write meta.
-- **Gateways:**
+- **Ticket types** are edited in the editor's Tickets panel and saved as `_oe_tickets` meta. They're mirrored into `oe_ticket_types` rows keyed `tkt-{key}`, so edits keep `sold`. Removed types are archived.
+- **Money** is stored as integers in minor units. `Money` knows the zero-decimal currencies and formats with `NumberFormatter`.
+- **Checkout** holds every line's seats or none, using the same conditional `UPDATE` as RSVP, for 20 minutes while the buyer pays. A cron sweep (every 5 minutes, and opportunistically on checkout) releases abandoned holds.
+- **Order lifecycle:** `pending → completed | expired | failed | cancelled`, `pending → unpaid → completed` (manual), `completed | unpaid → refunded`.
+  - Every change is `Orders::transition()`, a conditional `UPDATE … WHERE status IN (…)`, so racing webhooks and returns complete an order exactly once.
+  - A late payment after expiry is honoured: seats are re-taken, or force-added with `oversold` flagged and an admin notice.
+- **Gateways** implement `Modules\Tickets\Gateway`: `start_payment`, `handle_return`, `handle_webhook`, `refund`, and `settings_fields`. They're registered with `openevents/tickets/gateways`.
+  - Settings live in the non-autoloaded `openevents_gateways` option, or in `OPENEVENTS_{GATEWAY}_{KEY}` constants.
+  - Admin REST masks secrets.
+  - **Manual:** confirms immediately as unpaid.
+  - **Stripe:** hosted Checkout Sessions with idempotency keys, confirmed on return by retrieving the session, plus `Stripe-Signature` HMAC webhooks with a 5-minute tolerance. Refunds go through `/v1/refunds`.
+  - **PayPal:** Orders v2 with capture on return, and the captured amount and currency are checked. Webhooks are verified with `verify-webhook-signature`, and capture approved orders whose buyers never returned. Refunds go through the captures API. The OAuth token is cached until expiry.
+- **Public form** is cache-safe like RSVP (honeypot, signed timestamp, rate limit) and has a no-JS `admin-post` path. On return from a provider, the buyer sees their order through an HttpOnly cookie holding the order token; the email link carries it too.
+- **Admin:** Events → Orders (DataViews: mark paid, refund with confirmation, cancel) and Settings → Tickets (currency and gateways).
+- **Hooks:** `openevents/tickets/order_completed`, `order_unpaid`, `order_released`, `order_refunded`, `oversold`, `openevents/tickets/email`, `openevents/tickets/gateways`.
 
-  ```php
-  interface OpenEvents\Modules\Tickets\Gateway {
-      public function id(): string;
-      public function label(): string;
-      public function is_available(): bool;
-      public function start_payment( Order $order ): PaymentResult;
-      public function handle_webhook( \WP_REST_Request $r ): \WP_REST_Response;
-      public function refund( Order $order, int $amount_minor ): bool;
-  }
-  ```
-
-  Planned order: manual/offline, then Stripe, then a WooCommerce adapter. Gateways register through `openevents/tickets/gateways`, and the site's default is an explicit choice. There are no platform fees.
-- Order state lives in tables, never transients; Event Tickets' object-cache checkout bug came from transients.
-- Check-in uses QR codes containing an HMAC-signed attendee UUID. Imported security codes are kept.
+Setup steps for each provider are in `docs/payments.md`.

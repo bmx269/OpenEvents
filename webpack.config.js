@@ -13,7 +13,7 @@ module.exports = [
 			'editor/index': './src/editor/index.js',
 			'editor/bindings': './src/editor/bindings.js',
 			'admin/index': './src/admin/index.js',
-			'admin/attendees': './src/admin/attendees.js',
+			'admin/attendance': './src/admin/attendance.js',
 		} ),
 	},
 	{
@@ -21,6 +21,7 @@ module.exports = [
 		entry: () => ( {
 			...( typeof moduleConfig.entry === 'function' ? moduleConfig.entry() : moduleConfig.entry ),
 			'modules/rsvp/view': './src/modules/rsvp/view.js',
+			'modules/tickets/view': './src/modules/tickets/view.js',
 		} ),
 	},
 ];

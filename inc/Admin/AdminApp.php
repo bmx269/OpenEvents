@@ -86,6 +86,7 @@ final class AdminApp {
 								'type' => 'string',
 								'enum' => array( 'page', 'popup' ),
 							),
+							'currency'                 => array( 'type' => 'string' ),
 							'date_format'              => array( 'type' => 'string' ),
 							'time_format'              => array( 'type' => 'string' ),
 							'remove_data_on_uninstall' => array( 'type' => 'boolean' ),

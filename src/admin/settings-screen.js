@@ -13,6 +13,7 @@ import {
 } from '@wordpress/ui';
 import { useState } from '@wordpress/element';
 import useSettings from './use-settings';
+import TicketsSettings from './tickets-settings';
 import {
 	DisplayFields,
 	EventContentFields,
@@ -103,6 +104,11 @@ export default function SettingsScreen() {
 						<Tabs.Tab value="display">
 							{ __( 'Display', 'openevents' ) }
 						</Tabs.Tab>
+						{ modules.includes( 'tickets' ) && (
+							<Tabs.Tab value="tickets">
+								{ __( 'Tickets', 'openevents' ) }
+							</Tabs.Tab>
+						) }
 						<Tabs.Tab value="modules">
 							{ __( 'Modules', 'openevents' ) }
 						</Tabs.Tab>
@@ -135,6 +141,14 @@ export default function SettingsScreen() {
 								/>
 							</Section>
 						</Stack>
+					</Tabs.Panel>
+					<Tabs.Panel value="tickets">
+						<Section title={ __( 'Tickets', 'openevents' ) }>
+							<TicketsSettings
+								settings={ settings }
+								update={ update }
+							/>
+						</Section>
 					</Tabs.Panel>
 					<Tabs.Panel value="modules">
 						<Section title={ __( 'Modules', 'openevents' ) }>

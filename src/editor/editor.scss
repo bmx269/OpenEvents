@@ -12,3 +12,15 @@
 		max-width: 5em;
 	}
 }
+
+.oe-editor-panel__ticket {
+	margin: 0;
+	padding: 12px;
+	border: 1px solid #ddd;
+	border-radius: 4px;
+
+	legend {
+		padding: 0 4px;
+		font-weight: 600;
+	}
+}

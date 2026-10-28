@@ -33,10 +33,10 @@ Priority order, set 2026-10-27. Everything here is free: no paid tier, no platfo
    - Responding again with the same email updates the earlier response. Switching to "not going" frees the seats.
    - Confirmation email with a private link to change or cancel.
    - Admin attendee list: search, filter by event, CSV export, check-in.
-2. **Tickets module** (requires RSVP)
+2. ✅ **Tickets module** (done 2026-10-27): pay at the door, Stripe, and PayPal; tests in `TicketsTest.php`, `GatewaysTest.php`, `TicketsModuleTest.php`, `tickets.spec.js`
    - Several ticket types per event: price, capacity, sale window. `oe_orders` / `oe_order_items`.
-   - Gateway interface. Built-in: "Pay later / at the door" (manual), then Stripe Checkout with webhooks. A WooCommerce adapter later.
-   - Order emails, refunds from the admin, QR check-in.
+   - Gateway interface. Built-in: "Pay at the door" (manual), Stripe Checkout, and PayPal (Orders v2), all with webhooks. A WooCommerce adapter later.
+   - Order emails with check-in codes, refunds from the admin. Next: QR codes on tickets and a door check-in screen.
 3. **Google Calendar import** (iCal feed module)
    - Add a calendar by its iCal address (public or secret). No Google API keys or OAuth needed.
    - Scheduled sync. Events are matched by UID, so updates replace rather than duplicate, and removed events are unpublished. Each feed can map to a category.
