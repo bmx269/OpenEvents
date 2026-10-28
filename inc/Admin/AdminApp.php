@@ -102,7 +102,7 @@ final class AdminApp {
 			Settings::MODULES_OPTION,
 			array(
 				'type'              => 'array',
-				'default'           => array( 'ical' ),
+				'default'           => array( 'ical', 'recurrence' ),
 				'sanitize_callback' => fn( $value ) => $this->modules->resolve( array_map( 'sanitize_key', (array) $value ) ),
 				'show_in_rest'      => array(
 					'schema' => array(

@@ -136,7 +136,7 @@ final class OccurrencesController {
 			'event_id'   => $occurrence->event_id,
 			'post_type'  => $event ? $event->post->post_type : '',
 			'title'      => $event ? get_the_title( $event->post ) : '',
-			'link'       => $event ? get_permalink( $event->post ) : '',
+			'link'       => $event ? openevents_occurrence_url( $occurrence ) : '',
 			'excerpt'    => $event ? get_the_excerpt( $event->post ) : '',
 			'start'      => $occurrence->start->format( DATE_ATOM ),
 			'end'        => $occurrence->end->format( DATE_ATOM ),
