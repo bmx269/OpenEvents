@@ -13,6 +13,12 @@
 	}
 }
 
+// Fieldsets default to min-inline-size: min-content and would overflow the sidebar.
+.oe-editor-panel__ticket,
+.oe-editor-panel__question {
+	min-width: 0;
+}
+
 .oe-editor-panel__ticket {
 	margin: 0;
 	padding: 12px;
