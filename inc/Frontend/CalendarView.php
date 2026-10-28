@@ -309,7 +309,7 @@ final class CalendarView {
 		return sprintf(
 			'<a class="oe-month__event%s" href="%s"%s style="%s">%s<span class="oe-month__event-title">%s</span></a>',
 			$occurrence->all_day || $occurrence->is_multi_day() ? ' is-all-day' : '',
-			esc_url( get_permalink( $event->post ) ),
+			esc_url( openevents_occurrence_url( $occurrence ) ),
 			$popup ? self::popup_attributes( $occurrence ) : '',
 			esc_attr( CategoryColors::style_for( $event->id() ) ),
 			$time ? '<span class="oe-month__event-time">' . esc_html( $time ) . '</span>' : '',
@@ -417,7 +417,7 @@ final class CalendarView {
 			esc_html( wp_date( 'j', $occurrence->start->getTimestamp(), $occurrence->start->getTimezone() ) )
 		);
 		$html .= '<div class="oe-event-card__body">';
-		$html .= sprintf( '<%1$s class="oe-event-card__title"><a href="%2$s"%4$s>%3$s</a></%1$s>', tag_escape( $title_tag ), esc_url( get_permalink( $event->post ) ), esc_html( get_the_title( $event->post ) ), $options['popup'] ? self::popup_attributes( $occurrence ) : '' );
+		$html .= sprintf( '<%1$s class="oe-event-card__title"><a href="%2$s"%4$s>%3$s</a></%1$s>', tag_escape( $title_tag ), esc_url( openevents_occurrence_url( $occurrence ) ), esc_html( get_the_title( $event->post ) ), $options['popup'] ? self::popup_attributes( $occurrence ) : '' );
 		$html .= sprintf( '<p class="oe-event-card__when"><time datetime="%s">%s</time></p>', esc_attr( Formatter::iso( $occurrence->start, $occurrence->all_day ) ), esc_html( Formatter::range( $occurrence ) ) );
 		if ( $venue ) {
 			$html .= '<p class="oe-event-card__venue">' . esc_html( get_the_title( $venue ) ) . '</p>';
@@ -443,7 +443,7 @@ final class CalendarView {
 				'when'    => Formatter::range( $occurrence ),
 				'venue'   => $venue ? html_entity_decode( get_the_title( $venue ), ENT_QUOTES ) : '',
 				'excerpt' => wp_trim_words( wp_strip_all_tags( get_the_excerpt( $event->post ) ), 30 ),
-				'url'     => get_permalink( $event->post ),
+				'url'     => openevents_occurrence_url( $occurrence ),
 			),
 		);
 		return ' aria-haspopup="dialog" data-wp-on--click="actions.openEvent" data-wp-context="' . esc_attr( (string) wp_json_encode( $data ) ) . '"';

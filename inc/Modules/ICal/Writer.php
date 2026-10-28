@@ -62,7 +62,7 @@ final class Writer {
 
 		$lines[] = 'SUMMARY:' . self::text( get_the_title( $event->post ) );
 		$lines[] = 'DESCRIPTION:' . self::text( get_the_excerpt( $event->post ) );
-		$lines[] = 'URL:' . get_permalink( $event->post );
+		$lines[] = 'URL:' . openevents_occurrence_url( $occurrence );
 
 		$venue = $event->venue();
 		if ( $venue ) {
