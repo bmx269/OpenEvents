@@ -25,7 +25,6 @@ final class Service {
 
 	public const META_KEY  = '_oe_rsvp';
 	public const TYPE_KEY  = 'rsvp';
-	public const MIN_FILL  = 2;   // Seconds: faster submissions are treated as bots.
 	public const RATE      = 10;  // Responses per IP per window.
 	public const RATE_SPAN = 600; // Window, seconds.
 
@@ -299,28 +298,21 @@ final class Service {
 	}
 
 	public static function new_token(): string {
-		return bin2hex( random_bytes( 24 ) );
+		return \OpenEvents\Attendance\Guard::new_token();
 	}
 
 	/**
-	 * Signed form timestamp: lets the server reject instant (bot) submissions
-	 * without a nonce, so forms keep working on cached pages.
+	 * Signed form timestamp (see Attendance\Guard).
 	 */
 	public static function sign_timestamp( ?int $time = null ): string {
-		$time ??= time();
-		return $time . '.' . substr( hash_hmac( 'sha256', (string) $time, wp_salt( 'nonce' ) ), 0, 16 );
+		return \OpenEvents\Attendance\Guard::sign_timestamp( $time );
 	}
 
 	public static function verify_timestamp( string $value ): bool {
-		$parts = explode( '.', $value );
-		if ( 2 !== count( $parts ) || ! ctype_digit( $parts[0] ) ) {
-			return false;
-		}
-		$expected = substr( hash_hmac( 'sha256', $parts[0], wp_salt( 'nonce' ) ), 0, 16 );
-		return hash_equals( $expected, $parts[1] ) && time() - (int) $parts[0] >= self::MIN_FILL;
+		return \OpenEvents\Attendance\Guard::verify_timestamp( $value );
 	}
 
 	private static function hash_ip( string $ip ): string {
-		return '' === $ip ? '' : hash_hmac( 'sha256', $ip, wp_salt( 'auth' ) );
+		return \OpenEvents\Attendance\Guard::hash_ip( $ip );
 	}
 }

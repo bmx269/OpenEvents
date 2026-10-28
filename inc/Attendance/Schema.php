@@ -13,7 +13,7 @@ namespace OpenEvents\Attendance;
  */
 final class Schema {
 
-	public const VERSION        = '1';
+	public const VERSION        = '2';
 	public const VERSION_OPTION = 'openevents_attendance_db_version';
 
 	public static function ticket_types(): string {
@@ -24,6 +24,16 @@ final class Schema {
 	public static function attendees(): string {
 		global $wpdb;
 		return $wpdb->prefix . 'oe_attendees';
+	}
+
+	public static function orders(): string {
+		global $wpdb;
+		return $wpdb->prefix . 'oe_orders';
+	}
+
+	public static function order_items(): string {
+		global $wpdb;
+		return $wpdb->prefix . 'oe_order_items';
 	}
 
 	public static function maybe_install(): void {
@@ -93,12 +103,56 @@ final class Schema {
 ) {$charset};"
 		);
 
+		// Orders hold seats while payment happens elsewhere; expires_utc lets a
+		// sweep release abandoned holds. Order state never lives in transients.
+		dbDelta(
+			'CREATE TABLE ' . self::orders() . " (
+  id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  uuid char(36) NOT NULL,
+  event_id bigint(20) unsigned NOT NULL,
+  status varchar(20) NOT NULL DEFAULT 'pending',
+  gateway varchar(30) NOT NULL DEFAULT '',
+  gateway_ref varchar(191) NOT NULL DEFAULT '',
+  gateway_txn varchar(191) NOT NULL DEFAULT '',
+  name varchar(200) NOT NULL DEFAULT '',
+  email varchar(200) NOT NULL DEFAULT '',
+  total_minor int(10) unsigned NOT NULL DEFAULT 0,
+  currency char(3) NOT NULL DEFAULT '',
+  token_hash char(64) NOT NULL DEFAULT '',
+  ip_hash char(64) NOT NULL DEFAULT '',
+  expires_utc datetime DEFAULT NULL,
+  created_utc datetime NOT NULL,
+  updated_utc datetime NOT NULL,
+  meta longtext NOT NULL,
+  PRIMARY KEY  (id),
+  UNIQUE KEY uuid (uuid),
+  KEY status_expires (status,expires_utc),
+  KEY gateway_ref (gateway_ref),
+  KEY event_status (event_id,status),
+  KEY email (email(100))
+) {$charset};"
+		);
+
+		dbDelta(
+			'CREATE TABLE ' . self::order_items() . " (
+  id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  order_id bigint(20) unsigned NOT NULL,
+  ticket_type_id bigint(20) unsigned NOT NULL,
+  quantity int(10) unsigned NOT NULL,
+  unit_price_minor int(10) unsigned NOT NULL,
+  PRIMARY KEY  (id),
+  KEY order_id (order_id)
+) {$charset};"
+		);
+
 		update_option( self::VERSION_OPTION, self::VERSION );
 	}
 
 	public static function uninstall(): void {
 		global $wpdb;
 		// phpcs:disable WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.NotPrepared
+		$wpdb->query( 'DROP TABLE IF EXISTS ' . self::order_items() );
+		$wpdb->query( 'DROP TABLE IF EXISTS ' . self::orders() );
 		$wpdb->query( 'DROP TABLE IF EXISTS ' . self::attendees() );
 		$wpdb->query( 'DROP TABLE IF EXISTS ' . self::ticket_types() );
 		// phpcs:enable
