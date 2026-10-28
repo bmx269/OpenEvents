@@ -8,6 +8,7 @@ import {
 	TextareaControl,
 } from '@wordpress/components';
 import { DateField } from './event-panel';
+import AttendeeFields from './attendee-fields';
 
 const newType = () => ( {
 	key: Math.random().toString( 36 ).slice( 2, 10 ),
@@ -19,6 +20,8 @@ const newType = () => ( {
 	sale_start: '',
 	sale_end: '',
 	waitlist: false,
+	attendee_details: 'none',
+	fields: [],
 } );
 
 /**
@@ -158,6 +161,17 @@ export default function TicketsPanel( { meta, setMeta, postId, config } ) {
 							onChange={ ( description ) =>
 								update( index, { description } )
 							}
+						/>
+						<h3 className="oe-editor-panel__subhead">
+							{ __(
+								'Questions for each ticket holder',
+								'openevents'
+							) }
+						</h3>
+						<AttendeeFields
+							fields={ type.fields || [] }
+							details={ type.attendee_details || 'none' }
+							onChange={ ( changes ) => update( index, changes ) }
 						/>
 						<Button
 							variant="link"

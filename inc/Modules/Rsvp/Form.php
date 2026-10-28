@@ -9,6 +9,7 @@ namespace OpenEvents\Modules\Rsvp;
 
 use OpenEvents\Attendance\Attendee;
 use OpenEvents\Attendance\Attendees;
+use OpenEvents\Attendance\Fields;
 use OpenEvents\Attendance\TicketType;
 use OpenEvents\Content\Event;
 
@@ -107,7 +108,13 @@ final class Form {
 			) . '</p>';
 		}
 
-		$html .= '<form class="oe-rsvp__form" method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" data-wp-on--submit="actions.submit" data-wp-bind--hidden="context.done">';
+		$can_go     = ! $type->is_full() || ( $lead && $going );
+		$pick_going = $lead ? $going : $can_go;
+		$form_state = array(
+			'quantity' => $people,
+			'going'    => $pick_going,
+		);
+		$html      .= '<form class="oe-rsvp__form" method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" data-wp-on--submit="actions.submit" data-wp-bind--hidden="context.done" data-wp-context="' . esc_attr( (string) wp_json_encode( $form_state ) ) . '">';
 		$html .= '<input type="hidden" name="action" value="openevents_rsvp">';
 		$html .= '<input type="hidden" name="event_id" value="' . esc_attr( (string) $event_id ) . '">';
 		$html .= '<input type="hidden" name="ts" value="' . esc_attr( Service::sign_timestamp() ) . '">';
@@ -126,18 +133,21 @@ final class Form {
 			for ( $n = 1; $n <= $max; $n++ ) {
 				$options .= sprintf( '<option value="%1$d"%2$s>%1$d</option>', $n, selected( $n, $people, false ) );
 			}
-			$html .= self::field( $id . '-qty', __( 'People', 'openevents' ), '<select id="' . $id . '-qty" name="quantity">' . $options . '</select>' );
+			$html .= self::field( $id . '-qty', __( 'People', 'openevents' ), '<select id="' . $id . '-qty" name="quantity" data-wp-on--change="actions.setQuantity">' . $options . '</select>' );
 		}
 		$html .= '</div>';
 
+		if ( Fields::asks( $type ) ) {
+			// Without "not going", the respondent's own answers can be required in the browser too.
+			$html .= self::people_inputs( $type, $max, $existing, $id, ! $type->setting( 'allow_not_going', true ) );
+		}
+
 		if ( $type->setting( 'allow_not_going', true ) ) {
 			// When full, only "not going" (or keeping an existing seat) is possible.
-			$can_go     = ! $type->is_full() || ( $lead && $going );
-			$pick_going = $lead ? $going : $can_go;
-			$html      .= '<fieldset class="oe-rsvp__status"><legend>' . esc_html__( 'Are you going?', 'openevents' ) . '</legend>';
-			$html      .= '<label><input type="radio" name="status" value="going"' . checked( $pick_going, true, false ) . disabled( ! $can_go, true, false ) . '> ' . esc_html__( 'Going', 'openevents' ) . '</label>';
-			$html      .= '<label><input type="radio" name="status" value="not_going"' . checked( ! $pick_going, true, false ) . '> ' . esc_html__( 'Not going', 'openevents' ) . '</label>';
-			$html      .= '</fieldset>';
+			$html .= '<fieldset class="oe-rsvp__status"><legend>' . esc_html__( 'Are you going?', 'openevents' ) . '</legend>';
+			$html .= '<label><input type="radio" name="status" value="going" data-wp-on--change="actions.setStatus"' . checked( $pick_going, true, false ) . disabled( ! $can_go, true, false ) . '> ' . esc_html__( 'Going', 'openevents' ) . '</label>';
+			$html .= '<label><input type="radio" name="status" value="not_going" data-wp-on--change="actions.setStatus"' . checked( ! $pick_going, true, false ) . '> ' . esc_html__( 'Not going', 'openevents' ) . '</label>';
+			$html .= '</fieldset>';
 		} else {
 			$html .= '<input type="hidden" name="status" value="going">';
 		}
@@ -177,6 +187,42 @@ final class Form {
 		return $html;
 	}
 
+	/**
+	 * Attendee questions: the respondent's answers, then a group per possible
+	 * guest (shown as the party size grows, or all at once without JavaScript).
+	 *
+	 * @param Attendee[] $existing The response being changed, if any.
+	 */
+	private static function people_inputs( TicketType $type, int $max, array $existing, string $id, bool $lead_required ): string {
+		$fields  = Fields::sanitize( $type->setting( 'fields', array() ) );
+		$details = Fields::sanitize_details( $type->setting( 'attendee_details', 'none' ) );
+		$lead    = $existing[0] ?? null;
+		$html    = '';
+		for ( $i = 0; $i < $max; $i++ ) {
+			$person = $existing[ $i ] ?? null;
+			$inner  = '';
+			if ( $i > 0 ) {
+				// Guests saved without their own details carry the respondent's email; leave those blank.
+				$own    = $person && $lead && $person->email !== $lead->email;
+				$inner .= Fields::contact_inputs(
+					$details,
+					'attendees[' . $i . ']',
+					$id . '-p' . $i,
+					array(
+						'name'  => $own ? $person->name : '',
+						'email' => $own ? $person->email : '',
+					),
+					false
+				);
+			}
+			$inner .= Fields::inputs( $fields, 'attendees[' . $i . '][fields]', $id . '-p' . $i, $person ? $person->fields : array(), 0 === $i && $lead_required );
+			if ( '' !== $inner ) {
+				$html .= Fields::group( 0 === $i ? __( 'Your details', 'openevents' ) : Fields::person_label( $i, true ), $inner, array( 'n' => $i + 1 ) );
+			}
+		}
+		return $html;
+	}
+
 	private static function field( string $id, string $label, string $control ): string {
 		return '<p class="oe-rsvp__field"><label for="' . esc_attr( $id ) . '">' . esc_html( $label ) . '</label>' . $control . '</p>';
 	}
@@ -203,6 +249,7 @@ final class Form {
 			'full'         => __( 'Sorry, there aren’t enough spots left.', 'openevents' ),
 			'closed'       => __( 'RSVPs for this event are closed.', 'openevents' ),
 			'rate_limited' => __( 'Too many responses from your connection. Please try again later.', 'openevents' ),
+			'fields'       => __( 'Please fill in the details for everyone you’re RSVPing for.', 'openevents' ),
 		);
 		return $messages[ $code ] ?? __( 'Something went wrong. Please check the form and try again.', 'openevents' );
 	}

@@ -160,6 +160,23 @@ update_post_meta( $concert, '_oe_tickets', $tickets_meta );
 OpenEvents\Modules\Tickets\Module::sync( $concert );
 $front = ( new OpenEvents\Attendance\TicketTypes() )->find( $concert, 'tkt-front' );
 ( new OpenEvents\Modules\Tickets\Checkout() )->place( $concert, array( 'name' => 'Alan Turing', 'email' => 'alan@example.com', 'tickets' => array( $front->id => 2 ), 'gateway' => 'manual', 'ts' => OpenEvents\Attendance\Guard::sign_timestamp( time() - 60 ), 'ip' => '192.0.2.40' ) );
+// Registration with attendee questions, as library programs use: each ticket
+// holder's name and email, an age range, and a privacy consent.
+$kids_questions = array(
+	array( 'type' => 'radio', 'label' => 'Age range', 'required' => true, 'options' => array( '3–5', '6–8', '9–12' ) ),
+	array( 'type' => 'tel', 'label' => 'Phone number', 'help' => 'For reminders on the day.' ),
+	array( 'type' => 'checkbox', 'label' => 'I understand this information is collected to run the program and send reminders.', 'required' => true ),
+);
+$puppet_day = current_datetime()->modify( '+9 days' )->format( 'Y-m-d' );
+$puppets    = $make( 'Puppet Show (registration)', "{$puppet_day} 10:30:00", "{$puppet_day} 11:15:00", array( '_oe_cost' => '0' ), 'Workshops' );
+update_post_meta(
+	$puppets,
+	'_oe_tickets',
+	array( array( 'key' => 'child', 'name' => 'Child', 'price' => '0', 'capacity' => 30, 'max_per_order' => 4, 'attendee_details' => 'required', 'fields' => $kids_questions ) )
+);
+OpenEvents\Modules\Tickets\Module::sync( $puppets );
+OpenEvents\Attendance\FieldSets::save( 'Kids programs', $kids_questions );
+
 remove_filter( 'pre_wp_mail', '__return_true' );
 
 update_option( 'openevents_sample_data', 1 );

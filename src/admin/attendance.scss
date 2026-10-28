@@ -1,3 +1,23 @@
 // DataViews styles, inlined (core does not ship them). Imported through Sass
 // because the package marks its CSS side-effect free for JS imports.
 @import "@wordpress/dataviews/build-style/style";
+
+// Attendee answers: long consent labels are clamped (full text in the CSV).
+.oe-answers {
+	max-width: 32rem;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+
+	li {
+		display: -webkit-box;
+		margin: 0 0 4px;
+		overflow: hidden;
+		-webkit-line-clamp: 2;
+		-webkit-box-orient: vertical;
+	}
+}
+
+.oe-answers__label {
+	font-weight: 600;
+}

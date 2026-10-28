@@ -80,7 +80,8 @@ Done in Phase 2 groundwork:
 
 ## Phase 5: Ticketing extras
 
-- Attendee info fields per ticket type, coupons, shared capacity across ticket types.
+- ✅ Attendee fields per ticket type and RSVP (moved up for WVML, done 2026-10-28; tests in `AttendeeFieldsTest.php`, `attendee-fields.spec.js`): ten field types, per-person name and email, saved question sets, answers in the attendee list, REST, and CSV.
+- Coupons, shared capacity across ticket types.
 - WooCommerce gateway adapter.
 - Check-in screen for door staff (mobile-friendly, works offline-first).
 

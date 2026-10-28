@@ -29,7 +29,14 @@ export default function AttendeesScreen( { root } ) {
 		perPage: 50,
 		search: '',
 		sort: { field: 'created_utc', direction: 'desc' },
-		fields: [ 'email', 'event', 'status', 'checked_in', 'created_utc' ],
+		fields: [
+			'email',
+			'event',
+			'status',
+			'checked_in',
+			'answers',
+			'created_utc',
+		],
 		titleField: 'name',
 		filters: initialEvent
 			? [ { field: 'event', operator: 'is', value: initialEvent } ]
@@ -135,6 +142,30 @@ export default function AttendeesScreen( { root } ) {
 			{
 				id: 'code',
 				label: __( 'Check-in code', 'openevents' ),
+				enableSorting: false,
+			},
+			{
+				id: 'answers',
+				label: __( 'Details', 'openevents' ),
+				getValue: ( { item } ) =>
+					( item.answers || [] )
+						.map( ( a ) => `${ a.label }: ${ a.value }` )
+						.join( '; ' ),
+				render: ( { item } ) =>
+					item.answers?.length ? (
+						<ul className="oe-answers">
+							{ item.answers.map( ( a ) => (
+								<li key={ a.key }>
+									<span className="oe-answers__label">
+										{ a.label }
+									</span>{ ' ' }
+									{ a.value }
+								</li>
+							) ) }
+						</ul>
+					) : (
+						'—'
+					),
 				enableSorting: false,
 			},
 			{

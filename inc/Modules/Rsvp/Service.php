@@ -9,6 +9,7 @@ namespace OpenEvents\Modules\Rsvp;
 
 use OpenEvents\Attendance\Attendee;
 use OpenEvents\Attendance\Attendees;
+use OpenEvents\Attendance\Fields;
 use OpenEvents\Attendance\TicketType;
 use OpenEvents\Attendance\TicketTypes;
 use OpenEvents\Content\Event;
@@ -50,6 +51,8 @@ final class Service {
 			'allow_not_going'  => true,
 			'show_count'       => true,
 			'waitlist'         => false, // When full, let people queue for a spot.
+			'attendee_details' => 'none',  // Each guest's own name and email: none, optional, required.
+			'fields'           => array(), // Questions for each person; see Attendance\Fields.
 		);
 	}
 
@@ -100,6 +103,8 @@ final class Service {
 					'allow_not_going'  => (bool) $config['allow_not_going'],
 					'show_count'       => (bool) $config['show_count'],
 					'waitlist'         => (bool) $config['waitlist'],
+					'attendee_details' => \OpenEvents\Attendance\Fields::sanitize_details( $config['attendee_details'] ),
+					'fields'           => \OpenEvents\Attendance\Fields::sanitize( $config['fields'] ),
 				),
 			)
 		);
@@ -191,6 +196,24 @@ final class Service {
 			return Result::error( 'closed', __( 'RSVPs for this event are closed.', 'openevents' ) );
 		}
 
+		// Attendee questions, for each person going. Checked before any seat is held.
+		$answers = array( 'people' => array() );
+		if ( Attendee::GOING === $status && Fields::asks( $type ) ) {
+			$answers = Fields::people(
+				$type,
+				$input['attendees'] ?? array(),
+				$qty,
+				array(
+					'name'  => $name,
+					'email' => $email,
+				),
+				true
+			);
+			if ( $answers['error'] ) {
+				return Result::error( 'fields', $answers['error'] );
+			}
+		}
+
 		$ip_hash = self::hash_ip( (string) ( $input['ip'] ?? '' ) );
 		if ( ! $group && $this->attendees->count_recent_by_ip( $ip_hash, self::RATE_SPAN ) >= self::RATE ) {
 			return Result::error( 'rate_limited', __( 'Too many responses from your connection. Please try again later.', 'openevents' ) );
@@ -245,7 +268,9 @@ final class Service {
 				'ip_hash'        => $ip_hash,
 			),
 			$seats_after > 0 ? $seats_after : 1,
-			$group
+			$group,
+			false,
+			$answers['people']
 		);
 
 		$people = $this->attendees->group( $group );

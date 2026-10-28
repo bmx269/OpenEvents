@@ -25,9 +25,11 @@ final class Attendee {
 		public readonly string $security_code,
 		public readonly ?string $checked_in_utc,
 		public readonly string $created_utc,
+		public readonly array $fields = array(),
 	) {}
 
 	public static function from_row( object $row ): Attendee {
+		$fields = isset( $row->fields ) ? json_decode( (string) $row->fields, true ) : array();
 		return new self(
 			(int) $row->id,
 			(string) $row->uuid,
@@ -40,6 +42,7 @@ final class Attendee {
 			(string) $row->security_code,
 			$row->checked_in_utc ?: null,
 			(string) $row->created_utc,
+			is_array( $fields ) ? $fields : array(),
 		);
 	}
 
@@ -58,6 +61,7 @@ final class Attendee {
 			'status'         => $this->status,
 			'checked_in'     => null !== $this->checked_in_utc,
 			'checked_in_utc' => $this->checked_in_utc,
+			'fields'         => (object) $this->fields,
 			'created_utc'    => $this->created_utc,
 		);
 	}

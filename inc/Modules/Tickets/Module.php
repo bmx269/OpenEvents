@@ -46,6 +46,7 @@ final class Module extends AbstractModule {
 	}
 
 	public function boot(): void {
+		\OpenEvents\Attendance\FieldSets::register();
 		Schema::maybe_install();
 		\OpenEvents\Attendance\WaitlistService::register();
 
@@ -127,6 +128,11 @@ final class Module extends AbstractModule {
 							'sale_start'    => array( 'type' => 'string' ),
 							'sale_end'      => array( 'type' => 'string' ),
 							'waitlist'      => array( 'type' => 'boolean' ),
+							'attendee_details' => array(
+								'type' => 'string',
+								'enum' => \OpenEvents\Attendance\Fields::DETAILS,
+							),
+							'fields'        => \OpenEvents\Attendance\Fields::schema(),
 						),
 						'additionalProperties' => false,
 					),
@@ -168,6 +174,8 @@ final class Module extends AbstractModule {
 				'sale_start'    => Meta::sanitize_datetime( $type['sale_start'] ?? '' ),
 				'sale_end'      => Meta::sanitize_datetime( $type['sale_end'] ?? '' ),
 				'waitlist'      => ! empty( $type['waitlist'] ),
+				'attendee_details' => \OpenEvents\Attendance\Fields::sanitize_details( $type['attendee_details'] ?? 'none' ),
+				'fields'        => \OpenEvents\Attendance\Fields::sanitize( $type['fields'] ?? array() ),
 			);
 		}
 		return $out;
@@ -227,6 +235,8 @@ final class Module extends AbstractModule {
 						'max_per_order'  => (int) $type['max_per_order'],
 						'sale_start_utc' => (string) $to_utc( (string) ( $type['sale_start'] ?? '' ) ),
 						'waitlist'       => ! empty( $type['waitlist'] ),
+						'attendee_details' => \OpenEvents\Attendance\Fields::sanitize_details( $type['attendee_details'] ?? 'none' ),
+						'fields'         => \OpenEvents\Attendance\Fields::sanitize( $type['fields'] ?? array() ),
 					),
 				)
 			);
@@ -283,6 +293,7 @@ final class Module extends AbstractModule {
 				'name'    => wp_unslash( $_POST['name'] ?? '' ),
 				'email'   => wp_unslash( $_POST['email'] ?? '' ),
 				'tickets' => array_map( 'absint', (array) wp_unslash( $_POST['tickets'] ?? array() ) ),
+				'attendees' => wp_unslash( (array) ( $_POST['attendees'] ?? array() ) ),
 				'gateway' => sanitize_key( wp_unslash( $_POST['gateway'] ?? '' ) ),
 				'waitlist_token' => sanitize_text_field( wp_unslash( $_POST['waitlist_token'] ?? '' ) ),
 				'website' => wp_unslash( $_POST['website'] ?? '' ),

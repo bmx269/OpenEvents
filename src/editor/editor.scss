@@ -83,3 +83,19 @@
 	color: #757575;
 	font-size: 12px;
 }
+
+.oe-editor-panel__question {
+	margin: 0;
+	padding: 12px;
+	border: 1px solid #ddd;
+	border-radius: 4px;
+
+	legend {
+		max-width: 100%;
+		padding: 0 4px;
+		overflow: hidden;
+		font-weight: 600;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+}
