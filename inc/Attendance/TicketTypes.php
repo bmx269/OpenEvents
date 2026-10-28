@@ -34,7 +34,13 @@ final class TicketTypes {
 		}
 
 		if ( $existing ) {
+			$before = $this->get( (int) $existing );
 			$wpdb->update( $table, $data, array( 'id' => (int) $existing ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+			$after = $this->get( (int) $existing );
+			// More room (capacity raised or made unlimited): let the waitlist fill it.
+			if ( $before && $after && 'active' === $after->status && ( null === $after->capacity ? null !== $before->capacity : ( null !== $before->capacity && $after->capacity > $before->capacity ) ) ) {
+				do_action( 'openevents/seats_released', (int) $existing, 0 );
+			}
 			return (int) $existing;
 		}
 		$wpdb->insert( // phpcs:ignore WordPress.DB.DirectDatabaseQuery
@@ -102,6 +108,15 @@ final class TicketTypes {
 		$table = Schema::ticket_types();
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		$wpdb->query( $wpdb->prepare( "UPDATE {$table} SET sold = CASE WHEN sold >= %d THEN sold - %d ELSE 0 END WHERE id = %d", $quantity, $quantity, $id ) );
+
+		/**
+		 * Fires when seats are given back (cancellation, refund, expired hold).
+		 * The waitlist listens here to fill them.
+		 *
+		 * @param int $id       Ticket type id.
+		 * @param int $quantity Seats released.
+		 */
+		do_action( 'openevents/seats_released', $id, $quantity );
 	}
 
 	/**

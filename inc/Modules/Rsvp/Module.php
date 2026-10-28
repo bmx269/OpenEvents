@@ -45,6 +45,7 @@ final class Module extends AbstractModule {
 
 	public function boot(): void {
 		Schema::maybe_install();
+		\OpenEvents\Attendance\WaitlistService::register();
 
 		add_filter( 'openevents/meta_fields', array( $this, 'meta_fields' ), 10, 2 );
 		add_action( 'added_post_meta', array( $this, 'on_meta_change' ), 10, 3 );
@@ -98,6 +99,7 @@ final class Module extends AbstractModule {
 						'deadline'         => array( 'type' => 'string' ),
 						'allow_not_going'  => array( 'type' => 'boolean' ),
 						'show_count'       => array( 'type' => 'boolean' ),
+						'waitlist'         => array( 'type' => 'boolean' ),
 					),
 					'additionalProperties' => false,
 				),
@@ -120,6 +122,7 @@ final class Module extends AbstractModule {
 			'deadline'         => \OpenEvents\Content\Meta::sanitize_datetime( $value['deadline'] ?? '' ),
 			'allow_not_going'  => (bool) ( $value['allow_not_going'] ?? $defaults['allow_not_going'] ),
 			'show_count'       => (bool) ( $value['show_count'] ?? $defaults['show_count'] ),
+			'waitlist'         => ! empty( $value['waitlist'] ),
 		);
 	}
 

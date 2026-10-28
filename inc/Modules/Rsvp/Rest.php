@@ -51,7 +51,7 @@ final class Rest {
 						'email'    => array( 'type' => 'string' ),
 						'status'   => array(
 							'type' => 'string',
-							'enum' => array( 'going', 'not_going' ),
+							'enum' => array( 'going', 'not_going', 'waitlist' ),
 						),
 						'quantity' => array(
 							'type'    => 'integer',

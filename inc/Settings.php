@@ -36,6 +36,7 @@ final class Settings {
 			'default_view'             => 'month',
 			'click_action'             => 'page', // "page" or "popup".
 			'currency'                 => 'USD',  // ISO 4217, for ticket prices.
+			'waitlist_offer_hours'     => 24,     // How long held waitlist tickets wait to be claimed.
 			'date_format'              => '',
 			'time_format'              => '',
 			'remove_data_on_uninstall' => false,
@@ -148,6 +149,7 @@ final class Settings {
 			'per_page'                 => max( 1, min( 100, absint( $input['per_page'] ?? $defaults['per_page'] ) ) ),
 			'default_view'             => in_array( $view, array( 'month', 'list' ), true ) ? $view : $defaults['default_view'],
 			'click_action'             => 'popup' === ( $input['click_action'] ?? '' ) ? 'popup' : 'page',
+			'waitlist_offer_hours'     => max( 1, min( 168, absint( $input['waitlist_offer_hours'] ?? $defaults['waitlist_offer_hours'] ) ) ),
 			'currency'                 => preg_match( '/^[A-Z]{3}$/', strtoupper( (string) ( $input['currency'] ?? '' ) ) ) ? strtoupper( (string) $input['currency'] ) : $defaults['currency'],
 			'date_format'              => sanitize_text_field( (string) ( $input['date_format'] ?? '' ) ),
 			'time_format'              => sanitize_text_field( (string) ( $input['time_format'] ?? '' ) ),
