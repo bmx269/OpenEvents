@@ -161,7 +161,7 @@ final class Settings {
 	 * @return string[]
 	 */
 	public function enabled_modules(): array {
-		$stored = get_option( self::MODULES_OPTION, array( 'ical' ) );
+		$stored = get_option( self::MODULES_OPTION, array( 'ical', 'recurrence' ) );
 		return is_array( $stored ) ? array_values( array_filter( $stored, 'is_string' ) ) : array();
 	}
 }

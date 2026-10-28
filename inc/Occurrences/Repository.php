@@ -247,6 +247,33 @@ final class Repository {
 	}
 
 	/**
+	 * The event's first occurrence starting on a local date ("Y-m-d"), if any.
+	 */
+	public function on_date( int $event_id, string $date ): ?Occurrence {
+		global $wpdb;
+		Sync::instance()->flush();
+		$table = Installer::occurrences_table();
+		$row   = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table} WHERE event_id = %d AND start_local BETWEEN %s AND %s ORDER BY start_local LIMIT 1", $event_id, $date . ' 00:00:00', $date . ' 23:59:59' ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery
+		return $row ? Occurrence::from_row( $row ) : null;
+	}
+
+	/**
+	 * The occurrence a visitor asked for: the date in ?oe_occurrence= (links to one
+	 * date of a repeating event carry it), else the next one (see for_event()).
+	 */
+	public function requested( int $event_id ): ?Occurrence {
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only display state.
+		$date = sanitize_text_field( wp_unslash( $_GET['oe_occurrence'] ?? '' ) );
+		if ( preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date ) ) {
+			$occurrence = $this->on_date( $event_id, $date );
+			if ( $occurrence ) {
+				return $occurrence;
+			}
+		}
+		return $this->for_event( $event_id );
+	}
+
+	/**
 	 * Next occurrence that has not ended, else the most recent one.
 	 */
 	public function for_event( int $event_id ): ?Occurrence {

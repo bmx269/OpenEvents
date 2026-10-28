@@ -31,7 +31,7 @@ final class EventDetails {
 		if ( ! $event ) {
 			return '';
 		}
-		$occurrence = openevents()->occurrences()->for_event( $post_id );
+		$occurrence = openevents()->occurrences()->requested( $post_id );
 		if ( ! $occurrence ) {
 			return '';
 		}

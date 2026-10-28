@@ -18,7 +18,7 @@ final class Meta {
 	public const DATETIME_FORMAT = 'Y-m-d H:i:s';
 
 	/** Keys whose change requires regenerating occurrences. */
-	public const SCHEDULE_KEYS = array( '_oe_start', '_oe_end', '_oe_timezone', '_oe_all_day', '_oe_hide_from_listings' );
+	public const SCHEDULE_KEYS = array( '_oe_start', '_oe_end', '_oe_timezone', '_oe_all_day', '_oe_hide_from_listings', '_oe_recurrence' );
 
 	public function register(): void {
 		// After every post type (ours and other plugins') is registered, so revision support can be checked.

@@ -24,7 +24,7 @@ require_once $openevents_tests_dir . '/includes/functions.php';
 
 // Enable every bundled module so their tables are created at boot, outside the
 // per-test transactions.
-tests_add_filter( 'pre_option_openevents_modules', static fn() => array( 'ical', 'rsvp', 'tickets' ) );
+tests_add_filter( 'pre_option_openevents_modules', static fn() => array( 'ical', 'recurrence', 'rsvp', 'tickets' ) );
 
 tests_add_filter(
 	'muplugins_loaded',

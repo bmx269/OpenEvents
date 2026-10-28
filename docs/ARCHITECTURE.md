@@ -89,7 +89,7 @@ post_type, status                            denormalised from wp_posts so listi
 KEY (status, start_local)  KEY (status, end_utc)  KEY (status, start_utc)
 ```
 
-- **Recurrence is a generator.** The recurrence module will hook `openevents/occurrences/generate` and return N rows. Views, REST, iCal, and attendees don't change.
+- **Recurrence is a generator.** The recurrence module hooks `openevents/occurrences/generate` and returns one row per date (see [Recurrence module](#recurrence-module)). Views, REST, iCal, and attendees don't change.
 - **Stable IDs.** `Sync` diffs rows by `sequence` and updates in place, so moving an event's time keeps its occurrence ID (verified: id 5012 survives a move). Attendees will reference occurrence IDs.
 - **Derived, never canonical.** The table can always be rebuilt from posts and meta (`wp openevents rebuild`), so a failed migration never loses data. That fixes a major TEC pain point.
 
@@ -156,6 +156,19 @@ Patterns used throughout:
 - Admin: Events → Attendees (DataViews, server-paged) with check-in, cancel, and streamed CSV export protected against spreadsheet formula injection.
 - Hooks: `openevents/rsvp/responded`, `openevents/rsvp/cancelled`, `openevents/rsvp/email`, `openevents/attendees/capability`, `openevents/client_ip`.
 
+## Recurrence module
+
+- **Storage:** `_oe_recurrence` = `{ rrule, rdates, exdates }`, the three parts of an iCal VEVENT. `rrule` is a standard RFC 5545 string, so rules from iCal feeds, Google Calendar, and TEC map over as text.
+  - Supported: FREQ `DAILY`–`YEARLY`, `INTERVAL`, `COUNT`, `UNTIL`, `BYDAY` (with ordinals: `2TU`, `-1FR`), `BYMONTHDAY`, `BYMONTH`, `BYSETPOS`, `WKST`. Other parts are rejected (REST returns 400) rather than expanded wrongly.
+  - `UNTIL` may be a date (inclusive, event timezone), a local date-time, or UTC with `Z`.
+  - `rdates` are extra local start times; `exdates` are skipped local dates. The event's own `_oe_start` is always the first date, as DTSTART is in iCal.
+- **Expansion** (`Rule::starts()`, `Recurrence::starts()`) works on calendar dates and then applies the start's wall-clock time in the event timezone. A 7pm event stays at 7pm across DST, and every date keeps the event's wall-clock length.
+- **Sequences** are stable per date: the first date is 0 (as for a single event), and others are `day_number × 8 + slot`. Skipping, adding, or retiming dates never renumbers the others, so occurrence ids held by attendees and links survive.
+- **Horizon:** dates are written up to two years past today or the start, whichever is later (`openevents/recurrence/horizon`). A daily cron (`openevents_recurrence_extend`) re-syncs repeating events, which only writes rows that changed.
+- **Links to one date** add `?oe_occurrence=Y-m-d` (`openevents_occurrence_url()`); the first date uses the plain permalink, which stays canonical. Event details, block bindings, and the `.ics` download read the requested date (`Repository::requested()`). Details add a "Repeats" row with the rule in words (`Describer`) and the next dates.
+- **Editing scopes** (`Series`): skip a date; detach one date into its own event; split the series so a new event carries the rule from that date on (COUNT carries over as the dates still to come). Copies record `_oe_series_parent` and fire `openevents/recurrence/copied`.
+- **REST:** `POST /openevents/v1/recurrence/preview` (dates and description without saving, used by the editor) and `POST /openevents/v1/events/{id}/occurrences/{occurrence}/{skip|detach|split}`.
+
 ## Module system
 
 ```php
@@ -212,14 +225,15 @@ Extend `AbstractModule` and register through the `openevents/modules` filter. En
 
 | Surface | What add-ons do with it |
 | --- | --- |
-| **PHP API** (`inc/functions.php`) | `openevents()`, `openevents_get_event()`, `openevents_is_event()`, `openevents_get_occurrences()`, `openevents_get_upcoming()`, `openevents_format_range()`, `openevents_calendar_url()`, `openevents_event_post_types()`, `openevents_is_module_enabled()` |
+| **PHP API** (`inc/functions.php`) | `openevents()`, `openevents_get_event()`, `openevents_is_event()`, `openevents_get_occurrences()`, `openevents_get_upcoming()`, `openevents_format_range()`, `openevents_calendar_url()`, `openevents_occurrence_url()`, `openevents_event_post_types()`, `openevents_is_module_enabled()` |
 | **Modules** | `openevents/modules` |
 | **Meta** | `openevents/meta_fields` (registered with REST and sanitisation) |
 | **Occurrences** | `…/occurrences/generate`, `…/occurrences/synced`, `…/occurrences/query_args`; `Sync::suspend()`, `resume()`, `rebuild_all()` |
+| **Recurrence** | `…/recurrence/horizon`, `…/recurrence/copied` |
 | **Views** | `…/calendar/views` (register a renderer), `…/calendar/links`, `…/calendar/cache` |
 | **Event details** | `…/event_details/rows`, `…/event_details/links`, `…/event_details/sections` (RSVP form, tickets) |
 | **Formatting** | `…/format_range` |
-| **REST** | `GET /openevents/v1/occurrences`; `…/rest/occurrence` filter; core `/wp/v2/events`, `/venues`, `/organizers`, `/event-categories` with meta |
+| **REST** | `GET /openevents/v1/occurrences`; `POST …/recurrence/preview`; `POST …/events/{id}/occurrences/{occurrence}/{skip,detach,split}`; `…/rest/occurrence` filter; core `/wp/v2/events`, `/venues`, `/organizers`, `/event-categories` with meta |
 | **Abilities API** | `openevents/list-events` (read-only), `openevents/create-event`, exposed at `/wp-abilities/v1` for AI and automation clients |
 | **Block Bindings** | source `openevents/event` with keys `date`, `start_date`, `start_time`, `end_date`, `end_time`, `venue`, `venue_address`, `venue_url`, `cost`, `website`. Core Paragraph, Heading, and Button blocks can show event data. `…/block_bindings/value` filter for custom keys. |
 | **Editor SlotFill** | `OpenEventsEventPanel`, `OpenEventsVenuePanel`, `OpenEventsOrganizerPanel`; the fill receives `{ meta, setMeta, postType }` |
