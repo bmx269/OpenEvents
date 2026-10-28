@@ -42,6 +42,8 @@ Priority order, set 2026-10-27. Everything here is free: no paid tier, no platfo
    - Scheduled sync. Events are matched by UID, so updates replace rather than duplicate, and removed events are unpublished. Each feed can map to a category.
    - RRULE/EXDATE expansion through `openevents/occurrences/generate`. This is the first piece of the recurrence module.
 
+- ✅ **Waitlists** for RSVPs (automatic promotion) and ticket types (held, time-limited offers); tests in `WaitlistTest.php`, `WaitlistFormsTest.php`, `waitlist.spec.js`.
+
 Requested 2026-10-27 (all done):
 - ✅ **Category colours on event details**: coloured category badges in the details panel (they currently show only on calendars).
 - ✅ **Click behaviour**: a setting (site default, overridable per Calendar block) to open an event's page or an accessible popup (`<dialog>`) with date, venue, summary, and a link. Links stay real links without JavaScript.
@@ -78,7 +80,7 @@ Done in Phase 2 groundwork:
 
 ## Phase 5: Ticketing extras
 
-- Attendee info fields per ticket type, waitlists, coupons, shared capacity across ticket types.
+- Attendee info fields per ticket type, coupons, shared capacity across ticket types.
 - WooCommerce gateway adapter.
 - Check-in screen for door staff (mobile-friendly, works offline-first).
 

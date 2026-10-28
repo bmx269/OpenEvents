@@ -30,7 +30,12 @@ const PAGES = [
 	[ 'past events', '/events/?oe_view=list&oe_past=1', [ '.oe-calendar' ] ],
 	[ 'event details', '/events/jazz-night/', [ '.oe-details' ] ],
 	[ 'RSVP form', '/events/next-month-gala/', [ '.oe-details' ] ],
-	[ 'ticket checkout', '/events/spring-concert/', [ '.oe-details' ] ],
+	[
+		'ticket checkout and waitlist',
+		'/events/spring-concert/',
+		[ '.oe-details' ],
+	],
+	[ 'RSVP waitlist', '/events/author-talk-full/', [ '.oe-details' ] ],
 	[ 'existing post as event', '/blog-post-book-launch/', [ '.oe-details' ] ],
 ];
 
@@ -79,6 +84,16 @@ test.describe( 'Accessibility (WCAG 2.2 AA)', () => {
 		await page.getByRole( 'tab', { name: 'Tickets' } ).click();
 		await page.waitForSelector( 'text=Card (Stripe)' );
 		await scan( page, [ '#openevents-admin' ] );
+	} );
+
+	test( 'admin: waitlist', async ( { page } ) => {
+		await page.goto(
+			'/wp-admin/edit.php?post_type=oe_event&page=openevents-waitlist'
+		);
+		await page.waitForSelector(
+			'.dataviews-view-table, .dataviews-no-results'
+		);
+		await scan( page, [ '#openevents-attendance' ] );
 	} );
 
 	test( 'admin: attendees', async ( { page } ) => {

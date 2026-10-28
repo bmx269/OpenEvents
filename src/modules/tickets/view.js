@@ -15,6 +15,64 @@ const nextFrame = () =>
 
 store( 'openevents/tickets', {
 	actions: {
+		/** Leaves the waitlist (or releases held tickets) with the private token. */
+		leaveWaitlist: withSyncEvent( function* ( event ) {
+			event.preventDefault();
+			const context = getContext();
+			const form = event.target;
+			context.busy = true;
+			try {
+				const response = yield window.fetch( context.leaveEndpoint, {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify( {
+						token: new window.FormData( form ).get( 'token' ),
+					} ),
+				} );
+				const result = yield response.json();
+				context.message = result.message || context.fallbackError;
+				context.error = ! result.ok;
+				if ( result.ok ) {
+					form.hidden = true;
+				}
+			} catch ( e ) {
+				context.message = context.fallbackError;
+				context.error = true;
+			}
+			context.busy = false;
+			yield nextFrame();
+			form.closest( 'section' )?.querySelector( '[aria-live]' )?.focus();
+		} ),
+
+		/** Joins a sold-out ticket type's waitlist. */
+		joinWaitlist: withSyncEvent( function* ( event ) {
+			event.preventDefault();
+			const context = getContext();
+			const form = event.target;
+			const data = Object.fromEntries( new window.FormData( form ) );
+			data.quantity = Number( data.quantity || 1 );
+			data.ticket_type_id = Number( data.ticket_type_id );
+			context.busy = true;
+			try {
+				const response = yield window.fetch( context.waitlistEndpoint, {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify( data ),
+				} );
+				const result = yield response.json();
+				context.message = result.message || context.fallbackError;
+				context.error = ! result.ok;
+				if ( result.ok ) {
+					form.hidden = true;
+				}
+			} catch ( e ) {
+				context.message = context.fallbackError;
+				context.error = true;
+			}
+			context.busy = false;
+			yield nextFrame();
+			form.closest( 'section' )?.querySelector( '[aria-live]' )?.focus();
+		} ),
 		recalculate() {
 			const context = getContext();
 			const { ref } = getElement();

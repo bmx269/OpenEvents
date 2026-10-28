@@ -1,6 +1,7 @@
 import { __, sprintf } from '@wordpress/i18n';
 import {
 	Button,
+	ToggleControl,
 	ExternalLink,
 	Flex,
 	TextControl,
@@ -17,6 +18,7 @@ const newType = () => ( {
 	max_per_order: 10,
 	sale_start: '',
 	sale_end: '',
+	waitlist: false,
 } );
 
 /**
@@ -132,6 +134,21 @@ export default function TicketsPanel( { meta, setMeta, postId, config } ) {
 							}
 							onClear={ () => update( index, { sale_end: '' } ) }
 							is12Hour={ config.timeFormat12h }
+						/>
+						<ToggleControl
+							__nextHasNoMarginBottom
+							label={ __(
+								'Waitlist when sold out',
+								'openevents'
+							) }
+							help={ __(
+								'Freed tickets are held for the next person, who gets a link to buy them.',
+								'openevents'
+							) }
+							checked={ !! type.waitlist }
+							onChange={ ( value ) =>
+								update( index, { waitlist: value } )
+							}
 						/>
 						<TextareaControl
 							__nextHasNoMarginBottom

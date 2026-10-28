@@ -14,6 +14,34 @@ const nextFrame = () =>
 
 store( 'openevents/rsvp', {
 	actions: {
+		/** Leaves the waitlist (or releases held tickets) with the private token. */
+		leaveWaitlist: withSyncEvent( function* ( event ) {
+			event.preventDefault();
+			const context = getContext();
+			const form = event.target;
+			context.busy = true;
+			try {
+				const response = yield window.fetch( context.leaveEndpoint, {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify( {
+						token: new window.FormData( form ).get( 'token' ),
+					} ),
+				} );
+				const result = yield response.json();
+				context.message = result.message || context.fallbackError;
+				context.error = ! result.ok;
+				if ( result.ok ) {
+					form.hidden = true;
+				}
+			} catch ( e ) {
+				context.message = context.fallbackError;
+				context.error = true;
+			}
+			context.busy = false;
+			yield nextFrame();
+			form.closest( 'section' )?.querySelector( '[aria-live]' )?.focus();
+		} ),
 		submit: withSyncEvent( function* ( event ) {
 			event.preventDefault();
 			const context = getContext();

@@ -227,6 +227,23 @@ Extend `AbstractModule` and register through the `openevents/modules` filter. En
 | **WP-CLI** | `wp openevents rebuild`, `stats`, `generate` |
 | **Lifecycle** | `openevents/loaded`, `…/modules_booted`, `…/uninstall` |
 
+## Waitlist (RSVP and tickets)
+
+Opt-in per RSVP (`waitlist` in `_oe_rsvp`) and per ticket type (`waitlist` in `_oe_tickets`). Entries live in `oe_waitlist` (`waiting → offered → claimed`, or `expired` / `left`), and the queue is ordered by id.
+
+- `TicketTypes::release()` and capacity increases fire `openevents/seats_released`. `WaitlistService::process()` then fills the freed seats:
+  - **RSVP** promotes the next entry that fits straight to "going", creating attendee rows and sending the usual change/cancel link.
+  - **Tickets** hold the seats (they're counted in `sold`) and email a claim link valid for `waitlist_offer_hours` (default 24). Checkout with `waitlist_token` buys exactly the held tickets without reserving them again. Unclaimed offers expire through a 5-minute cron and pass down the queue, and so do abandoned claim checkouts, through the normal order release.
+- **Fairness:** first come, first served. An entry larger than the free seats keeps its place while smaller ones behind it are served.
+- **Safety:** each entry moves with a conditional `UPDATE` before seats are taken with the atomic reserve, and is handed back if the reserve fails. A per-request re-entrancy guard stops expiry-triggered releases from recursing.
+- **Privacy and spam:** joining again with an email already on the list only emails a fresh private link, as with RSVPs. The forms are cache-safe: honeypot, signed timestamp, and rate limit.
+- **Surfaces:**
+  - The RSVP form switches to "Join the waitlist" when full, and the count shows how many are waiting.
+  - The tickets section offers a waitlist form for sold-out types and a claim view behind the private link.
+  - REST: `POST /events/{id}/waitlist`, `POST /waitlist/leave`, `GET /waitlist`, and `POST /waitlist/{id}` (remove).
+  - Events → Waitlist (DataViews).
+- **Hooks:** `openevents/waitlist/joined`, `promoted`, `offered`, `openevents/waitlist/email`, `openevents/seats_released`.
+
 ## Tickets module
 
 Built on the same attendance tables as RSVP, plus orders:

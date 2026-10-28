@@ -14,7 +14,7 @@ Open-source events for WordPress, built to replace The Events Calendar and its p
 - **Fast at library scale.** Listings read one indexed table and batch-load everything they render. With 5,000 events, a month view costs 2 more queries than a plain page.
 - **Works without JavaScript.** Calendar views are server-rendered links. The Interactivity API upgrades them to in-place navigation.
 - **Theme-friendly.** Blocks inherit your theme.json, the templates are editable in the Site Editor, and classic themes get fallbacks.
-- **Free RSVP and tickets.** Capacity limits, guests, pay at the door, Stripe, or PayPal, with no platform fees. See [docs/payments.md](docs/payments.md).
+- **Free RSVP and tickets.** Capacity limits, guests, waitlists, pay at the door, Stripe, or PayPal, with no platform fees. See [docs/payments.md](docs/payments.md).
 - **Open APIs.** PHP functions, hooks, a module registry, REST, the Abilities API, Block Bindings, and editor SlotFills.
 
 Requires WordPress 7.1+ and PHP 8.2+.

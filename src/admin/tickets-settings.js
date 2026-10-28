@@ -169,6 +169,25 @@ export default function TicketsSettings( { settings, update } ) {
 				value={ settings.currency || 'USD' }
 				onValueChange={ ( currency ) => update( { currency } ) }
 			/>
+			<InputControl
+				type="number"
+				min={ 1 }
+				max={ 168 }
+				label={ __( 'Waitlist hold (hours)', 'openevents' ) }
+				description={ __(
+					'How long freed tickets are held for the next person on a waitlist before passing down the line. Save changes to apply.',
+					'openevents'
+				) }
+				value={ String( settings.waitlist_offer_hours ?? 24 ) }
+				onValueChange={ ( value ) =>
+					update( {
+						waitlist_offer_hours: Math.min(
+							168,
+							Math.max( 1, Number( value ) || 24 )
+						),
+					} )
+				}
+			/>
 			<Text variant="heading-sm">
 				{ __( 'Payment methods', 'openevents' ) }
 			</Text>

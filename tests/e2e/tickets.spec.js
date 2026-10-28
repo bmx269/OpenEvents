@@ -7,7 +7,8 @@ test.describe( 'Tickets', () => {
 		page,
 	} ) => {
 		await page.goto( '/events/spring-concert/' );
-		const tickets = page.locator( '.oe-tickets' );
+		// The checkout form (the page also has a waitlist form for sold-out types).
+		const tickets = page.locator( '.oe-tickets__form:not(.oe-waitlist)' );
 
 		await tickets.getByLabel( 'Adult' ).selectOption( '2' );
 		await tickets.getByLabel( 'Under 12' ).selectOption( '1' );
@@ -35,7 +36,8 @@ test.describe( 'Tickets', () => {
 		} );
 		const page = await context.newPage();
 		await page.goto( '/events/spring-concert/' );
-		const tickets = page.locator( '.oe-tickets' );
+		// The checkout form (the page also has a waitlist form for sold-out types).
+		const tickets = page.locator( '.oe-tickets__form:not(.oe-waitlist)' );
 		await tickets.getByLabel( 'Student' ).selectOption( '1' );
 		await tickets.getByLabel( 'Name' ).fill( 'No Script' );
 		await tickets

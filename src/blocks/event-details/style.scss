@@ -408,3 +408,49 @@
 		overflow: hidden;
 	}
 }
+
+// Waitlist (RSVP and tickets).
+.oe-waitlist {
+	margin-block-start: var(--oe-gap);
+
+	h4 {
+		margin: 0 0 0.25em;
+	}
+
+	&__intro {
+		margin: 0 0 0.75em;
+		color: var(--oe-muted);
+	}
+}
+
+.oe-waitlist__entry {
+	margin: 0 0 1em;
+	padding: 0.6em 0.8em;
+	border-inline-start: 4px solid var(--oe-accent);
+	background: var(--oe-surface);
+
+	p {
+		margin: 0 0 0.5em;
+	}
+
+	&:focus-visible {
+		outline: 2px solid var(--oe-accent);
+		outline-offset: 2px;
+	}
+}
+
+.oe-waitlist__leave {
+	min-height: 2.75em;
+	padding: 0.5em 0;
+	border: 0;
+	background: none;
+	color: inherit;
+	font: inherit;
+	text-decoration: underline;
+	cursor: pointer;
+
+	&:focus-visible {
+		outline: 2px solid var(--oe-accent);
+		outline-offset: 2px;
+	}
+}
