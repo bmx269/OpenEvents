@@ -9,7 +9,13 @@ Sources for the images in `.wordpress-org/`. Not shipped in the plugin.
 node .wordpress-org-src/capture.mjs              # writes .wordpress-org-src/captures/*.png
 ```
 
-Screenshots 2–6 are copies of `single`, `list`, `editor`, `setup`, and `settings`.
+Screenshots 2–9 are copies of `single`, `list`, `editor`, `setup`, `settings`, `rsvp`, `tickets`, and `waitlist` (run from this folder):
+
+```sh
+i=2; for n in single list editor setup settings rsvp tickets waitlist; do cp captures/$n.png ../.wordpress-org/screenshot-$i.png; i=$((i+1)); done
+```
+
+The drawn images keep text at WCAG AA contrast (4.5:1): dark text on the coral, `#047857` for green fills, `#C2410C` for coral text on white.
 
 No plugin icon yet: branding is still being decided.
 
