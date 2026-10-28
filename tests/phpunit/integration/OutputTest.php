@@ -237,17 +237,38 @@ final class OutputTest extends TestCase {
 	/**
 	 * @dataProvider colors
 	 */
-	public function test_category_colour_text_contrast( string $background, string $text ): void {
-		$this->assertSame( $text, CategoryColors::contrast( $background ) );
+	public function test_category_colour_fill_and_text( string $color, string $fill, string $text ): void {
+		$this->assertSame( $fill, CategoryColors::fill( $color ) );
+		$this->assertSame( $text, CategoryColors::contrast( $fill ) );
 	}
 
 	public static function colors(): array {
 		return array(
-			'yellow' => array( '#f59e0b', '#000000' ),
-			'purple' => array( '#7c3aed', '#ffffff' ),
-			'white'  => array( '#fff', '#000000' ),
-			'navy'   => array( '#1e3a8a', '#ffffff' ),
+			'amber keeps black text'         => array( '#f59e0b', '#f59e0b', '#000000' ),
+			'purple keeps white text'        => array( '#7c3aed', '#7c3aed', '#ffffff' ),
+			'white'                          => array( '#fff', '#ffffff', '#000000' ),
+			'navy'                           => array( '#1e3a8a', '#1e3a8a', '#ffffff' ),
+			'mid green darkens for white'    => array( '#059669', '#05875f', '#ffffff' ),
+			'mid grey darkens for white'     => array( '#808080', '#737373', '#ffffff' ),
 		);
+	}
+
+	public function test_every_category_fill_meets_aa_for_its_text(): void {
+		$luminance = static function ( string $hex ): float {
+			$channel = static function ( string $pair ): float {
+				$c = hexdec( $pair ) / 255;
+				return $c <= 0.03928 ? $c / 12.92 : ( ( $c + 0.055 ) / 1.055 ) ** 2.4;
+			};
+			$hex = ltrim( $hex, '#' );
+			return 0.2126 * $channel( substr( $hex, 0, 2 ) ) + 0.7152 * $channel( substr( $hex, 2, 2 ) ) + 0.0722 * $channel( substr( $hex, 4, 2 ) );
+		};
+		for ( $i = 0; $i < 4096; $i += 7 ) {
+			$color = sprintf( '#%x%x%x', $i >> 8, ( $i >> 4 ) & 15, $i & 15 );
+			$fill  = CategoryColors::fill( $color );
+			$a     = $luminance( $fill );
+			$b     = $luminance( CategoryColors::contrast( $fill ) );
+			$this->assertGreaterThanOrEqual( 4.5, ( max( $a, $b ) + 0.05 ) / ( min( $a, $b ) + 0.05 ), $color );
+		}
 	}
 
 	public function test_event_details_show_coloured_category_badges(): void {
