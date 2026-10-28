@@ -26,6 +26,7 @@ import EventPanel from './event-panel';
 import { VenuePanel, OrganizerPanel } from './place-panels';
 import RsvpPanel from './rsvp-panel';
 import TicketsPanel from './tickets-panel';
+import RepeatPanel from './repeat-panel';
 import './editor.scss';
 
 const config = window.openEvents || {};
@@ -50,6 +51,7 @@ function OpenEventsSidebar() {
 		const isEvent = isDedicated || !! meta._oe_start;
 		const rsvpEnabled = ( config.modules || [] ).includes( 'rsvp' );
 		const ticketsEnabled = ( config.modules || [] ).includes( 'tickets' );
+		const repeatEnabled = ( config.modules || [] ).includes( 'recurrence' );
 		return (
 			<>
 				<PluginDocumentSettingPanel
@@ -65,6 +67,20 @@ function OpenEventsSidebar() {
 						config={ config }
 					/>
 				</PluginDocumentSettingPanel>
+				{ repeatEnabled && isEvent && (
+					<PluginDocumentSettingPanel
+						name="openevents-repeat"
+						title={ __( 'Repeat', 'openevents' ) }
+						className="oe-editor-panel"
+					>
+						<RepeatPanel
+							meta={ meta }
+							setMeta={ setMeta }
+							postId={ postId }
+							config={ config }
+						/>
+					</PluginDocumentSettingPanel>
+				) }
 				{ rsvpEnabled && isEvent && (
 					<PluginDocumentSettingPanel
 						name="openevents-rsvp"

@@ -93,6 +93,9 @@ foreach ( array( 'Open Mic', 'Choir Practice', 'Board Games', 'Late Show' ) as $
 $gala = $make( 'Next Month Gala', $month->modify( '+1 month +4 days' )->format( 'Y-m-d' ) . ' 18:00:00', $month->modify( '+1 month +4 days' )->format( 'Y-m-d' ) . ' 23:00:00' );
 $make( 'Hidden Rehearsal', $d( 22, '09:00:00' ), $d( 22, '10:00:00' ), array( '_oe_hide_from_listings' => true ) );
 
+// A repeating event: eight weeks from the 2nd (needs the recurrence module, enabled below).
+$make( 'Weekly Storytime', $d( 2, '10:30:00' ), $d( 2, '11:15:00' ), array( '_oe_cost' => '0', '_oe_recurrence' => array( 'rrule' => 'FREQ=WEEKLY;COUNT=8', 'rdates' => array(), 'exdates' => array() ) ), 'Community' );
+
 // An ordinary Post that becomes an event, and one that stays a plain post.
 $make( 'Blog post: Book Launch', $d( 25, '17:00:00' ), $d( 25, '19:00:00' ), array(), 'Music', 'post' );
 wp_insert_post(
@@ -111,7 +114,7 @@ $rsvp_events = array(
 	$gala     => array( 'enabled' => true, 'capacity' => 120, 'max_per_response' => 4 ),
 	$workshop => array( 'enabled' => true, 'capacity' => 3, 'max_per_response' => 2 ),
 );
-update_option( 'openevents_modules', array( 'ical', 'rsvp', 'tickets' ) );
+update_option( 'openevents_modules', array( 'ical', 'recurrence', 'rsvp', 'tickets' ) );
 OpenEvents\Attendance\Schema::install();
 $rsvp = new OpenEvents\Modules\Rsvp\Service();
 foreach ( $rsvp_events as $event_id => $config ) {
