@@ -84,6 +84,16 @@ final class TicketTypes {
 		return 1 === (int) $changed;
 	}
 
+	/**
+	 * Adds seats regardless of capacity. Only for honouring a payment that
+	 * arrived after its hold expired and the seats were resold.
+	 */
+	public function force_add( int $id, int $quantity ): void {
+		global $wpdb;
+		$table = Schema::ticket_types();
+		$wpdb->query( $wpdb->prepare( "UPDATE {$table} SET sold = sold + %d WHERE id = %d", $quantity, $id ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+	}
+
 	public function release( int $id, int $quantity ): void {
 		global $wpdb;
 		if ( $quantity <= 0 ) {
