@@ -92,13 +92,22 @@ function openevents_format_range( Occurrence $occurrence ): string {
 }
 
 /**
- * Link to one occurrence. Later dates of a repeating event add ?oe_occurrence= so the
- * event page shows the date that was clicked; the first date uses the plain
- * permalink, which stays the canonical URL.
+ * Link to one occurrence. Later dates of a repeating event add the date
+ * (/event/{slug}/{Y-m-d}/, or ?oe_occurrence= without pretty permalinks) so
+ * the event page shows the date that was clicked; the first date uses the
+ * plain permalink, which stays the canonical URL.
  */
 function openevents_occurrence_url( Occurrence $occurrence ): string {
 	$url = (string) get_permalink( $occurrence->event_id );
-	return 0 === $occurrence->sequence ? $url : add_query_arg( 'oe_occurrence', $occurrence->start->format( 'Y-m-d' ), $url );
+	if ( 0 === $occurrence->sequence ) {
+		return $url;
+	}
+	$date = $occurrence->start->format( 'Y-m-d' );
+	// Pretty permalinks: /event/{slug}/{date}/, as TEC links them (see the recurrence module's rewrite).
+	if ( get_option( 'permalink_structure' ) && OpenEvents\Content\PostTypes::EVENT === get_post_type( $occurrence->event_id ) && openevents_is_module_enabled( 'recurrence' ) ) {
+		return trailingslashit( $url ) . $date . '/';
+	}
+	return add_query_arg( 'oe_occurrence', $date, $url );
 }
 
 function openevents_is_module_enabled( string $id ): bool {

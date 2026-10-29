@@ -41,7 +41,17 @@ final class Module extends AbstractModule {
 		return __( 'Repeat events daily, weekly, monthly, or yearly, skip or add dates, and edit one date or the rest of a series.', 'openevents' );
 	}
 
+	public function version(): string {
+		return '2'; // 2: dated URLs (/event/{slug}/{Y-m-d}/) need a rewrite flush.
+	}
+
+	public function install(): void {
+		update_option( \OpenEvents\Installer::FLUSH_OPTION, 1 );
+	}
+
 	public function boot(): void {
+		add_action( 'init', array( self::class, 'rewrite' ) );
+		add_filter( 'query_vars', static fn( array $vars ) => array_merge( $vars, array( 'oe_occurrence' ) ) );
 		add_filter( 'openevents/meta_fields', array( $this, 'meta_fields' ), 10, 2 );
 		add_filter( 'openevents/occurrences/generate', array( self::class, 'expand' ), 10, 2 );
 		add_filter( 'openevents/event_details/rows', array( $this, 'detail_rows' ), 10, 3 );
@@ -96,6 +106,18 @@ final class Module extends AbstractModule {
 			),
 		);
 		return $fields;
+	}
+
+	/**
+	 * Dated URLs for one date of a repeating event, /{single slug}/{slug}/{Y-m-d}/,
+	 * the form TEC uses, so links from a TEC site keep working.
+	 */
+	public static function rewrite(): void {
+		if ( ! openevents()->settings()->registers_event_type() ) {
+			return;
+		}
+		$base = preg_quote( openevents()->settings()->single_slug(), '#' );
+		add_rewrite_rule( "^{$base}/([^/]+)/(\\d{4}-\\d{2}-\\d{2})/?$", 'index.php?post_type=' . \OpenEvents\Content\PostTypes::EVENT . '&name=$matches[1]&oe_occurrence=$matches[2]', 'top' );
 	}
 
 	/**

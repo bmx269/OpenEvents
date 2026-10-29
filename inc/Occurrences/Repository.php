@@ -289,7 +289,7 @@ final class Repository {
 	 */
 	public function requested( int $event_id ): ?Occurrence {
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only display state.
-		$date = sanitize_text_field( wp_unslash( $_GET['oe_occurrence'] ?? '' ) );
+		$date = sanitize_text_field( wp_unslash( $_GET['oe_occurrence'] ?? '' ) ) ?: (string) get_query_var( 'oe_occurrence' );
 		if ( preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date ) ) {
 			$occurrence = $this->on_date( $event_id, $date );
 			if ( $occurrence ) {

@@ -269,4 +269,23 @@ final class RecurrenceTest extends TestCase {
 		$this->assertSame( 400, $response->get_status() );
 		$this->assertSame( 'openevents_invalid_rrule', $response->get_data()['code'] );
 	}
+
+	public function test_pretty_dated_urls_like_tec(): void {
+		$this->set_permalink_structure( '/%postname%/' );
+		// The test framework resets post types; register ours again for pretty permastructs.
+		( new \OpenEvents\Content\PostTypes( openevents()->settings() ) )->register_types();
+		Module::rewrite();
+		flush_rewrite_rules();
+
+		$id    = $this->series( array( 'rrule' => 'FREQ=WEEKLY;COUNT=3' ) );
+		$items = openevents_get_upcoming( 10, array( 'event_ids' => array( $id ) ) );
+		$date  = $items[1]->start->format( 'Y-m-d' );
+		$url   = openevents_occurrence_url( $items[1] );
+
+		$this->assertSame( trailingslashit( get_permalink( $id ) ) . $date . '/', $url );
+		$this->go_to( $url );
+		$this->assertTrue( is_singular( \OpenEvents\Content\PostTypes::EVENT ) );
+		$this->assertSame( $items[1]->id, openevents()->occurrences()->requested( $id )->id );
+		$this->set_permalink_structure( '' );
+	}
 }

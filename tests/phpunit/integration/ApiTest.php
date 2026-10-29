@@ -204,4 +204,21 @@ final class ApiTest extends TestCase {
 
 		remove_filter( 'openevents/modules', $add );
 	}
+
+	public function test_settings_are_readable_over_rest_with_every_key(): void {
+		// A stored key missing from the REST schema makes core return null for
+		// the whole setting, and the settings screens then save defaults.
+		wp_set_current_user( self::factory()->user->create( array( 'role' => 'administrator' ) ) );
+		update_option( \OpenEvents\Settings::OPTION, \OpenEvents\Settings::sanitize( array_merge( \OpenEvents\Settings::defaults(), array( 'single_slug' => 'event' ) ) ) );
+		do_action( 'rest_api_init' );
+		$data = rest_get_server()->dispatch( new \WP_REST_Request( 'GET', '/wp/v2/settings' ) )->get_data();
+
+		$this->assertIsArray( $data[ \OpenEvents\Settings::OPTION ] );
+		$expected = array_keys( \OpenEvents\Settings::defaults() );
+		$actual   = array_keys( $data[ \OpenEvents\Settings::OPTION ] );
+		sort( $expected );
+		sort( $actual );
+		$this->assertSame( $expected, $actual );
+		$this->assertSame( 'event', $data[ \OpenEvents\Settings::OPTION ]['single_slug'] );
+	}
 }
