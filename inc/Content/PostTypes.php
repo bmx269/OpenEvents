@@ -106,8 +106,9 @@ final class PostTypes {
 				'rest_base'         => 'event-categories',
 				'show_admin_column' => true,
 				'rewrite'           => array(
-					'slug'       => $slug . '/category',
-					'with_front' => false,
+					'slug'         => $slug . '/category',
+					'with_front'   => false,
+					'hierarchical' => true,
 				),
 			)
 		);
@@ -145,7 +146,7 @@ final class PostTypes {
 				'menu_position' => 6,
 				'has_archive'   => $slug,
 				'rewrite'       => array(
-					'slug'       => $slug,
+					'slug'       => $this->settings->single_slug(),
 					'with_front' => false,
 				),
 				'supports'      => array( 'title', 'editor', 'excerpt', 'thumbnail', 'author', 'revisions', 'custom-fields' ),
@@ -177,7 +178,7 @@ final class PostTypes {
 	 * @param mixed $value     New settings.
 	 */
 	public function flush_on_change( mixed $old_value, mixed $value ): void {
-		foreach ( array( 'events_slug', 'register_event_type' ) as $key ) {
+		foreach ( array( 'events_slug', 'single_slug', 'register_event_type' ) as $key ) {
 			if ( ( $old_value[ $key ] ?? null ) !== ( $value[ $key ] ?? null ) ) {
 				update_option( Installer::FLUSH_OPTION, 1 );
 				return;

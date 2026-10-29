@@ -29,6 +29,7 @@ final class Settings {
 			'register_event_type'      => true,
 			'event_post_types'         => array(), // Existing post types that also carry event data.
 			'events_slug'              => 'events',
+			'single_slug'              => '',     // Base for single events; empty uses events_slug.
 			'append_details'           => true,
 			'event_template'           => false, // Use the Single Event template for events in existing post types.
 			'calendar_page'            => 0,
@@ -58,6 +59,14 @@ final class Settings {
 
 	public function events_slug(): string {
 		return (string) $this->get( 'events_slug' ) ?: 'events';
+	}
+
+	/**
+	 * Base of single event URLs. Defaults to the archive's (/events/{slug}/);
+	 * sites moving from TEC keep its separate base (/event/{slug}/).
+	 */
+	public function single_slug(): string {
+		return (string) $this->get( 'single_slug' ) ?: $this->events_slug();
 	}
 
 	public function registers_event_type(): bool {
@@ -129,6 +138,7 @@ final class Settings {
 		$defaults = self::defaults();
 
 		$slug = sanitize_title( (string) ( $input['events_slug'] ?? '' ) );
+		$single = sanitize_title( (string) ( $input['single_slug'] ?? '' ) );
 		$view = (string) ( $input['default_view'] ?? '' );
 
 		// Validated against registered types at save time; unknown names are kept out.
@@ -143,6 +153,7 @@ final class Settings {
 			'register_event_type'      => ! empty( $input['register_event_type'] ),
 			'event_post_types'         => $types,
 			'events_slug'              => '' !== $slug ? $slug : $defaults['events_slug'],
+			'single_slug'              => $single,
 			'append_details'           => ! empty( $input['append_details'] ),
 			'event_template'           => ! empty( $input['event_template'] ),
 			'calendar_page'            => absint( $input['calendar_page'] ?? 0 ),
