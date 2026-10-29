@@ -43,6 +43,7 @@ Requires WordPress 7.1+ and PHP 8.2+.
 | **Waitlists** for RSVPs (automatic promotion) and ticket types (time-limited offers), with an organiser screen | ✅ Done |
 | **Recurring events**: daily to yearly rules (iCal RRULE), skipped and extra dates, edit one date or the rest of a series | ✅ Done |
 | **Attendee fields**: questions per RSVP or ticket type (ten field types, consent boxes), each person's own name and email, saved question sets, answers in the attendee list and CSV | ✅ Done |
+| **Series**: group events under a series page, with series passes | ✅ Done |
 | TEC and Event Tickets importer, per-date RSVP and tickets for recurring events | 🚧 In progress |
 | Calendar filter and search, event popups, category badges, per-category and per-post-type templates | ✅ Done |
 | Google Calendar import (iCal feeds) | Next |

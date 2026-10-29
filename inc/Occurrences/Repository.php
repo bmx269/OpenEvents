@@ -47,6 +47,7 @@ final class Repository {
 			'local_to'       => null,
 			'categories'     => array(), // Term ids; children included.
 			'venue'          => 0,
+			'series'         => 0,       // Series post id (series module).
 			'event_ids'      => array(),
 			'post_types'     => array(), // Defaults to every event-enabled post type.
 			'search'         => '',
@@ -173,6 +174,13 @@ final class Repository {
 			);
 		}
 
+		if ( $args['series'] ) {
+			$where[] = $wpdb->prepare(
+				"o.event_id IN (SELECT sm.post_id FROM {$wpdb->postmeta} sm WHERE sm.meta_key = '_oe_series_id' AND sm.meta_value = %s)",
+				(string) absint( $args['series'] )
+			);
+		}
+
 		$event_ids = array_filter( array_map( 'absint', (array) $args['event_ids'] ) );
 		if ( $event_ids ) {
 			$where[] = 'o.event_id IN (' . implode( ',', $event_ids ) . ')';
@@ -244,6 +252,24 @@ final class Repository {
 		$table = Installer::occurrences_table();
 		$row   = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table} WHERE id = %d", $occurrence_id ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery
 		return $row ? Occurrence::from_row( $row ) : null;
+	}
+
+	/**
+	 * The latest-starting occurrence of a series' published events (including
+	 * ones hidden from listings), or null when the series has none.
+	 */
+	public function last_in_series( int $series_id ): ?Occurrence {
+		$items = $this->query(
+			array(
+				'series'         => $series_id,
+				'include_hidden' => true,
+				'order'          => 'DESC',
+				'per_page'       => 1,
+				'count'          => false,
+				'prime'          => false,
+			)
+		)['items'];
+		return $items[0] ?? null;
 	}
 
 	/**

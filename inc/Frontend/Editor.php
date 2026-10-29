@@ -30,7 +30,7 @@ final class Editor {
 		}
 		$settings    = openevents()->settings();
 		$event_types = $settings->event_post_types();
-		if ( ! in_array( $screen->post_type, array_merge( $event_types, array( PostTypes::VENUE, PostTypes::ORGANIZER ) ), true ) ) {
+		if ( ! in_array( $screen->post_type, array_merge( $event_types, array( PostTypes::VENUE, PostTypes::ORGANIZER, \OpenEvents\Modules\Series\Module::POST_TYPE ) ), true ) ) {
 			return;
 		}
 

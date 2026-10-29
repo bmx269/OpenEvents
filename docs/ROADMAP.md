@@ -78,6 +78,10 @@ Done in Phase 2 groundwork:
 - Import of TEC Pro `_EventRecurrence` rules (with the TEC importer).
 - RRULE export in iCal feeds (dates are exported expanded today).
 
+## Series (done 2026-10-28)
+
+- ✅ Series post type with its own page listing upcoming and past dates; events link to their series; series passes sold on the series page (tests in `SeriesTest.php`, `series.spec.js`).
+
 ## Phase 5: Ticketing extras
 
 - ✅ Attendee fields per ticket type and RSVP (done 2026-10-28; tests in `AttendeeFieldsTest.php`, `attendee-fields.spec.js`): ten field types, per-person name and email, saved question sets, answers in the attendee list, REST, and CSV.

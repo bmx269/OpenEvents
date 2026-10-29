@@ -64,6 +64,11 @@ final class OccurrencesController {
 						'type'    => 'integer',
 						'default' => 0,
 					),
+					'series'     => array(
+						'description' => __( 'Limit to one series (series module).', 'openevents' ),
+						'type'        => 'integer',
+						'default'     => 0,
+					),
 					'event'      => array(
 						'description' => __( 'Limit to one event id.', 'openevents' ),
 						'type'        => 'integer',
@@ -99,6 +104,7 @@ final class OccurrencesController {
 		$args = array(
 			'categories' => $request['categories'],
 			'venue'      => $request['venue'],
+			'series'     => $request['series'],
 			'event_ids'  => $request['event'] ? array( $request['event'] ) : array(),
 			'search'     => $request['search'],
 			'post_types' => array_values( array_intersect( (array) $request['post_type'], openevents()->settings()->event_post_types() ) ),

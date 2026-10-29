@@ -31,6 +31,20 @@ function openevents_event_post_types(): array {
 }
 
 /**
+ * Post types that can sell tickets or take RSVPs: event types, plus series
+ * (for series passes) when the series module is on.
+ *
+ * @return string[]
+ */
+function openevents_ticketed_post_types(): array {
+	$types = openevents_event_post_types();
+	if ( openevents()->modules()->is_enabled( 'series' ) ) {
+		$types[] = OpenEvents\Modules\Series\Module::POST_TYPE;
+	}
+	return $types;
+}
+
+/**
  * Event wrapper for a post, or null when the post's type is not event-enabled
  * or the post has no start date.
  */
