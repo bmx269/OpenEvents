@@ -65,6 +65,7 @@ final class Plugin {
 		( new PostTypes( $this->settings ) )->register();
 		( new Meta( $this->settings ) )->register();
 		( new Sync() )->register();
+		\OpenEvents\Attendance\Cleanup::register();
 		$rest = new OccurrencesController( $this->occurrences );
 		$rest->register();
 		( new Abilities( $rest ) )->register();

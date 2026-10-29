@@ -410,4 +410,62 @@ final class AttendeeFieldsTest extends TestCase {
 		$this->assertCount( 1, $sets, 'Saving under the same name replaces the set.' );
 		$this->assertSame( array( 'Phone number' ), array_column( $sets[0]['fields'], 'label' ) );
 	}
+
+	public function test_deleting_an_event_deletes_its_attendance_data(): void {
+		global $wpdb;
+		$keep   = $this->rsvp_event( array( 'fields' => array() ) );
+		$event  = $this->rsvp_event( array( 'fields' => array() ) );
+		$this->respond( $keep, array() );
+		$this->respond( $event, array( 'email' => 'grace@example.com' ) );
+		$count  = static fn( string $table, int $id ) => (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$table} WHERE event_id = %d", $id ) ); // phpcs:ignore WordPress.DB
+
+		wp_trash_post( $event );
+		$this->assertSame( 1, $count( \OpenEvents\Attendance\Schema::attendees(), $event ), 'Trash keeps attendees, so a restore is whole.' );
+
+		wp_delete_post( $event, true );
+		$this->assertSame( 0, $count( \OpenEvents\Attendance\Schema::attendees(), $event ) );
+		$this->assertSame( 0, $count( \OpenEvents\Attendance\Schema::ticket_types(), $event ) );
+		$this->assertSame( 1, $count( \OpenEvents\Attendance\Schema::attendees(), $keep ), 'Other events are untouched.' );
+	}
+
+	public function test_deleting_an_event_deletes_its_orders(): void {
+		global $wpdb;
+		$day   = current_datetime()->modify( '+10 days' )->format( 'Y-m-d' );
+		$event = $this->event(
+			array(
+				'_oe_start' => "{$day} 19:00:00",
+				'_oe_end'   => "{$day} 21:00:00",
+			)
+		);
+		update_post_meta(
+			$event,
+			TicketsModule::META_KEY,
+			array(
+				array(
+					'name'     => 'Free',
+					'price'    => '0',
+					'capacity' => 10,
+				),
+			)
+		);
+		$this->rows( $event );
+		$type   = current( ( new Checkout() )->ticket_types( $event ) );
+		$result = ( new Checkout() )->place(
+			$event,
+			array(
+				'name'    => 'Grace Hopper',
+				'email'   => 'grace@example.com',
+				'tickets' => array( $type->id => 2 ),
+				'ts'      => Guard::sign_timestamp( time() - 10 ),
+				'ip'      => '198.51.100.9',
+			)
+		);
+		$this->assertTrue( $result->ok, $result->message );
+
+		wp_delete_post( $event, true );
+		foreach ( array( \OpenEvents\Attendance\Schema::orders(), \OpenEvents\Attendance\Schema::attendees(), \OpenEvents\Attendance\Schema::ticket_types() ) as $table ) {
+			$this->assertSame( 0, (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$table} WHERE event_id = %d", $event ) ), $table ); // phpcs:ignore WordPress.DB
+		}
+		$this->assertSame( 0, (int) $wpdb->get_var( 'SELECT COUNT(*) FROM ' . \OpenEvents\Attendance\Schema::order_items() ), 'Order lines go with their orders.' ); // phpcs:ignore WordPress.DB
+	}
 }
