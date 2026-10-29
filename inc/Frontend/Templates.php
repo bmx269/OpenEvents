@@ -23,7 +23,10 @@ final class Templates {
 
 	public function register(): void {
 		add_action( 'init', array( $this, 'register_block_templates' ), 20 );
-		add_filter( 'template_include', array( $this, 'classic_archive' ) );
+		// Late, as TEC does: page-builder archive layouts built around another
+		// plugin's loop would otherwise replace the calendar with an empty loop.
+		add_filter( 'template_include', array( $this, 'classic_archive' ), 50 );
+		add_shortcode( 'openevents_calendar', array( self::class, 'calendar_shortcode' ) );
 		add_filter( 'the_content', array( $this, 'prepend_details' ), 5 );
 		add_filter( 'posts_pre_query', array( $this, 'skip_archive_query' ), 10, 2 );
 		add_filter( 'single_template_hierarchy', array( $this, 'single_hierarchy' ) );
@@ -150,6 +153,12 @@ final class Templates {
 	}
 
 	public function register_block_templates(): void {
+		// Classic themes can report block-template support, but they have no
+		// header or footer template parts for these templates to use: they keep
+		// their own single.php (with the details prepended) and the classic archive.
+		if ( ! wp_is_block_theme() ) {
+			return;
+		}
 		// The base template serves every event post type; the rest belong to oe_event.
 		$templates = array( 'single-event' => __( 'Single Event (all event types)', 'openevents' ) );
 		if ( openevents()->settings()->registers_event_type() ) {
@@ -174,7 +183,14 @@ final class Templates {
 	}
 
 	public function classic_archive( string $template ): string {
-		if ( wp_is_block_theme() ) {
+		/**
+		 * Filters whether classic themes get the plugin's events archive. Return
+		 * false to design the archive in a page builder (place the calendar with
+		 * the [openevents_calendar] shortcode).
+		 *
+		 * @param bool $use Whether to use the plugin's archive template.
+		 */
+		if ( wp_is_block_theme() || ! apply_filters( 'openevents/classic_archive', true ) ) {
 			return $template;
 		}
 		if ( is_post_type_archive( PostTypes::EVENT ) || is_tax( PostTypes::CATEGORY ) ) {
@@ -204,5 +220,46 @@ final class Templates {
 			wp_enqueue_style( generate_block_asset_handle( 'openevents/event-details', 'style' ) );
 		}
 		return $details ? '<div class="wp-block-openevents-event-details oe-details">' . $details . '</div>' . $content : $content;
+	}
+
+	/**
+	 * [openevents_calendar] places the calendar anywhere shortcodes run (page
+	 * builders, widgets). Attributes: views ("month,list"), view (default
+	 * view), categories (ids or slugs), legend, filters (yes/no), per_page.
+	 *
+	 * @param array<string, string>|string $atts Shortcode attributes.
+	 */
+	public static function calendar_shortcode( array|string $atts ): string {
+		$atts       = shortcode_atts(
+			array(
+				'views'      => 'month,list',
+				'view'       => '',
+				'categories' => '',
+				'legend'     => 'yes',
+				'filters'    => 'yes',
+				'per_page'   => 0,
+			),
+			is_array( $atts ) ? $atts : array(),
+			'openevents_calendar'
+		);
+		$categories = array();
+		foreach ( array_filter( array_map( 'trim', explode( ',', (string) $atts['categories'] ) ) ) as $item ) {
+			$term = is_numeric( $item ) ? get_term( (int) $item, PostTypes::CATEGORY ) : get_term_by( 'slug', $item, PostTypes::CATEGORY );
+			if ( $term instanceof \WP_Term ) {
+				$categories[] = $term->term_id;
+			}
+		}
+		if ( ! $categories && is_tax( PostTypes::CATEGORY ) ) {
+			$categories[] = get_queried_object_id();
+		}
+		$attributes = array(
+			'views'       => array_values( array_intersect( array_map( 'trim', explode( ',', (string) $atts['views'] ) ), array( 'month', 'list' ) ) ) ?: array( 'month', 'list' ),
+			'defaultView' => in_array( $atts['view'], array( 'month', 'list' ), true ) ? $atts['view'] : '',
+			'categories'  => $categories,
+			'showLegend'  => 'no' !== $atts['legend'],
+			'showFilters' => 'no' !== $atts['filters'],
+			'perPage'     => absint( $atts['per_page'] ),
+		);
+		return do_blocks( '<!-- wp:openevents/calendar ' . wp_json_encode( $attributes ) . ' /-->' );
 	}
 }

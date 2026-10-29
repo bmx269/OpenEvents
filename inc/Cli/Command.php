@@ -155,4 +155,60 @@ final class Command {
 		wp_defer_term_counting( false );
 		Sync::instance()->rebuild_all();
 	}
+
+	/**
+	 * Imports The Events Calendar (and Pro), Event Tickets (and Plus) data.
+	 *
+	 * Converts events, venues, organizers, series, and event categories in
+	 * place (ids and URLs stay), and copies tickets, orders, and attendees
+	 * with their check-in codes and answers. TEC's own data is left in place.
+	 * Back up the database first.
+	 *
+	 * ## OPTIONS
+	 *
+	 * [--preview]
+	 * : Show what would be imported, and change nothing.
+	 *
+	 * [--verify]
+	 * : Compare TEC's data with what OpenEvents has now.
+	 *
+	 * [--rollback]
+	 * : Undo the conversion and remove imported rows.
+	 *
+	 * [--yes]
+	 * : Don't ask for confirmation.
+	 *
+	 * ## EXAMPLES
+	 *
+	 *     wp openevents import-tec --preview
+	 *     wp openevents import-tec
+	 *     wp openevents import-tec --verify
+	 *
+	 * @subcommand import-tec
+	 *
+	 * @param string[]             $args       Positional arguments.
+	 * @param array<string, mixed> $assoc_args Flags.
+	 */
+	public function import_tec( array $args, array $assoc_args ): void {
+		$importer = new \OpenEvents\Import\Tec( static fn( string $message ) => \WP_CLI::log( $message ) );
+		if ( ! empty( $assoc_args['preview'] ) ) {
+			\WP_CLI::print_value( $importer->preview(), array( 'format' => 'yaml' ) );
+			return;
+		}
+		if ( ! empty( $assoc_args['verify'] ) ) {
+			\WP_CLI::print_value( $importer->verify(), array( 'format' => 'yaml' ) );
+			return;
+		}
+		if ( ! empty( $assoc_args['rollback'] ) ) {
+			\WP_CLI::confirm( 'Switch converted posts back to TEC and delete imported rows?', $assoc_args );
+			\WP_CLI::print_value( $importer->rollback(), array( 'format' => 'yaml' ) );
+			\WP_CLI::success( 'Rolled back. Reactivate TEC to use it again.' );
+			return;
+		}
+		\WP_CLI::confirm( 'Convert TEC data to OpenEvents? Back up the database first.', $assoc_args );
+		$start  = microtime( true );
+		$report = $importer->run();
+		\WP_CLI::print_value( $report, array( 'format' => 'yaml' ) );
+		\WP_CLI::success( sprintf( 'Imported in %.1fs. Deactivate The Events Calendar and Event Tickets, then check the site.', microtime( true ) - $start ) );
+	}
 }
