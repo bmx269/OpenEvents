@@ -18,10 +18,13 @@ final class Attendees {
 	 * the respondent; extra rows are their guests ("Guest of …") unless
 	 * $same_name (tickets bought by one person keep the buyer's name).
 	 *
-	 * @param array<string, mixed> $data name, email, status, ticket_type_id, event_id, token_hash, ip_hash.
+	 * @param array<string, mixed>             $data   name, email, status, ticket_type_id, event_id, token_hash, ip_hash.
+	 * @param array<int, array<string, mixed>> $people Per person (by index): name, email, and fields
+	 *                                                 (attendee field answers). Empty name or email
+	 *                                                 falls back to the defaults above.
 	 * @return string Group uuid.
 	 */
-	public function create_group( array $data, int $count, ?string $group_uuid = null, bool $same_name = false ): string {
+	public function create_group( array $data, int $count, ?string $group_uuid = null, bool $same_name = false, array $people = array() ): string {
 		global $wpdb;
 		$group = $group_uuid ?? wp_generate_uuid4();
 		$now   = gmdate( 'Y-m-d H:i:s' );
@@ -36,18 +39,18 @@ final class Attendees {
 					'ticket_type_id' => (int) $data['ticket_type_id'],
 					'event_id'       => (int) $data['event_id'],
 					'occurrence_id'  => (int) ( $data['occurrence_id'] ?? 0 ),
-					'name'           => 0 === $i || $same_name ? (string) $data['name'] : sprintf(
+					'name'           => '' !== (string) ( $people[ $i ]['name'] ?? '' ) ? (string) $people[ $i ]['name'] : ( 0 === $i || $same_name ? (string) $data['name'] : sprintf(
 						/* translators: %s: name of the person who RSVPed */
 						__( 'Guest of %s', 'openevents' ),
 						(string) $data['name']
-					),
-					'email'          => (string) $data['email'],
+					) ),
+					'email'          => '' !== (string) ( $people[ $i ]['email'] ?? '' ) ? (string) $people[ $i ]['email'] : (string) $data['email'],
 					'status'         => (string) $data['status'],
 					'security_code'  => self::security_code(),
 					'ip_hash'        => (string) ( $data['ip_hash'] ?? '' ),
 					'created_utc'    => $now,
 					'updated_utc'    => $now,
-					'fields'         => '{}',
+					'fields'         => (string) wp_json_encode( (object) ( $people[ $i ]['fields'] ?? array() ) ),
 				)
 			);
 		}

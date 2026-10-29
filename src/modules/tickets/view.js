@@ -9,11 +9,28 @@ import {
 	getElement,
 	withSyncEvent,
 } from '@wordpress/interactivity';
+import formObject from '../shared/form-object';
 
 const nextFrame = () =>
 	new Promise( ( resolve ) => window.requestAnimationFrame( resolve ) );
 
-store( 'openevents/tickets', {
+const { state } = store( 'openevents/tickets', {
+	state: {
+		/** Chosen quantity per ticket type id (set from the quantity pickers). */
+		quantities: {},
+		/** A ticket holder group is beyond the quantity chosen for its type. */
+		get groupHidden() {
+			const context = getContext();
+			return context.n > ( state.quantities[ context.typeId ] || 0 );
+		},
+		get groupRequired() {
+			const context = getContext();
+			return context.n <= ( state.quantities[ context.typeId ] || 0 );
+		},
+		get holdersHidden() {
+			return ! state.quantities[ getContext().typeId ];
+		},
+	},
 	actions: {
 		/** Leaves the waitlist (or releases held tickets) with the private token. */
 		leaveWaitlist: withSyncEvent( function* ( event ) {
@@ -79,13 +96,16 @@ store( 'openevents/tickets', {
 			const form = ref.closest( 'form' ) || ref;
 			let minor = 0;
 			let count = 0;
+			const quantities = {};
 			form.querySelectorAll( 'select[data-price]' ).forEach(
 				( select ) => {
 					const quantity = Number( select.value ) || 0;
 					minor += quantity * Number( select.dataset.price );
 					count += quantity;
+					quantities[ select.dataset.type ] = quantity;
 				}
 			);
+			state.quantities = quantities;
 			context.total = count
 				? new Intl.NumberFormat( context.locale, {
 						style: 'currency',
@@ -97,15 +117,10 @@ store( 'openevents/tickets', {
 			event.preventDefault();
 			const context = getContext();
 			const form = event.target;
-			const data = { tickets: {} };
-			for ( const [ key, value ] of new window.FormData( form ) ) {
-				const match = key.match( /^tickets\[(\d+)\]$/ );
-				if ( match ) {
-					data.tickets[ match[ 1 ] ] = Number( value );
-				} else {
-					data[ key ] = value;
-				}
-			}
+			const data = formObject( form );
+			Object.keys( data.tickets || {} ).forEach( ( id ) => {
+				data.tickets[ id ] = Number( data.tickets[ id ] );
+			} );
 
 			context.busy = true;
 			context.message = '';

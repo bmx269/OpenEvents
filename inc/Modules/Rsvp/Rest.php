@@ -155,6 +155,7 @@ final class Rest {
 			'email'    => (string) $request['email'],
 			'status'   => (string) ( $request['status'] ?: 'going' ),
 			'quantity' => (int) ( $request['quantity'] ?: 1 ),
+			'attendees' => (array) $request['attendees'],
 			'token'    => (string) $request['token'],
 			'website'  => (string) $request['website'],
 			'ts'       => (string) $request['ts'],
@@ -218,14 +219,18 @@ final class Rest {
 			_prime_post_caches( $event_ids, false, false );
 		}
 
+		$types    = array();
 		$items    = array_map(
-			static fn( Attendee $a ) => array_merge(
-				$a->to_array(),
-				array(
-					'event_title' => html_entity_decode( get_the_title( $a->event_id ), ENT_QUOTES ),
-					'code'        => $a->security_code,
-				)
-			),
+			static function ( Attendee $a ) use ( &$types ) {
+				return array_merge(
+					$a->to_array(),
+					array(
+						'event_title' => html_entity_decode( get_the_title( $a->event_id ), ENT_QUOTES ),
+						'code'        => $a->security_code,
+						'answers'     => \OpenEvents\Attendance\Fields::answers( $a, $types ),
+					)
+				);
+			},
 			$result['items']
 		);
 		$response = new WP_REST_Response( $items );

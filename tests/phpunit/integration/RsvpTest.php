@@ -288,7 +288,7 @@ final class RsvpTest extends TestCase {
 
 		$this->assertStringContainsString( 'This event is full.', $html );
 		$this->assertMatchesRegularExpression( '/value="going"[^>]*disabled/', $html );
-		$this->assertMatchesRegularExpression( '/value="not_going" checked/', $html );
+		$this->assertMatchesRegularExpression( '/value="not_going"[^>]*checked/', $html );
 	}
 
 	public function test_csv_cells_are_protected_from_formula_injection(): void {

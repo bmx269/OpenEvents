@@ -8,6 +8,7 @@
 namespace OpenEvents\Modules\Rsvp;
 
 use OpenEvents\Attendance\Attendees;
+use OpenEvents\Attendance\Fields;
 use OpenEvents\Content\PostTypes;
 
 /**
@@ -111,33 +112,55 @@ final class Admin {
 
 		$out = fopen( 'php://output', 'w' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen
 		fwrite( $out, "\xEF\xBB\xBF" ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fwrite -- BOM so Excel reads UTF-8.
-		fputcsv( $out, array( 'Name', 'Email', 'Event', 'Status', 'Checked in', 'Check-in code', 'Response group', 'Created (UTC)' ) );
+		$repo  = new Attendees();
+		$args  = array(
+			'event_id' => $event_id,
+			'status'   => $status,
+			'per_page' => 500,
+			'orderby'  => 'created_utc',
+			'order'    => 'ASC',
+		);
+		$types = array();
 
-		$repo = new Attendees();
+		// First pass: one column per attendee question that has answers.
+		$columns = array();
+		$page    = 1;
+		do {
+			$batch = $repo->query( $args + array( 'page' => $page ) );
+			foreach ( $batch['items'] as $a ) {
+				foreach ( Fields::answers( $a, $types ) as $answer ) {
+					$columns[ $answer['key'] ] ??= $answer['label'];
+				}
+			}
+			++$page;
+		} while ( count( $batch['items'] ) === 500 );
+
+		fputcsv( $out, array_merge( array( 'Name', 'Email', 'Event', 'Status', 'Checked in', 'Check-in code', 'Response group', 'Created (UTC)' ), array_map( array( self::class, 'safe_cell' ), array_values( $columns ) ) ) );
+
 		$page = 1;
 		do {
-			$batch = $repo->query(
-				array(
-					'event_id' => $event_id,
-					'status'   => $status,
-					'per_page' => 500,
-					'page'     => $page,
-					'orderby'  => 'created_utc',
-					'order'    => 'ASC',
-				)
-			);
+			$batch = $repo->query( $args + array( 'page' => $page ) );
 			foreach ( $batch['items'] as $a ) {
+				$answers = array_fill_keys( array_keys( $columns ), '' );
+				foreach ( $a->fields as $key => $value ) {
+					if ( isset( $answers[ $key ] ) ) {
+						$answers[ $key ] = self::safe_cell( Fields::display( $value ) );
+					}
+				}
 				fputcsv(
 					$out,
-					array(
-						self::safe_cell( $a->name ),
-						self::safe_cell( $a->email ),
-						self::safe_cell( html_entity_decode( get_the_title( $a->event_id ), ENT_QUOTES ) ),
-						$a->status,
-						$a->checked_in_utc ?? '',
-						$a->security_code,
-						$a->group_uuid,
-						$a->created_utc,
+					array_merge(
+						array(
+							self::safe_cell( $a->name ),
+							self::safe_cell( $a->email ),
+							self::safe_cell( html_entity_decode( get_the_title( $a->event_id ), ENT_QUOTES ) ),
+							$a->status,
+							$a->checked_in_utc ?? '',
+							$a->security_code,
+							$a->group_uuid,
+							$a->created_utc,
+						),
+						array_values( $answers )
 					)
 				);
 			}

@@ -8,12 +8,30 @@ import {
 	getElement,
 	withSyncEvent,
 } from '@wordpress/interactivity';
+import formObject from '../shared/form-object';
 
 const nextFrame = () =>
 	new Promise( ( resolve ) => window.requestAnimationFrame( resolve ) );
 
 store( 'openevents/rsvp', {
+	state: {
+		/** An attendee group is unused: beyond the party size, or not going. */
+		get groupHidden() {
+			const context = getContext();
+			return ! context.going || context.n > Number( context.quantity );
+		},
+		get groupRequired() {
+			const context = getContext();
+			return context.going && context.n <= Number( context.quantity );
+		},
+	},
 	actions: {
+		setQuantity( event ) {
+			getContext().quantity = Number( event.target.value ) || 1;
+		},
+		setStatus( event ) {
+			getContext().going = event.target.value === 'going';
+		},
 		/** Leaves the waitlist (or releases held tickets) with the private token. */
 		leaveWaitlist: withSyncEvent( function* ( event ) {
 			event.preventDefault();
@@ -47,7 +65,7 @@ store( 'openevents/rsvp', {
 			const context = getContext();
 			const { ref } = getElement();
 			const form = event.target;
-			const data = Object.fromEntries( new window.FormData( form ) );
+			const data = formObject( form );
 			if ( event.submitter?.name === 'cancel' ) {
 				data.cancel = true;
 			}

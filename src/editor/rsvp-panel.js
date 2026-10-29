@@ -11,6 +11,7 @@ import { useSelect } from '@wordpress/data';
 import { store as editorStore } from '@wordpress/editor';
 import { useEffect, useState } from '@wordpress/element';
 import { DateField } from './event-panel';
+import AttendeeFields from './attendee-fields';
 
 const DEFAULTS = {
 	enabled: false,
@@ -20,6 +21,8 @@ const DEFAULTS = {
 	allow_not_going: true,
 	show_count: true,
 	waitlist: false,
+	attendee_details: 'none',
+	fields: [],
 };
 
 /**
@@ -171,6 +174,15 @@ export default function RsvpPanel( { meta, setMeta, postId, config } ) {
 						) }
 						checked={ !! rsvp.waitlist }
 						onChange={ ( value ) => update( { waitlist: value } ) }
+					/>
+					<h3 className="oe-editor-panel__subhead">
+						{ __( 'Questions for each person', 'openevents' ) }
+					</h3>
+					<AttendeeFields
+						fields={ rsvp.fields }
+						details={ rsvp.attendee_details }
+						forWhom="guest"
+						onChange={ update }
 					/>
 					<Summary postId={ postId } config={ config } />
 				</>

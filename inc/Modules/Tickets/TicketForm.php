@@ -104,7 +104,7 @@ final class TicketForm {
 					$options .= sprintf( '<option value="%1$d">%1$d</option>', $n );
 				}
 				$html .= sprintf(
-					'<select id="%1$s" name="tickets[%2$d]" data-price="%3$d"%4$s>%5$s</select>',
+					'<select id="%1$s" name="tickets[%2$d]" data-price="%3$d" data-type="%2$d"%4$s>%5$s</select>',
 					esc_attr( $field_id ),
 					$type->id,
 					$price,
@@ -128,6 +128,12 @@ final class TicketForm {
 		$html .= '<p class="oe-tickets__field"><label for="' . esc_attr( $id ) . '-name">' . esc_html__( 'Name', 'openevents' ) . '</label><input id="' . esc_attr( $id ) . '-name" type="text" name="name" required maxlength="200" autocomplete="name"></p>';
 		$html .= '<p class="oe-tickets__field"><label for="' . esc_attr( $id ) . '-email">' . esc_html__( 'Email', 'openevents' ) . '</label><input id="' . esc_attr( $id ) . '-email" type="email" name="email" required autocomplete="email"></p>';
 		$html .= '</div>';
+
+		foreach ( $on_sale as $type ) {
+			$max   = (int) $type->setting( 'max_per_order', 10 );
+			$max   = null === $type->remaining() ? $max : min( $max, $type->remaining() );
+			$html .= self::holders( $type, $max, $id, 0 );
+		}
 
 		$priced = array_filter( $on_sale, static fn( TicketType $t ) => (int) $t->setting( 'price_minor', 0 ) > 0 );
 		if ( $priced ) {
@@ -220,6 +226,9 @@ final class TicketForm {
 		$html .= '<p class="oe-tickets__field"><label for="' . esc_attr( $id ) . '-name">' . esc_html__( 'Name', 'openevents' ) . '</label><input id="' . esc_attr( $id ) . '-name" type="text" name="name" required maxlength="200" autocomplete="name" value="' . esc_attr( $entry->name ) . '"></p>';
 		$html .= '<p class="oe-tickets__field"><label for="' . esc_attr( $id ) . '-email">' . esc_html__( 'Email', 'openevents' ) . '</label><input id="' . esc_attr( $id ) . '-email" type="email" name="email" required autocomplete="email" value="' . esc_attr( $entry->email ) . '"></p>';
 		$html .= '</div>';
+		// The held quantity is fixed, so every group is in use from the start.
+		wp_interactivity_state( 'openevents/tickets', array( 'quantities' => array( (string) $type->id => $entry->quantity ) ) );
+		$html .= self::holders( $type, $entry->quantity, $id, $entry->quantity );
 		if ( $price > 0 ) {
 			$gateways = Gateways::available( $currency );
 			$html    .= '<fieldset class="oe-tickets__gateways"><legend>' . esc_html__( 'Payment', 'openevents' ) . '</legend>';
@@ -233,6 +242,40 @@ final class TicketForm {
 		}
 		$html .= '<p class="oe-tickets__actions"><button type="submit" class="oe-tickets__submit wp-element-button" data-wp-bind--disabled="context.busy">' . esc_html__( 'Claim tickets', 'openevents' ) . '</button></p></form>';
 		return $html . \OpenEvents\Attendance\WaitlistController::leave_form( $entry, $token, 'tickets' );
+	}
+
+	/**
+	 * Questions for each ticket holder of one type: a group per ticket up to
+	 * $max, shown as the quantity grows (all at once without JavaScript).
+	 *
+	 * @param int $enforced Groups that are certainly used (a held waitlist
+	 *                      offer), whose required inputs are marked required.
+	 */
+	private static function holders( TicketType $type, int $max, string $id, int $enforced ): string {
+		if ( ! \OpenEvents\Attendance\Fields::asks( $type ) || $max < 1 ) {
+			return '';
+		}
+		$fields  = \OpenEvents\Attendance\Fields::sanitize( $type->setting( 'fields', array() ) );
+		$details = \OpenEvents\Attendance\Fields::sanitize_details( $type->setting( 'attendee_details', 'none' ) );
+		$prefix  = 'attendees[' . $type->id . ']';
+		$html    = '<div class="oe-tickets__holders" role="group" aria-labelledby="' . esc_attr( $id . '-holders-' . $type->id ) . '" data-wp-context="' . esc_attr( (string) wp_json_encode( array( 'typeId' => (string) $type->id ) ) ) . '" data-wp-bind--hidden="state.holdersHidden">';
+		/* translators: %s: ticket name */
+		$html .= '<h4 id="' . esc_attr( $id . '-holders-' . $type->id ) . '">' . esc_html( sprintf( __( 'Ticket holders: %s', 'openevents' ), $type->name ) ) . '</h4>';
+		for ( $i = 0; $i < $max; $i++ ) {
+			$group_id = $id . '-t' . $type->id . '-' . $i;
+			$enforce  = $i < $enforced;
+			$inner    = \OpenEvents\Attendance\Fields::contact_inputs( $details, $prefix . '[' . $i . ']', $group_id, array(), $enforce );
+			$inner   .= \OpenEvents\Attendance\Fields::inputs( $fields, $prefix . '[' . $i . '][fields]', $group_id, array(), $enforce );
+			$html    .= \OpenEvents\Attendance\Fields::group(
+				\OpenEvents\Attendance\Fields::person_label( $i, false, $type->name ),
+				$inner,
+				array(
+					'typeId' => (string) $type->id,
+					'n'      => $i + 1,
+				)
+			);
+		}
+		return $html . '</div>';
 	}
 
 	private static function availability( TicketType $type, ?string $state ): string {
@@ -290,6 +333,7 @@ final class TicketForm {
 				'full'         => __( 'Sorry, there aren’t enough tickets left for that order.', 'openevents' ),
 				'closed'       => __( 'Those tickets are no longer on sale.', 'openevents' ),
 				'rate_limited' => __( 'Too many orders from your connection. Please try again later.', 'openevents' ),
+				'fields'       => __( 'Please fill in the details for each ticket holder.', 'openevents' ),
 			);
 			return '<p class="oe-tickets__notice is-error" role="alert" tabindex="-1">' . esc_html( $errors[ $code ] ?? __( 'Please check the form and try again.', 'openevents' ) ) . '</p>';
 		}

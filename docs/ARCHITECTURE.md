@@ -233,6 +233,7 @@ Extend `AbstractModule` and register through the `openevents/modules` filter. En
 | **Views** | `…/calendar/views` (register a renderer), `…/calendar/links`, `…/calendar/cache` |
 | **Event details** | `…/event_details/rows`, `…/event_details/links`, `…/event_details/sections` (RSVP form, tickets) |
 | **Formatting** | `…/format_range` |
+| **Attendee fields** | `fields` and `attendee_details` on `_oe_rsvp` and each `_oe_tickets` entry; `GET/POST /openevents/v1/field-sets`; answers in `GET …/attendees` |
 | **REST** | `GET /openevents/v1/occurrences`; `POST …/recurrence/preview`; `POST …/events/{id}/occurrences/{occurrence}/{skip,detach,split}`; `…/rest/occurrence` filter; core `/wp/v2/events`, `/venues`, `/organizers`, `/event-categories` with meta |
 | **Abilities API** | `openevents/list-events` (read-only), `openevents/create-event`, exposed at `/wp-abilities/v1` for AI and automation clients |
 | **Block Bindings** | source `openevents/event` with keys `date`, `start_date`, `start_time`, `end_date`, `end_time`, `venue`, `venue_address`, `venue_url`, `cost`, `website`. Core Paragraph, Heading, and Button blocks can show event data. `…/block_bindings/value` filter for custom keys. |
@@ -240,6 +241,20 @@ Extend `AbstractModule` and register through the `openevents/modules` filter. En
 | **Templates** | Site Editor templates; classic override path; `…/skip_archive_query` |
 | **WP-CLI** | `wp openevents rebuild`, `stats`, `generate` |
 | **Lifecycle** | `openevents/loaded`, `…/modules_booted`, `…/uninstall` |
+
+## Attendee fields (RSVP and tickets)
+
+Questions asked of each person, defined per ticket type (the RSVP settings, or each entry in `_oe_tickets`):
+
+- **Definitions:** `fields` = list of `{ key, type, label, required, help, options }`. Types: `text`, `textarea`, `email`, `tel`, `url`, `number`, `date`, `select`, `radio`, `checkbox` (a checkbox with one option is an "I agree" box). Keys are made from labels and stay stable. `attendee_details` (`none`, `optional`, `required`) asks for each guest's or ticket holder's own name and email.
+- **Answers** are stored per attendee in `oe_attendees.fields` (JSON, key → value; checkboxes are lists), so a group booking keeps each person's answers. `Fields::answers()` pairs them with labels; answers to removed questions keep their key as the label.
+- **Forms:** one `<fieldset class="oe-person">` per possible person. The view scripts hide and disable groups beyond the chosen quantity (and, for RSVPs, when "not going"), which also keeps them out of the submission. Bindings use `state.groupHidden` / `state.groupRequired`, which are undefined on the server, so without JavaScript every group shows and nothing unused is `required` in the browser; the server checks the groups for the people actually booked.
+- **Validation** (`Fields::people()`, `Fields::collect()`) runs before any seat is held. Errors name the person ("Guest 2: …", "Child, ticket 2: …").
+- **Input shape** (forms and REST): RSVP `attendees[i][name|email|fields][key]`; checkout `attendees[ticket_type_id][i][…]`.
+- **Reporting:** `answers` in `GET /openevents/v1/attendees`, a Details column on the attendee screen, and one CSV column per question.
+- **Saved question sets** (`FieldSets`, option `openevents_field_sets`): `GET/POST /openevents/v1/field-sets`, `DELETE …/field-sets/{n}`. Applying a set copies its questions, so editing a set never changes past events.
+- Waitlisted RSVPs promoted automatically don't have answers yet (the waitlist form doesn't ask them).
+- **Deleting an event deletes its attendance data** (`Attendance\Cleanup`, on `before_delete_post`): attendees, waitlist entries, orders and their lines, and ticket types. Trashing keeps everything. Registered by core, so it runs even with RSVP and Tickets switched off. Fires `openevents/attendance/deleted`.
 
 ## Waitlist (RSVP and tickets)
 

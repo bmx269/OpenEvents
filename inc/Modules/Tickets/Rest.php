@@ -44,6 +44,10 @@ final class Rest {
 					'name'    => array( 'type' => 'string' ),
 					'email'   => array( 'type' => 'string' ),
 					'tickets' => array( 'type' => 'object' ),
+					'attendees' => array(
+						'description' => __( 'Per ticket type id, a list of people: name, email, and fields (answers by field key).', 'openevents' ),
+						'type'        => 'object',
+					),
 					'gateway' => array( 'type' => 'string' ),
 					'waitlist_token' => array( 'type' => 'string' ),
 					'website' => array( 'type' => 'string' ),
@@ -133,6 +137,7 @@ final class Rest {
 				'name'    => (string) $request['name'],
 				'email'   => (string) $request['email'],
 				'tickets' => array_map( 'absint', (array) $request['tickets'] ),
+				'attendees' => (array) $request['attendees'],
 				'gateway' => sanitize_key( (string) $request['gateway'] ),
 				'waitlist_token' => (string) $request['waitlist_token'],
 				'website' => (string) $request['website'],

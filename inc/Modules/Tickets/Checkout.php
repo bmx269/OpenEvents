@@ -151,11 +151,30 @@ final class Checkout {
 				/* translators: 1: maximum, 2: ticket name */
 				return CheckoutResult::error( 'invalid', sprintf( __( 'You can buy up to %1$d “%2$s” tickets per order.', 'openevents' ), $max, $type->name ) );
 			}
+			$people = array();
+			if ( \OpenEvents\Attendance\Fields::asks( $type ) ) {
+				$answers = \OpenEvents\Attendance\Fields::people(
+					$type,
+					$input['attendees'][ $type->id ] ?? array(),
+					$quantity,
+					array(
+						'name'  => $name,
+						'email' => $email,
+					),
+					false,
+					$type->name
+				);
+				if ( $answers['error'] ) {
+					return CheckoutResult::error( 'fields', $answers['error'] );
+				}
+				$people = $answers['people'];
+			}
 			$price   = (int) $type->setting( 'price_minor', 0 );
 			$lines[] = array(
 				'type'     => $type,
 				'quantity' => $quantity,
 				'price'    => $price,
+				'people'   => $people,
 			);
 			$count  += $quantity;
 			$total  += $price * $quantity;
@@ -234,7 +253,8 @@ final class Checkout {
 				),
 				$line['quantity'],
 				$order->uuid,
-				true
+				true,
+				$line['people']
 			);
 		}
 
