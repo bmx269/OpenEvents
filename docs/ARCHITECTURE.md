@@ -169,6 +169,13 @@ Patterns used throughout:
 - **Editing scopes** (`Series`): skip a date; detach one date into its own event; split the series so a new event carries the rule from that date on (COUNT carries over as the dates still to come). Copies record `_oe_series_parent` and fire `openevents/recurrence/copied`.
 - **REST:** `POST /openevents/v1/recurrence/preview` (dates and description without saving, used by the editor) and `POST /openevents/v1/events/{id}/occurrences/{occurrence}/{skip|detach|split}`.
 
+## Series module
+
+- **Post type** `oe_series` (`/series/{slug}/`, REST `series`), under the Events menu. An event belongs to at most one series: `_oe_series_id` on the event (REST, editor picker with "add new"). Dates split off or detached from a repeating event copy it, so they stay in the series.
+- **Series page:** the content, then sections from `openevents/series/sections`: upcoming dates (event cards), past dates behind a disclosure, and series passes when Tickets is on. Added through `the_content`, so page builders that print the content show it too.
+- **Event details** get a "Series" row linking to the series. Listings and REST take a `series` argument (`openevents_get_occurrences( [ 'series' => id ] )`, `GET /openevents/v1/occurrences?series=id`).
+- **Series passes** are ticket types owned by the series post (`_oe_tickets` on the series; `openevents_ticketed_post_types()` includes series when the module is on). They're sold on the series page and stop selling when the series' last date starts, unless a pass sets its own sale end. Deleting a series deletes its pass holders, as for events.
+
 ## Module system
 
 ```php
@@ -230,6 +237,7 @@ Extend `AbstractModule` and register through the `openevents/modules` filter. En
 | **Meta** | `openevents/meta_fields` (registered with REST and sanitisation) |
 | **Occurrences** | `…/occurrences/generate`, `…/occurrences/synced`, `…/occurrences/query_args`; `Sync::suspend()`, `resume()`, `rebuild_all()` |
 | **Recurrence** | `…/recurrence/horizon`, `…/recurrence/copied` |
+| **Series** | `_oe_series_id`; `openevents/series/sections`; `series` query argument; `openevents_ticketed_post_types()` |
 | **Views** | `…/calendar/views` (register a renderer), `…/calendar/links`, `…/calendar/cache` |
 | **Event details** | `…/event_details/rows`, `…/event_details/links`, `…/event_details/sections` (RSVP form, tickets) |
 | **Formatting** | `…/format_range` |

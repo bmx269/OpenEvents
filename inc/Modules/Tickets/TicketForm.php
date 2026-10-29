@@ -14,7 +14,6 @@ use OpenEvents\Attendance\Order;
 use OpenEvents\Attendance\Orders;
 use OpenEvents\Attendance\TicketType;
 use OpenEvents\Attendance\TicketTypes;
-use OpenEvents\Content\Event;
 
 /**
  * The tickets section: a table of ticket types with quantity pickers, buyer
@@ -24,22 +23,24 @@ use OpenEvents\Content\Event;
 final class TicketForm {
 
 	/**
-	 * @param TicketType[] $types Active paid ticket types.
+	 * @param int|\OpenEvents\Content\Event $owner Event (or series id, for passes) the tickets are for.
+	 * @param TicketType[]                   $types Active paid ticket types.
 	 */
-	public static function render( Event $event, array $types, Checkout $checkout, string $token = '' ): string {
-		$id       = 'oe-tickets-' . $event->id();
+	public static function render( int|\OpenEvents\Content\Event $owner, array $types, Checkout $checkout, string $token = '' ): string {
+		$owner    = is_int( $owner ) ? $owner : $owner->id();
+		$id       = 'oe-tickets-' . $owner;
 		$currency = Checkout::currency();
 
 		$html = '<section class="oe-tickets" id="tickets" aria-labelledby="' . esc_attr( $id ) . '-title" data-wp-interactive="openevents/tickets" data-wp-context="' . esc_attr(
 			(string) wp_json_encode(
 				array(
-					'endpoint'      => rest_url( 'openevents/v1/events/' . $event->id() . '/orders' ),
+					'endpoint'      => rest_url( 'openevents/v1/events/' . $owner . '/orders' ),
 					'message'       => '',
 					'error'         => false,
 					'busy'          => false,
 					'total'         => '',
 					'currency'      => $currency,
-					'waitlistEndpoint' => rest_url( 'openevents/v1/events/' . $event->id() . '/waitlist' ),
+					'waitlistEndpoint' => rest_url( 'openevents/v1/events/' . $owner . '/waitlist' ),
 					'leaveEndpoint' => rest_url( 'openevents/v1/waitlist/leave' ),
 					'locale'        => str_replace( '_', '-', get_locale() ),
 					'decimals'      => Money::decimals( $currency ),
@@ -51,7 +52,7 @@ final class TicketForm {
 
 		// Returning buyer: show their order.
 		$order = '' !== $token ? ( new Orders() )->by_token( $token ) : null;
-		if ( $order && $order->event_id === $event->id() ) {
+		if ( $order && $order->event_id === $owner ) {
 			$html .= self::order_summary( $order );
 		}
 		$html .= self::outcome_notice();
@@ -65,9 +66,9 @@ final class TicketForm {
 			$html .= '<p class="oe-tickets__notice" role="status" tabindex="-1">' . esc_html( \OpenEvents\Attendance\WaitlistController::result_text( $wl_result ) ) . '</p>';
 		}
 		$wl_entry = '' !== $wl_token ? ( new \OpenEvents\Attendance\Waitlist() )->by_token( $wl_token ) : null;
-		if ( $wl_entry && $wl_entry->event_id === $event->id() && isset( $types[ $wl_entry->ticket_type_id ] ) ) {
+		if ( $wl_entry && $wl_entry->event_id === $owner && isset( $types[ $wl_entry->ticket_type_id ] ) ) {
 			if ( $wl_entry->offer_is_live() ) {
-				return $html . self::claim_form( $event, $types[ $wl_entry->ticket_type_id ], $wl_entry, $wl_token ) . '</section>';
+				return $html . self::claim_form( $owner, $types[ $wl_entry->ticket_type_id ], $wl_entry, $wl_token ) . '</section>';
 			}
 			$html .= \OpenEvents\Attendance\WaitlistController::leave_form( $wl_entry, $wl_token, 'tickets' );
 		}
@@ -80,7 +81,7 @@ final class TicketForm {
 
 		$gateways = Gateways::available( $currency );
 		$html    .= '<form class="oe-tickets__form" method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" data-wp-on--submit="actions.submit" data-wp-on--change="actions.recalculate">';
-		$html    .= '<input type="hidden" name="action" value="openevents_checkout"><input type="hidden" name="event_id" value="' . esc_attr( (string) $event->id() ) . '">';
+		$html    .= '<input type="hidden" name="action" value="openevents_checkout"><input type="hidden" name="event_id" value="' . esc_attr( (string) $owner ) . '">';
 		$html    .= '<input type="hidden" name="ts" value="' . esc_attr( Guard::sign_timestamp() ) . '">';
 		$html    .= '<div class="oe-tickets__hp" aria-hidden="true"><label>' . esc_html__( 'Website', 'openevents' ) . ' <input type="text" name="website" tabindex="-1" autocomplete="off"></label></div>';
 
@@ -118,7 +119,7 @@ final class TicketForm {
 		}
 		$html .= '</tbody></table>';
 
-		$waitlist = self::waitlist_form( $event, $types, $checkout );
+		$waitlist = self::waitlist_form( $owner, $types, $checkout );
 		if ( ! $on_sale ) {
 			return $html . '</form>' . $waitlist . '</section>';
 		}
@@ -165,18 +166,18 @@ final class TicketForm {
 	 *
 	 * @param TicketType[] $types Ticket types.
 	 */
-	private static function waitlist_form( Event $event, array $types, Checkout $checkout ): string {
+	private static function waitlist_form( int $owner, array $types, Checkout $checkout ): string {
 		$eligible = array_filter( $types, static fn( TicketType $t ) => 'sold_out' === $checkout->sale_state( $t ) && \OpenEvents\Attendance\WaitlistService::enabled( $t ) );
 		if ( ! $eligible ) {
 			return '';
 		}
-		$id   = 'oe-tickets-wl-' . $event->id();
+		$id   = 'oe-tickets-wl-' . $owner;
 		$wl   = new \OpenEvents\Attendance\Waitlist();
 		$html = '<form class="oe-tickets__form oe-waitlist" method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" data-wp-on--submit="actions.joinWaitlist" aria-labelledby="' . esc_attr( $id ) . '-title">';
 		$html .= '<h4 id="' . esc_attr( $id ) . '-title">' . esc_html__( 'Join the waitlist', 'openevents' ) . '</h4>';
 		/* translators: %d: hours */
 		$html .= '<p class="oe-waitlist__intro">' . esc_html( sprintf( _n( 'If tickets open up, we’ll hold them for you and email you a link. You’ll have %d hour to buy them.', 'If tickets open up, we’ll hold them for you and email you a link. You’ll have %d hours to buy them.', \OpenEvents\Attendance\WaitlistService::offer_hours(), 'openevents' ), \OpenEvents\Attendance\WaitlistService::offer_hours() ) ) . '</p>';
-		$html .= '<input type="hidden" name="action" value="openevents_waitlist"><input type="hidden" name="event_id" value="' . esc_attr( (string) $event->id() ) . '">';
+		$html .= '<input type="hidden" name="action" value="openevents_waitlist"><input type="hidden" name="event_id" value="' . esc_attr( (string) $owner ) . '">';
 		$html .= '<input type="hidden" name="ts" value="' . esc_attr( Guard::sign_timestamp() ) . '">';
 		$html .= '<div class="oe-tickets__hp" aria-hidden="true"><label>' . esc_html__( 'Website', 'openevents' ) . ' <input type="text" name="website" tabindex="-1" autocomplete="off"></label></div>';
 		$html .= '<div class="oe-tickets__fields">';
@@ -206,8 +207,8 @@ final class TicketForm {
 	/**
 	 * Checkout for tickets held by a waitlist offer: exactly those tickets.
 	 */
-	private static function claim_form( Event $event, TicketType $type, \OpenEvents\Attendance\WaitlistEntry $entry, string $token ): string {
-		$id       = 'oe-tickets-claim-' . $event->id();
+	private static function claim_form( int $owner, TicketType $type, \OpenEvents\Attendance\WaitlistEntry $entry, string $token ): string {
+		$id       = 'oe-tickets-claim-' . $owner;
 		$currency = Checkout::currency();
 		$price    = (int) $type->setting( 'price_minor', 0 );
 		$deadline = wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), strtotime( $entry->offer_expires_utc . ' UTC' ) );
@@ -217,7 +218,7 @@ final class TicketForm {
 		$html .= '<p>' . esc_html( sprintf( __( '%1$d × %2$s (%3$s) are held for you until %4$s.', 'openevents' ), $entry->quantity, $type->name, Money::format( $price * $entry->quantity, $currency ), $deadline ) ) . '</p></div>';
 
 		$html .= '<form class="oe-tickets__form" method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" data-wp-on--submit="actions.submit">';
-		$html .= '<input type="hidden" name="action" value="openevents_checkout"><input type="hidden" name="event_id" value="' . esc_attr( (string) $event->id() ) . '">';
+		$html .= '<input type="hidden" name="action" value="openevents_checkout"><input type="hidden" name="event_id" value="' . esc_attr( (string) $owner ) . '">';
 		$html .= '<input type="hidden" name="ts" value="' . esc_attr( Guard::sign_timestamp( time() - Guard::MIN_FILL ) ) . '">';
 		$html .= '<input type="hidden" name="waitlist_token" value="' . esc_attr( $token ) . '">';
 		$html .= '<input type="hidden" name="tickets[' . esc_attr( (string) $type->id ) . ']" value="' . esc_attr( (string) $entry->quantity ) . '">';

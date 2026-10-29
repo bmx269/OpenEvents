@@ -56,6 +56,7 @@ final class Module extends AbstractModule {
 		add_action( 'deleted_post_meta', array( $this, 'on_meta_change' ), 10, 3 );
 
 		add_filter( 'openevents/event_details/sections', array( $this, 'section' ), 20, 3 );
+		add_filter( 'openevents/series/sections', array( $this, 'series_section' ), 20, 2 );
 		add_action( 'init', array( $this, 'register_assets' ) );
 		add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_on_event_pages' ) );
 		add_action( 'admin_post_openevents_checkout', array( $this, 'handle_form' ) );
@@ -106,7 +107,7 @@ final class Module extends AbstractModule {
 	 * @return array<string, array<string, mixed>>
 	 */
 	public function meta_fields( array $fields, string $post_type ): array {
-		if ( ! in_array( $post_type, openevents_event_post_types(), true ) ) {
+		if ( ! in_array( $post_type, openevents_ticketed_post_types(), true ) ) {
 			return $fields;
 		}
 		$fields[ self::META_KEY ] = array(
@@ -185,30 +186,33 @@ final class Module extends AbstractModule {
 	 * @param int|int[] $meta_ids Meta id(s); unused.
 	 */
 	public function on_meta_change( int|array $meta_ids, int $post_id, string $meta_key ): void {
-		if ( in_array( $meta_key, array( self::META_KEY, '_oe_timezone' ), true ) && Event::is_event_type( (string) get_post_type( $post_id ) ) ) {
+		if ( in_array( $meta_key, array( self::META_KEY, '_oe_timezone' ), true ) && in_array( (string) get_post_type( $post_id ), openevents_ticketed_post_types(), true ) ) {
 			self::sync( $post_id );
 		}
 	}
 
 	/**
-	 * Mirrors the event's ticket list into ticket type rows; removed types are
-	 * archived (their orders and attendees stay).
+	 * Mirrors the ticket list of an event (or a series, for passes) into ticket
+	 * type rows; removed types are archived (their orders and attendees stay).
 	 */
 	public static function sync( int $event_id ): void {
 		global $wpdb;
-		$event = Event::get( $event_id );
-		if ( ! $event ) {
+		$post_type = (string) get_post_type( $event_id );
+		// Series are accepted even before the series module boots (setup, imports).
+		if ( ! in_array( $post_type, openevents_ticketed_post_types(), true ) && \OpenEvents\Modules\Series\Module::POST_TYPE !== $post_type ) {
 			return;
 		}
+		// Series have no timezone of their own: sale dates use the site's.
+		$timezone = Event::get( $event_id )?->timezone() ?? wp_timezone();
 		$repo     = new TicketTypes();
 		$currency = Checkout::currency();
 		$keep     = array();
 		$utc      = new \DateTimeZone( 'UTC' );
-		$to_utc   = static function ( string $local ) use ( $event, $utc ): ?string {
+		$to_utc   = static function ( string $local ) use ( $timezone, $utc ): ?string {
 			if ( '' === $local ) {
 				return null;
 			}
-			$date = \DateTimeImmutable::createFromFormat( Meta::DATETIME_FORMAT, $local, $event->timezone() );
+			$date = \DateTimeImmutable::createFromFormat( Meta::DATETIME_FORMAT, $local, $timezone );
 			return $date ? $date->setTimezone( $utc )->format( Meta::DATETIME_FORMAT ) : null;
 		};
 
@@ -260,7 +264,7 @@ final class Module extends AbstractModule {
 	}
 
 	public function enqueue_on_event_pages(): void {
-		if ( is_singular( openevents_event_post_types() ) && ( new Checkout() )->ticket_types( get_queried_object_id() ) ) {
+		if ( is_singular( openevents_ticketed_post_types() ) && ( new Checkout() )->ticket_types( get_queried_object_id() ) ) {
 			wp_enqueue_script_module( 'openevents-tickets' );
 		}
 	}
@@ -276,7 +280,25 @@ final class Module extends AbstractModule {
 		$token = sanitize_text_field( wp_unslash( $_GET['oe_order_token'] ?? '' ) );
 		if ( $types || '' !== $token ) {
 			wp_enqueue_script_module( 'openevents-tickets' );
-			$sections['tickets'] = TicketForm::render( $event, $types, $checkout, $token );
+			$sections['tickets'] = TicketForm::render( $event->id(), $types, $checkout, $token );
+		}
+		return $sections;
+	}
+
+	/**
+	 * Series passes on a series page.
+	 *
+	 * @param string[] $sections Sections.
+	 * @return string[]
+	 */
+	public function series_section( array $sections, int $series_id ): array {
+		$checkout = new Checkout();
+		$types    = $checkout->ticket_types( $series_id );
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$token = sanitize_text_field( wp_unslash( $_GET['oe_order_token'] ?? '' ) );
+		if ( $types || '' !== $token ) {
+			wp_enqueue_script_module( 'openevents-tickets' );
+			$sections['tickets'] = TicketForm::render( $series_id, $types, $checkout, $token );
 		}
 		return $sections;
 	}

@@ -1,5 +1,5 @@
 const { test, expect } = require( '@playwright/test' );
-const { rest } = require( './helpers' );
+const { rest, newPost } = require( './helpers' );
 
 test.describe( 'Admin', () => {
 	test( 'setup wizard creates a calendar page and saves choices', async ( {
@@ -99,17 +99,7 @@ test.describe( 'Admin', () => {
 	test( 'editor: create an event from the sidebar panel', async ( {
 		page,
 	} ) => {
-		await page.goto( '/wp-admin/post-new.php?post_type=oe_event' );
-		await page.waitForFunction( () =>
-			window.wp?.data?.dispatch( 'core/preferences' )
-		);
-		await page.evaluate( () =>
-			window.wp.data
-				.dispatch( 'core/preferences' )
-				.set( 'core/edit-post', 'welcomeGuide', false )
-		);
-		// The guide is already open on this load; the preference applies from the next one.
-		await page.reload();
+		await newPost( page, 'oe_event' );
 
 		const canvas = page.frameLocator( 'iframe[name="editor-canvas"]' );
 		await canvas

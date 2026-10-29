@@ -146,8 +146,18 @@ function useLinkedPosts( postType ) {
 	];
 }
 
-function VenueField( { value, onChange } ) {
-	const [ options, create ] = useLinkedPosts( 'oe_venue' );
+/**
+ * Picks a linked post (venue, series), or creates one from the typed name.
+ *
+ * @param {Object}   props
+ * @param {string}   props.postType    Linked post type.
+ * @param {string}   props.label       Field label.
+ * @param {Function} props.createLabel Button text for a new name.
+ * @param {number}   props.value       Selected id.
+ * @param {Function} props.onChange    Receives the id (0 for none).
+ */
+function LinkedPostField( { postType, label, createLabel, value, onChange } ) {
+	const [ options, create ] = useLinkedPosts( postType );
 	const [ typed, setTyped ] = useState( '' );
 	const exists = options.some(
 		( o ) => o.label.toLowerCase() === typed.trim().toLowerCase()
@@ -158,7 +168,7 @@ function VenueField( { value, onChange } ) {
 			<ComboboxControl
 				__next40pxDefaultSize
 				__nextHasNoMarginBottom
-				label={ __( 'Venue', 'openevents' ) }
+				label={ label }
 				value={ value ? String( value ) : null }
 				options={ options }
 				onChange={ ( id ) => onChange( id ? Number( id ) : 0 ) }
@@ -168,18 +178,14 @@ function VenueField( { value, onChange } ) {
 				<Button
 					variant="link"
 					onClick={ async () => {
-						const venue = await create( typed.trim() );
-						if ( venue?.id ) {
-							onChange( venue.id );
+						const post = await create( typed.trim() );
+						if ( post?.id ) {
+							onChange( post.id );
 							setTyped( '' );
 						}
 					} }
 				>
-					{ sprintf(
-						/* translators: %s: venue name */
-						__( 'Add “%s” as a new venue', 'openevents' ),
-						typed.trim()
-					) }
+					{ createLabel( typed.trim() ) }
 				</Button>
 			) }
 		</>
@@ -355,10 +361,34 @@ export default function EventPanel( {
 					}
 				/>
 			) }
-			<VenueField
+			<LinkedPostField
+				postType="oe_venue"
+				label={ __( 'Venue', 'openevents' ) }
+				createLabel={ ( name ) =>
+					sprintf(
+						/* translators: %s: venue name */
+						__( 'Add “%s” as a new venue', 'openevents' ),
+						name
+					)
+				}
 				value={ meta._oe_venue_id }
 				onChange={ ( id ) => setMeta( { _oe_venue_id: id } ) }
 			/>
+			{ ( config.modules || [] ).includes( 'series' ) && (
+				<LinkedPostField
+					postType="oe_series"
+					label={ __( 'Series', 'openevents' ) }
+					createLabel={ ( name ) =>
+						sprintf(
+							/* translators: %s: series name */
+							__( 'Add “%s” as a new series', 'openevents' ),
+							name
+						)
+					}
+					value={ meta._oe_series_id }
+					onChange={ ( id ) => setMeta( { _oe_series_id: id } ) }
+				/>
+			) }
 			<OrganizersField
 				value={ meta._oe_organizer_ids }
 				onChange={ ( ids ) => setMeta( { _oe_organizer_ids: ids } ) }

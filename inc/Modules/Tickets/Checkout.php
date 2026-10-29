@@ -80,7 +80,10 @@ final class Checkout {
 		if ( $type->sale_end_utc && $now > $type->sale_end_utc ) {
 			return 'ended';
 		}
-		$occurrence = openevents()->occurrences()->for_event( $type->event_id );
+		// A series pass sells until the series' last date starts.
+		$occurrence = \OpenEvents\Modules\Series\Module::POST_TYPE === get_post_type( $type->event_id )
+			? openevents()->occurrences()->last_in_series( $type->event_id )
+			: openevents()->occurrences()->for_event( $type->event_id );
 		if ( ! $type->sale_end_utc && ( ! $occurrence || $now >= $occurrence->start_utc()->format( 'Y-m-d H:i:s' ) ) ) {
 			return 'event_started';
 		}

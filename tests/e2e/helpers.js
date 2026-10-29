@@ -40,4 +40,34 @@ function day( offset ) {
 	) }`;
 }
 
-module.exports = { rest, day };
+/**
+ * Opens the block editor for a new post with the welcome guide closed. The
+ * guide is turned off through a preference, which WordPress saves after a
+ * short delay, so a reload can still show it once: close it if it's there.
+ *
+ * @param {import('@playwright/test').Page} page
+ * @param {string}                          postType Post type.
+ */
+async function newPost( page, postType ) {
+	await page.goto( `/wp-admin/post-new.php?post_type=${ postType }` );
+	await page.waitForFunction( () =>
+		window.wp?.data?.dispatch( 'core/preferences' )
+	);
+	await page.evaluate( () =>
+		window.wp.data
+			.dispatch( 'core/preferences' )
+			.set( 'core/edit-post', 'welcomeGuide', false )
+	);
+	// The guide mounts with the editor; wait for the editor before checking.
+	await page
+		.frameLocator( 'iframe[name="editor-canvas"]' )
+		.getByRole( 'textbox', { name: 'Add title' } )
+		.waitFor();
+	const guide = page.getByRole( 'dialog', { name: /Welcome to/ } );
+	if ( await guide.isVisible() ) {
+		await guide.getByRole( 'button', { name: 'Close' } ).click();
+	}
+	await guide.waitFor( { state: 'hidden' } );
+}
+
+module.exports = { rest, day, newPost };

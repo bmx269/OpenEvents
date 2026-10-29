@@ -1,21 +1,12 @@
 const { test, expect } = require( '@playwright/test' );
 const AxeBuilder = require( '@axe-core/playwright' ).default;
-const { rest } = require( './helpers' );
+const { rest, newPost } = require( './helpers' );
 
 test.describe( 'Recurring events', () => {
 	test( 'editor: repeat weekly, preview the dates, and publish', async ( {
 		page,
 	} ) => {
-		await page.goto( '/wp-admin/post-new.php?post_type=oe_event' );
-		await page.waitForFunction( () =>
-			window.wp?.data?.dispatch( 'core/preferences' )
-		);
-		await page.evaluate( () =>
-			window.wp.data
-				.dispatch( 'core/preferences' )
-				.set( 'core/edit-post', 'welcomeGuide', false )
-		);
-		await page.reload();
+		await newPost( page, 'oe_event' );
 
 		const canvas = page.frameLocator( 'iframe[name="editor-canvas"]' );
 		await canvas
@@ -97,7 +88,9 @@ test.describe( 'Recurring events', () => {
 		expect( ( starts[ 1 ] - starts[ 0 ] ) / 864e5 ).toBe( 7 );
 		expect( ( starts[ 2 ] - starts[ 1 ] ) / 864e5 ).toBe( 7 );
 		const secondDate = occurrences[ 1 ].start.slice( 0, 10 );
-		expect( occurrences[ 1 ].link ).toContain( `oe_occurrence=${ secondDate }` );
+		expect( occurrences[ 1 ].link ).toContain(
+			`oe_occurrence=${ secondDate }`
+		);
 
 		// Each date's link opens the page for that date.
 		await page.goto( occurrences[ 1 ].link );

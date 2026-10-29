@@ -114,7 +114,7 @@ $rsvp_events = array(
 	$gala     => array( 'enabled' => true, 'capacity' => 120, 'max_per_response' => 4 ),
 	$workshop => array( 'enabled' => true, 'capacity' => 3, 'max_per_response' => 2 ),
 );
-update_option( 'openevents_modules', array( 'ical', 'recurrence', 'rsvp', 'tickets' ) );
+update_option( 'openevents_modules', array( 'ical', 'recurrence', 'series', 'rsvp', 'tickets' ) );
 OpenEvents\Attendance\Schema::install();
 $rsvp = new OpenEvents\Modules\Rsvp\Service();
 foreach ( $rsvp_events as $event_id => $config ) {
@@ -176,6 +176,26 @@ update_post_meta(
 );
 OpenEvents\Modules\Tickets\Module::sync( $puppets );
 OpenEvents\Attendance\FieldSets::save( 'Kids programs', $kids_questions );
+
+// A series: three film nights with a free season pass sold on the series page.
+$season = wp_insert_post(
+	array(
+		'post_type'    => 'oe_series',
+		'post_status'  => 'publish',
+		'post_title'   => 'Autumn Film Season',
+		'post_content' => '<!-- wp:paragraph --><p>Three classic films, one evening each week.</p><!-- /wp:paragraph -->',
+	)
+);
+foreach ( array( 'Film Night: Metropolis' => 4, 'Film Night: Casablanca' => 11, 'Film Night: Rear Window' => 18 ) as $film => $days ) {
+	$film_day = current_datetime()->modify( "+{$days} days" )->format( 'Y-m-d' );
+	$make( $film, "{$film_day} 19:00:00", "{$film_day} 21:00:00", array( '_oe_series_id' => $season, '_oe_cost' => '0' ), 'Music' );
+}
+update_post_meta(
+	$season,
+	'_oe_tickets',
+	array( array( 'key' => 'pass', 'name' => 'Season pass', 'price' => '0', 'capacity' => 40, 'max_per_order' => 2 ) )
+);
+OpenEvents\Modules\Tickets\Module::sync( $season );
 
 remove_filter( 'pre_wp_mail', '__return_true' );
 

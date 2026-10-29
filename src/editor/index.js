@@ -113,6 +113,32 @@ function OpenEventsSidebar() {
 		);
 	}
 
+	if (
+		postType === 'oe_series' &&
+		( config.modules || [] ).includes( 'tickets' )
+	) {
+		return (
+			<PluginDocumentSettingPanel
+				name="openevents-series-passes"
+				title={ __( 'Series passes', 'openevents' ) }
+				className="oe-editor-panel"
+			>
+				<p className="oe-editor-panel__hint">
+					{ __(
+						'Passes are sold on the series page and cover every event in the series.',
+						'openevents'
+					) }
+				</p>
+				<TicketsPanel
+					meta={ meta }
+					setMeta={ setMeta }
+					postId={ postId }
+					config={ config }
+				/>
+			</PluginDocumentSettingPanel>
+		);
+	}
+
 	if ( postType === 'oe_venue' ) {
 		return (
 			<PluginDocumentSettingPanel
