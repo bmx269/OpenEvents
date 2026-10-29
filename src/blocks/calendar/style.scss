@@ -404,3 +404,13 @@
 		transform: translateY(0.5rem);
 	}
 }
+
+// The classic-theme archive template: themes without a content container of
+// their own (page-builder themes) would otherwise run it edge to edge.
+.oe-classic-archive {
+	box-sizing: border-box;
+	width: 100%;
+	max-width: var(--wp--style--global--wide-size, 1200px);
+	margin-inline: auto;
+	padding: var(--oe-gap) var(--wp--style--root--padding-right, 1.25rem) calc(var(--oe-gap) * 2) var(--wp--style--root--padding-left, 1.25rem);
+}

@@ -62,4 +62,53 @@ final class TemplateTest extends TestCase {
 		$this->assertArrayHasKey( 'single-event', $types );
 		$this->assertSame( 'Single Event: Workshops', $types['single-event-category-workshops']['title'] );
 	}
+
+	public function test_classic_themes_dont_get_plugin_block_templates(): void {
+		$registry = \WP_Block_Templates_Registry::get_instance();
+		$this->assertFalse( wp_is_block_theme() );
+		$this->assertFalse( $registry->is_registered( 'openevents//single-event' ), 'Classic themes have no header or footer parts for them.' );
+
+		switch_theme( 'twentytwentyfive' );
+		( new \OpenEvents\Frontend\Templates() )->register_block_templates();
+		$this->assertTrue( $registry->is_registered( 'openevents//single-event' ) );
+		foreach ( array( 'single-event', 'single-oe_event', 'archive-oe_event', 'taxonomy-oe_event_category' ) as $slug ) {
+			if ( $registry->is_registered( 'openevents//' . $slug ) ) {
+				unregister_block_template( 'openevents//' . $slug );
+			}
+		}
+		switch_theme( 'default' );
+	}
+
+	public function test_classic_archive_can_be_turned_off(): void {
+		$templates = new \OpenEvents\Frontend\Templates();
+		$this->go_to( get_post_type_archive_link( \OpenEvents\Content\PostTypes::EVENT ) );
+		$this->assertStringEndsWith( 'templates/classic/archive.php', $templates->classic_archive( 'theme-archive.php' ) );
+
+		add_filter( 'openevents/classic_archive', '__return_false' );
+		$this->assertSame( 'theme-archive.php', $templates->classic_archive( 'theme-archive.php' ) );
+		remove_filter( 'openevents/classic_archive', '__return_false' );
+	}
+
+	public function test_calendar_shortcode(): void {
+		add_filter( 'openevents/calendar/cache', '__return_false' );
+		$term  = self::factory()->term->create(
+			array(
+				'taxonomy' => \OpenEvents\Content\PostTypes::CATEGORY,
+				'slug'     => 'music',
+			)
+		);
+		$day   = current_datetime()->modify( '+3 days' )->format( 'Y-m-d' );
+		$music = $this->event( array( '_oe_start' => "{$day} 19:00:00" ), array( 'post_title' => 'Choir night' ) );
+		$other = $this->event( array( '_oe_start' => "{$day} 10:00:00" ), array( 'post_title' => 'Book sale' ) );
+		wp_set_object_terms( $music, array( $term ), \OpenEvents\Content\PostTypes::CATEGORY );
+		$this->rows( $music );
+		$this->rows( $other );
+
+		$html = do_shortcode( '[openevents_calendar view="list" categories="music,not-a-category" legend="no"]' );
+		remove_filter( 'openevents/calendar/cache', '__return_false' );
+
+		$this->assertStringContainsString( 'oe-calendar--list', $html );
+		$this->assertStringContainsString( 'Choir night', $html, 'Category slugs limit the calendar.' );
+		$this->assertStringNotContainsString( 'Book sale', $html );
+	}
 }
