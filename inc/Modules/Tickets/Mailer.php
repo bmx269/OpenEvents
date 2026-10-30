@@ -60,9 +60,11 @@ final class Mailer {
 			}
 		}
 		$lines[] = '';
-		$lines[] = __( 'Check-in codes (show one per person at the door):', 'openevents' );
+		$lines[] = __( 'Passes (show one per person at the door, on your phone or printed):', 'openevents' );
 		foreach ( ( new Attendees() )->group( $order->uuid ) as $i => $attendee ) {
-			$lines[] = sprintf( '  %d. %s', $i + 1, $attendee->security_code );
+			$holder  = $types->get( $attendee->ticket_type_id );
+			$lines[] = sprintf( '  %d. %s, %s (%s)', $i + 1, $attendee->name, $holder ? $holder->name : '', $attendee->security_code );
+			$lines[] = '     ' . \OpenEvents\Attendance\Pass::url( $attendee );
 		}
 		$lines[] = '';
 		/* translators: %s: order number */

@@ -110,6 +110,9 @@ final class Form {
 					? sprintf( _n( 'You’re going (%d person). Change your response below.', 'You’re going (%d people). Change your response below.', $people, 'openevents' ), $people )
 					: __( 'You said you can’t make it. Change your response below.', 'openevents' )
 			) . '</p>';
+			if ( $going ) {
+				$html .= self::passes( $existing );
+			}
 		}
 
 		$can_go     = ! $type->is_full() || ( $lead && $going );
@@ -236,6 +239,19 @@ final class Form {
 			}
 		}
 		return $html;
+	}
+
+	/**
+	 * Links to each person's check-in pass.
+	 *
+	 * @param Attendee[] $people The response's rows.
+	 */
+	private static function passes( array $people ): string {
+		$html = '<p class="oe-rsvp__passes-title">' . esc_html__( 'Passes for the door, one per person:', 'openevents' ) . '</p><ul class="oe-rsvp__passes">';
+		foreach ( $people as $attendee ) {
+			$html .= '<li><a href="' . esc_url( \OpenEvents\Attendance\Pass::url( $attendee ) ) . '">' . esc_html( $attendee->name ) . '</a> <code>' . esc_html( $attendee->security_code ) . '</code></li>';
+		}
+		return $html . '</ul>';
 	}
 
 	private static function field( string $id, string $label, string $control ): string {

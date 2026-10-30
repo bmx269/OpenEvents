@@ -99,7 +99,9 @@ final class TicketsTest extends TestCase {
 		$this->assertSame( 'confirmed', $result->code );
 		$this->assertSame( Order::COMPLETED, ( new Orders() )->get( $result->order->id )->status );
 		$this->assertSame( 2, ( new Attendees() )->counts( $event )['going'] );
-		$this->assertStringContainsString( 'Check-in codes', tests_retrieve_phpmailer_instance()->get_sent()->body );
+		$body = tests_retrieve_phpmailer_instance()->get_sent()->body;
+		$this->assertStringContainsString( 'Passes (show one per person at the door', $body );
+		$this->assertSame( 2, substr_count( $body, '?oe_pass=' ), 'A pass link per person.' );
 	}
 
 	public function test_manual_gateway_reserves_tickets_as_unpaid_until_marked_paid(): void {
