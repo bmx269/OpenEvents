@@ -86,7 +86,7 @@ $d = static fn( int $day, string $time ) => $month->modify( '+' . ( $day - 1 ) .
 $jazz = $make( 'Jazz Night', $d( 3, '19:00:00' ), $d( 3, '22:00:00' ) );
 $make( 'Pottery Basics', $d( 8, '10:00:00' ), $d( 8, '12:30:00' ), array( '_oe_cost' => '0' ), 'Workshops' );
 $make( 'Harvest Festival', $d( 12, '00:00:00' ), $d( 14, '23:59:59' ), array( '_oe_all_day' => true ), 'Community' );
-$make( 'Online Talk (Toronto time)', $d( 16, '18:00:00' ), $d( 16, '19:00:00' ), array( '_oe_timezone' => 'America/Toronto' ), 'Workshops' );
+$online = $make( 'Online Talk (Toronto time)', $d( 16, '18:00:00' ), $d( 16, '19:00:00' ), array( '_oe_timezone' => 'America/Toronto' ), 'Workshops' );
 foreach ( array( 'Open Mic', 'Choir Practice', 'Board Games', 'Late Show' ) as $i => $title ) {
 	$make( $title, $d( 20, sprintf( '%02d:00:00', 12 + $i * 2 ) ), $d( 20, sprintf( '%02d:30:00', 13 + $i * 2 ) ), array(), 'Community' );
 }
@@ -160,6 +160,11 @@ update_post_meta( $storytime, '_oe_rsvp', array( 'enabled' => true, 'capacity' =
 $rsvp->sync( $storytime );
 $story_second = openevents()->occurrences()->query( array( 'event_ids' => array( $storytime ), 'ends_after' => OpenEvents\Occurrences\Repository::now(), 'per_page' => 2, 'count' => false, 'prime' => false ) )['items'][1];
 $rsvp->respond( $storytime, array( 'name' => 'Mae Jemison', 'email' => 'mae@example.com', 'status' => 'going', 'quantity' => 1, 'sequence' => $story_second->sequence, 'ts' => OpenEvents\Attendance\Guard::sign_timestamp( time() - 60 ), 'ip' => '192.0.2.40' ) );
+
+// Event status: a postponed event, and one storytime date cancelled on its own.
+OpenEvents\Content\EventStatus::set( $online, OpenEvents\Content\EventStatus::POSTPONED, 'Our speaker is unwell. We’ll announce the new date soon.' );
+$story_third = openevents()->occurrences()->query( array( 'event_ids' => array( $storytime ), 'ends_after' => OpenEvents\Occurrences\Repository::now(), 'per_page' => 3, 'count' => false, 'prime' => false ) )['items'][2];
+OpenEvents\Content\EventStatus::set( $storytime, OpenEvents\Content\EventStatus::CANCELLED, 'Our storyteller is away this week.', $story_third->start->format( 'Y-m-d' ) );
 
 $tickets_meta   = get_post_meta( $concert, '_oe_tickets', true );
 $tickets_meta[] = array( 'key' => 'front', 'name' => 'Front Row', 'price' => '60', 'capacity' => 2, 'max_per_order' => 2, 'waitlist' => true );

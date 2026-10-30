@@ -60,7 +60,14 @@ final class Writer {
 			$lines[] = 'DTEND:' . $occurrence->end_utc()->format( 'Ymd\THis\Z' );
 		}
 
-		$lines[] = 'SUMMARY:' . self::text( get_the_title( $event->post ) );
+		$title = get_the_title( $event->post );
+		if ( $occurrence->is_called_off() ) {
+			// STATUS for apps that show it (cancelled dates are struck through); the title for the rest.
+			$lines[] = 'STATUS:' . ( \OpenEvents\Content\EventStatus::CANCELLED === $occurrence->event_status ? 'CANCELLED' : 'TENTATIVE' );
+			/* translators: 1: status such as "Cancelled", 2: event title */
+			$title = sprintf( __( '%1$s: %2$s', 'openevents' ), \OpenEvents\Content\EventStatus::label( $occurrence->event_status ), $title );
+		}
+		$lines[] = 'SUMMARY:' . self::text( $title );
 		$lines[] = 'DESCRIPTION:' . self::text( get_the_excerpt( $event->post ) );
 		$lines[] = 'URL:' . openevents_occurrence_url( $occurrence );
 

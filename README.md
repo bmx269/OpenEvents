@@ -48,6 +48,7 @@ Requires WordPress 7.1+ and PHP 8.2+.
 | **Privacy tools**: attendee data in WordPress's personal data export and erase | ✅ Done |
 | **Week and day views** | ✅ Done |
 | **Event attributes and calendar filters**: lists such as Audiences, filter by attribute and day of the week | ✅ Done |
+| **Event status**: cancel or postpone an event, or one date of a repeating event, with a note; bookings close and listings say so | ✅ Done |
 | **Per-date places** for recurring events: each date has its own RSVP and ticket capacity, waitlist, and attendee list | ✅ Done |
 | Calendar filter and search, event popups, category badges, per-category and per-post-type templates | ✅ Done |
 | Google Calendar import (iCal feeds) | Next |

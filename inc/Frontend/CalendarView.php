@@ -8,6 +8,7 @@
 namespace OpenEvents\Frontend;
 
 use DateTimeImmutable;
+use OpenEvents\Content\EventStatus;
 use OpenEvents\Occurrences\Occurrence;
 use OpenEvents\Occurrences\Repository;
 
@@ -458,11 +459,13 @@ final class CalendarView {
 		$starts_today = $occurrence->start->format( 'Y-m-d' ) === $day;
 		$time         = ( ! $occurrence->all_day && $starts_today ) ? Formatter::time( $occurrence->start ) . ' ' : '';
 		return sprintf(
-			'<a class="oe-month__event%s" href="%s"%s style="%s">%s<span class="oe-month__event-title">%s</span></a>',
+			'<a class="oe-month__event%s%s" href="%s"%s style="%s">%s%s<span class="oe-month__event-title">%s</span></a>',
 			$occurrence->all_day || $occurrence->is_multi_day() ? ' is-all-day' : '',
+			$occurrence->is_called_off() ? ' is-called-off' : '',
 			esc_url( openevents_occurrence_url( $occurrence ) ),
 			$popup ? self::popup_attributes( $occurrence ) : '',
 			esc_attr( CategoryColors::style_for( $event->id() ) ),
+			EventStatus::badge( $occurrence, 'oe-status' ),
 			$time ? '<span class="oe-month__event-time">' . esc_html( $time ) . '</span>' : '',
 			esc_html( get_the_title( $event->post ) )
 		);
@@ -559,7 +562,7 @@ final class CalendarView {
 		$image = $options['image'] ? get_the_post_thumbnail( $event->post, 'medium', array( 'class' => 'oe-event-card__image', 'alt' => '' ) ) : '';
 		$venue = $options['venue'] ? $event->venue() : null;
 
-		$html  = sprintf( '<article class="oe-event-card%s" style="%s">', $image ? ' has-image' : '', esc_attr( CategoryColors::style_for( $event->id() ) ) );
+		$html  = sprintf( '<article class="oe-event-card%s%s" style="%s">', $image ? ' has-image' : '', $occurrence->is_called_off() ? ' is-called-off' : '', esc_attr( CategoryColors::style_for( $event->id() ) ) );
 		$html .= sprintf(
 			'<div class="oe-event-card__date" aria-hidden="true"><span class="oe-event-card__month">%s</span><span class="oe-event-card__day">%s</span></div>',
 			esc_html( wp_date( 'M', $occurrence->start->getTimestamp(), $occurrence->start->getTimezone() ) ),
@@ -567,7 +570,7 @@ final class CalendarView {
 		);
 		$html .= '<div class="oe-event-card__body">';
 		$html .= sprintf( '<%1$s class="oe-event-card__title"><a href="%2$s"%4$s>%3$s</a></%1$s>', tag_escape( $title_tag ), esc_url( openevents_occurrence_url( $occurrence ) ), esc_html( get_the_title( $event->post ) ), $options['popup'] ? self::popup_attributes( $occurrence ) : '' );
-		$html .= sprintf( '<p class="oe-event-card__when"><time datetime="%s">%s</time></p>', esc_attr( Formatter::iso( $occurrence->start, $occurrence->all_day ) ), esc_html( Formatter::range( $occurrence ) ) );
+		$html .= sprintf( '<p class="oe-event-card__when">%s<time datetime="%s">%s</time></p>', EventStatus::badge( $occurrence, 'oe-status' ), esc_attr( Formatter::iso( $occurrence->start, $occurrence->all_day ) ), esc_html( Formatter::range( $occurrence ) ) );
 		if ( $venue ) {
 			$html .= '<p class="oe-event-card__venue">' . esc_html( get_the_title( $venue ) ) . '</p>';
 		}
@@ -592,10 +595,24 @@ final class CalendarView {
 				'when'    => Formatter::range( $occurrence ),
 				'venue'   => $venue ? html_entity_decode( get_the_title( $venue ), ENT_QUOTES ) : '',
 				'excerpt' => wp_trim_words( wp_strip_all_tags( get_the_excerpt( $event->post ) ), 30 ),
+				'status'  => self::status_text( $occurrence ),
 				'url'     => openevents_occurrence_url( $occurrence ),
 			),
 		);
 		return ' aria-haspopup="dialog" data-wp-on--click="actions.openEvent" data-wp-context="' . esc_attr( (string) wp_json_encode( $data ) ) . '"';
+	}
+
+	/**
+	 * "Cancelled: reason" for a called-off date, else empty.
+	 */
+	private static function status_text( Occurrence $occurrence ): string {
+		if ( ! $occurrence->is_called_off() ) {
+			return '';
+		}
+		$reason = EventStatus::reason( $occurrence );
+		$label  = EventStatus::label( $occurrence->event_status );
+		/* translators: 1: status such as "Cancelled", 2: the organiser's note */
+		return '' !== $reason ? sprintf( __( '%1$s: %2$s', 'openevents' ), $label, $reason ) : $label;
 	}
 
 	/**
@@ -608,6 +625,7 @@ final class CalendarView {
 			. '<div class="oe-popup__inner">'
 			. '<button type="button" class="oe-popup__close" data-wp-on--click="actions.closePopup"><span aria-hidden="true">×</span><span class="oe-visually-hidden">' . esc_html__( 'Close', 'openevents' ) . '</span></button>'
 			. '<h2 class="oe-popup__title" id="' . esc_attr( $title ) . '" data-wp-text="context.popup.title"></h2>'
+			. '<p class="oe-popup__status" data-wp-text="context.popup.status" data-wp-bind--hidden="!context.popup.status"></p>'
 			. '<p class="oe-popup__when" data-wp-text="context.popup.when"></p>'
 			. '<p class="oe-popup__venue" data-wp-text="context.popup.venue" data-wp-bind--hidden="!context.popup.venue"></p>'
 			. '<p class="oe-popup__excerpt" data-wp-text="context.popup.excerpt" data-wp-bind--hidden="!context.popup.excerpt"></p>'

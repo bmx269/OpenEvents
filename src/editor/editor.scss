@@ -105,3 +105,12 @@
 		white-space: nowrap;
 	}
 }
+
+.oe-editor-panel__tag {
+	margin-inline-start: 6px;
+	padding: 0 4px;
+	border: 1px solid #757575;
+	border-radius: 2px;
+	font-size: 11px;
+	text-transform: uppercase;
+}

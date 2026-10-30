@@ -286,6 +286,8 @@ final class TicketForm {
 
 	private static function availability( TicketType $type, ?string $state ): string {
 		$messages = array(
+			'cancelled'     => __( 'Event cancelled', 'openevents' ),
+			'postponed'     => __( 'Event postponed', 'openevents' ),
 			'not_started'   => __( 'Not on sale yet', 'openevents' ),
 			'ended'         => __( 'Sales have ended', 'openevents' ),
 			'event_started' => __( 'Sales have ended', 'openevents' ),

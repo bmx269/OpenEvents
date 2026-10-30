@@ -156,6 +156,17 @@ Patterns used throughout:
 - Admin: Events → Attendees (DataViews, server-paged) with check-in, cancel, and streamed CSV export protected against spreadsheet formula injection.
 - Hooks: `openevents/rsvp/responded`, `openevents/rsvp/cancelled`, `openevents/rsvp/email`, `openevents/attendees/capability`, `openevents/client_ip`.
 
+## Event status
+
+An event, or one date of a repeating event, can be cancelled or postponed, with a note for visitors (`Content\EventStatus`).
+
+- **Meta:** `_oe_status` (`scheduled`, `cancelled`, `postponed`) and `_oe_status_reason` for the whole event; `_oe_date_status` (`[ { date: "Y-m-d", status, reason } ]`) for single dates, keyed by local date like skipped dates. The whole event's status wins when it isn't "scheduled".
+- **Occurrences** carry the resolved status in `event_status` (Installer schema 3), written by `Generator::row()`. Both meta keys are schedule keys, so a change re-syncs the rows, and listings read it without meta lookups (`Occurrence::is_called_off()`).
+- **Bookings close** on a called-off date: `Rsvp\Service::closed_reason()` returns the status, `Checkout::sale_state()` too (not for a series pass, which covers many dates), and waitlist joins are refused. Existing responses can still be cancelled.
+- **Shown:** a "Status" row first in the event details (badge and note), a badge in calendar items and list cards (`.oe-status`, the word in the text colour), the popup, iCal (`STATUS:CANCELLED`, or `TENTATIVE` for postponed, plus the label in the summary), and REST (`status`, `status_reason`).
+- **Editing:** the Event panel has Status and a note; the Repeat panel's date menu cancels, postpones, or reinstates one date, with a note per date. `EventStatus::set()` validates for code, and the `openevents/set-event-status` ability (needs `edit_post`) lets assistants do the same.
+- **TEC import:** `_tribe_events_status` and its reason; without it, a title starting with "[Cancelled]", "Canceled:", or "Postponed –" sets the status. Titles are left as they are.
+
 ## Per-date places (repeating events)
 
 Each date of a repeating event has its own RSVP and ticket capacity, so a weekly storytime for 12 takes 12 every week.

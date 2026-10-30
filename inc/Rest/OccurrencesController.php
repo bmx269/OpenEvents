@@ -150,6 +150,9 @@ final class OccurrencesController {
 			'end_utc'    => $occurrence->end_utc()->format( 'Y-m-d\TH:i:s\Z' ),
 			'timezone'   => $occurrence->start->getTimezone()->getName(),
 			'all_day'    => $occurrence->all_day,
+			// Scheduled, cancelled, or postponed (this date's, or the whole event's).
+			'status'        => $occurrence->event_status,
+			'status_reason' => \OpenEvents\Content\EventStatus::reason( $occurrence ),
 			'cost'       => $event ? $event->cost() : '',
 			'image'      => $event ? get_the_post_thumbnail_url( $event->post, 'large' ) : false,
 			'venue'      => $venue ? array(

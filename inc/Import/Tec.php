@@ -14,6 +14,7 @@ use OpenEvents\Attendance\FieldSets;
 use OpenEvents\Attendance\Money;
 use OpenEvents\Attendance\Schema;
 use OpenEvents\Attendance\TicketTypes;
+use OpenEvents\Content\EventStatus;
 use OpenEvents\Content\Meta;
 use OpenEvents\Content\PostTypes;
 use OpenEvents\Modules\Recurrence\Recurrence;
@@ -371,6 +372,7 @@ final class Tec {
 		// phpcs:enable
 
 		$repeating = 0;
+		$called    = 0;
 		$offsets   = array();
 		foreach ( $this->converted( PostTypes::EVENT ) as $id ) {
 			$meta = static fn( string $key ) => get_post_meta( $id, $key, true );
@@ -395,6 +397,12 @@ final class Tec {
 				'_oe_featured'           => (bool) $meta( '_tribe_featured' ),
 				'_oe_hide_from_listings' => '' !== (string) $meta( '_EventHideFromUpcoming' ) && 'no' !== strtolower( (string) $meta( '_EventHideFromUpcoming' ) ),
 			);
+			$status = self::status( (string) $meta( '_tribe_events_status' ), (string) get_post_field( 'post_title', $id ) );
+			if ( EventStatus::SCHEDULED !== $status ) {
+				$values['_oe_status']        = $status;
+				$values['_oe_status_reason'] = EventStatus::sanitize_reason( $meta( '_tribe_events_status_reason' ) );
+				++$called;
+			}
 			if ( isset( $series[ $id ] ) ) {
 				$values[ Series::META_KEY ] = $series[ $id ];
 			}
@@ -409,10 +417,30 @@ final class Tec {
 				update_post_meta( $id, $key, $value );
 			}
 		}
-		$this->report['repeating events'] = $repeating;
+		$this->report['repeating events']               = $repeating;
+		$this->report['cancelled or postponed events'] = $called;
 		if ( $offsets ) {
 			$this->report['notes'][] = sprintf( '%d events used a fixed UTC offset; their wall-clock times were kept with the site timezone (ids: %s).', count( $offsets ), implode( ', ', array_slice( $offsets, 0, 20 ) ) );
 		}
+	}
+
+	/**
+	 * TEC's event status ("canceled", "postponed"), else a title that says so
+	 * ("[CANCELLED] Storytime", "Postponed: Concert"), as sites without the
+	 * status field often marked it. Titles are left as they are.
+	 */
+	public static function status( string $tec_status, string $title ): string {
+		$tec_status = strtolower( trim( $tec_status ) );
+		if ( in_array( $tec_status, array( 'canceled', 'cancelled' ), true ) ) {
+			return EventStatus::CANCELLED;
+		}
+		if ( 'postponed' === $tec_status ) {
+			return EventStatus::POSTPONED;
+		}
+		if ( preg_match( '/^\W*(cancell?ed|postponed)\b/i', $title, $m ) ) {
+			return str_starts_with( strtolower( $m[1] ), 'post' ) ? EventStatus::POSTPONED : EventStatus::CANCELLED;
+		}
+		return EventStatus::SCHEDULED;
 	}
 
 	/**

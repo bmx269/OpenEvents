@@ -139,6 +139,9 @@ final class Service {
 		if ( $occurrence->has_ended() ) {
 			return 'ended';
 		}
+		if ( $occurrence->is_called_off() ) {
+			return $occurrence->event_status; // "cancelled" or "postponed".
+		}
 		$now = gmdate( Meta::DATETIME_FORMAT );
 		if ( $type->sale_end_utc ) {
 			return $now > $type->sale_end_utc ? 'deadline' : null;
@@ -176,8 +179,9 @@ final class Service {
 
 		// Full event with a waitlist: queue instead of booking.
 		if ( 'waitlist' === ( $input['status'] ?? '' ) && ! $group ) {
-			if ( $this->closed_reason( $event_id, $type ) ) {
-				return Result::error( 'closed', __( 'RSVPs for this event are closed.', 'openevents' ) );
+			$closed = $this->closed_reason( $event_id, $type );
+			if ( $closed ) {
+				return Result::error( 'closed', Form::closed_text( $closed ) );
 			}
 			$joined = ( new \OpenEvents\Attendance\WaitlistService() )->join( $type, $input );
 			return $joined->ok ? Result::ok( $joined->code, $joined->message ) : Result::error( 'available' === $joined->code ? 'invalid' : $joined->code, $joined->message );
@@ -204,7 +208,7 @@ final class Service {
 		}
 		$closed = $this->closed_reason( $event_id, $type );
 		if ( $closed ) {
-			return Result::error( 'closed', __( 'RSVPs for this event are closed.', 'openevents' ) );
+			return Result::error( 'closed', Form::closed_text( $closed ) );
 		}
 
 		// Attendee questions, for each person going. Checked before any seat is held.
