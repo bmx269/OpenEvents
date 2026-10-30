@@ -283,6 +283,8 @@ final class Rest {
 						'event_title' => html_entity_decode( get_the_title( $a->event_id ), ENT_QUOTES ),
 						'date'        => $repo->date_label( $a->ticket_type_id, $dates ),
 						'code'        => $a->security_code,
+						// For organisers to send again when someone can't find their email.
+						'pass_url'    => \OpenEvents\Attendance\Pass::url( $a ),
 						'answers'     => \OpenEvents\Attendance\Fields::answers( $a, $types ),
 					)
 				);

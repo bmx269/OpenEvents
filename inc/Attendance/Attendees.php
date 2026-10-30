@@ -98,6 +98,19 @@ final class Attendees {
 		$wpdb->update( Schema::attendees(), array( 'status' => $status, 'updated_utc' => gmdate( 'Y-m-d H:i:s' ) ), array( 'group_uuid' => $group_uuid ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery
 	}
 
+	/**
+	 * Checks someone in unless they already are, in one conditional UPDATE,
+	 * so two scanners at the door can't both succeed.
+	 *
+	 * @return bool Whether this call checked them in.
+	 */
+	public function check_in( int $id ): bool {
+		global $wpdb;
+		$table = Schema::attendees();
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		return 1 === (int) $wpdb->query( $wpdb->prepare( "UPDATE {$table} SET checked_in_utc = %s WHERE id = %d AND checked_in_utc IS NULL", gmdate( 'Y-m-d H:i:s' ), $id ) );
+	}
+
 	public function set_checked_in( int $id, bool $checked_in ): bool {
 		global $wpdb;
 		return false !== $wpdb->update( Schema::attendees(), array( 'checked_in_utc' => $checked_in ? gmdate( 'Y-m-d H:i:s' ) : null ), array( 'id' => $id ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery
@@ -106,6 +119,28 @@ final class Attendees {
 	public function set_status( int $id, string $status ): bool {
 		global $wpdb;
 		return false !== $wpdb->update( Schema::attendees(), array( 'status' => $status, 'updated_utc' => gmdate( 'Y-m-d H:i:s' ) ), array( 'id' => $id ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+	}
+
+	/**
+	 * The attendee with a check-in code (codes are compared case-insensitively,
+	 * as people type them).
+	 */
+	public function find_by_code( string $code ): ?Attendee {
+		global $wpdb;
+		$code = strtoupper( (string) preg_replace( '/[^A-Za-z0-9]/', '', $code ) );
+		if ( '' === $code ) {
+			return null;
+		}
+		$table = Schema::attendees();
+		$row   = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table} WHERE security_code = %s LIMIT 1", $code ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		return $row ? Attendee::from_row( $row ) : null;
+	}
+
+	public function find_by_uuid( string $uuid ): ?Attendee {
+		global $wpdb;
+		$table = Schema::attendees();
+		$row   = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table} WHERE uuid = %s LIMIT 1", $uuid ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		return $row ? Attendee::from_row( $row ) : null;
 	}
 
 	public function get( int $id ): ?Attendee {

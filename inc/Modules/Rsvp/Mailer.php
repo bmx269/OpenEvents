@@ -47,7 +47,7 @@ final class Mailer {
 			'',
 		);
 		$occurrence = self::occurrence( $event_id, $people );
-		$lines      = array_merge( $lines, $this->event_lines( $event_id, $occurrence ) );
+		$lines      = array_merge( $lines, $this->event_lines( $event_id, $occurrence ), \OpenEvents\Attendance\Pass::email_lines( $people ) );
 		if ( $token ) {
 			$lines[] = '';
 			$lines[] = __( 'Change or cancel your RSVP:', 'openevents' );

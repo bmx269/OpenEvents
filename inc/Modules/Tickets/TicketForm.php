@@ -315,10 +315,11 @@ final class TicketForm {
 		$html .= '<p><strong>' . esc_html( $statuses[ $order->status ] ?? $order->status ) . '</strong> · ' . esc_html( Money::format( $order->total_minor, $order->currency ) ) . '</p>';
 		if ( in_array( $order->status, Order::VALID, true ) ) {
 			$types = new TicketTypes();
-			$html .= '<p>' . esc_html__( 'Show one check-in code per person at the door:', 'openevents' ) . '</p><ol class="oe-tickets__codes">';
+			$html .= '<p>' . esc_html__( 'Show one pass per person at the door:', 'openevents' ) . '</p><ol class="oe-tickets__codes">';
 			foreach ( ( new Attendees() )->group( $order->uuid ) as $attendee ) {
 				$type  = $types->get( $attendee->ticket_type_id );
-				$html .= '<li><code>' . esc_html( $attendee->security_code ) . '</code> ' . esc_html( $type ? $type->name : '' ) . '</li>';
+				$html .= '<li><code>' . esc_html( $attendee->security_code ) . '</code> ' . esc_html( $type ? $type->name : '' ) . ' · ' . esc_html( $attendee->name )
+					. ' · <a href="' . esc_url( \OpenEvents\Attendance\Pass::url( $attendee ) ) . '">' . esc_html__( 'Open pass', 'openevents' ) . '<span class="oe-visually-hidden"> ' . esc_html( $attendee->security_code ) . '</span></a></li>';
 			}
 			$html .= '</ol>';
 		}

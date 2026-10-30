@@ -156,6 +156,17 @@ Patterns used throughout:
 - Admin: Events → Attendees (DataViews, server-paged) with check-in, cancel, and streamed CSV export protected against spreadsheet formula injection.
 - Hooks: `openevents/rsvp/responded`, `openevents/rsvp/cancelled`, `openevents/rsvp/email`, `openevents/attendees/capability`, `openevents/client_ip`.
 
+## Passes and check-in
+
+Every confirmed person (RSVP guest or ticket holder) has a pass, and staff check people in at the door from Events → Check-in.
+
+- **Pass** (`Attendance\Pass`): a page at `/?oe_pass={uuid}.{signature}`, where the signature is an HMAC of the attendee's uuid (site salt). Nothing is stored; the link can go in any email at any time and shows only that person. The page is standalone and printable: event, date, ticket, name, code, and a QR code. It sends `no-cache`, `noindex`, and `Referrer-Policy: no-referrer`; a cancelled booking shows "no longer valid" and no QR code.
+- **Where passes are linked:** RSVP confirmations, waitlist promotions, and ticket emails list each person's pass; the order summary and the RSVP change form link them; organisers can open any pass from the attendee list (`pass_url` in `GET /openevents/v1/attendees`).
+- **QR codes** (`Attendance\QrCode`): a built-in encoder (byte mode, level M, versions 1 to 10, so up to 213 bytes) that outputs inline SVG, with no library, image, or outside service. It encodes the check-in link `admin.php?page=openevents-check-in&code=…`, so any phone camera opens the check-in screen, and handheld scanners type it into that screen. The end-to-end test decodes the rendered symbol with jsQR.
+- **Check-in** (`Attendance\CheckIn`): `GET /openevents/v1/check-in?code=` looks someone up; `POST` checks them in (or undoes it). The `code` may be the code or a scanned link. Staff need `edit_posts`, and then `edit_post` on that attendee's event; otherwise the answer is the same 404 as a wrong code. Checking in is one conditional `UPDATE … WHERE checked_in_utc IS NULL`, so two scanners can't both succeed; the second sees "already checked in at …". Only `going` bookings check in. Warnings: payment due at the door (pay-at-the-door order), a booking for another date, and a called-off date. Fires `openevents/checked_in`.
+- **The screen:** a code field that keeps focus (for typing and handheld scanners), camera scanning where the browser has `BarcodeDetector`, a live result with warnings and the date's tally, Undo, and recent check-ins on this device. Opening a scanned link only looks the person up; checking in is a tap, so a link alone can't check anyone in.
+- **Schema:** attendance schema 6 indexes `security_code`.
+
 ## Event status
 
 An event, or one date of a repeating event, can be cancelled or postponed, with a note for visitors (`Content\EventStatus`).

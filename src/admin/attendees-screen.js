@@ -227,6 +227,13 @@ export default function AttendeesScreen( { root } ) {
 				callback: ( items ) => update( items, { checked_in: false } ),
 			},
 			{
+				id: 'pass',
+				label: __( 'Open pass', 'openevents' ),
+				isEligible: ( item ) => item.status === 'going',
+				callback: ( [ item ] ) =>
+					window.open( item.pass_url, '_blank', 'noopener' ),
+			},
+			{
 				id: 'cancel',
 				label: __( 'Cancel RSVP', 'openevents' ),
 				supportsBulk: true,

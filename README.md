@@ -52,7 +52,8 @@ Requires WordPress 7.1+ and PHP 8.2+.
 | **Per-date places** for recurring events: each date has its own RSVP and ticket capacity, waitlist, and attendee list | ✅ Done |
 | Calendar filter and search, event popups, category badges, per-category and per-post-type templates | ✅ Done |
 | Google Calendar import (iCal feeds) | Next |
-| Ticket QR codes and door check-in, Pro views (week, photo, map) | Planned |
+| **Passes and door check-in**: a pass per person with a QR code, linked from every confirmation; a check-in screen for phones, cameras, and handheld scanners | ✅ Done |
+| Pro views (photo, map) | Planned |
 
 Details and the order of work are in [docs/ROADMAP.md](docs/ROADMAP.md).
 

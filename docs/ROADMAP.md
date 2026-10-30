@@ -36,7 +36,7 @@ Priority order, set 2026-10-27. Everything here is free: no paid tier, no platfo
 2. ✅ **Tickets module** (done 2026-10-27): pay at the door, Stripe, and PayPal; tests in `TicketsTest.php`, `GatewaysTest.php`, `TicketsModuleTest.php`, `tickets.spec.js`
    - Several ticket types per event: price, capacity, sale window. `oe_orders` / `oe_order_items`.
    - Gateway interface. Built-in: "Pay at the door" (manual), Stripe Checkout, and PayPal (Orders v2), all with webhooks. A WooCommerce adapter later.
-   - Order emails with check-in codes, refunds from the admin. Next: QR codes on tickets and a door check-in screen.
+   - Order emails with check-in passes (QR codes), refunds from the admin.
 3. **Google Calendar import** (iCal feed module)
    - Add a calendar by its iCal address (public or secret). No Google API keys or OAuth needed.
    - Scheduled sync. Events are matched by UID, so updates replace rather than duplicate, and removed events are unpublished. Each feed can map to a category.
@@ -88,7 +88,8 @@ Done in Phase 2 groundwork:
 - ✅ Attendee fields per ticket type and RSVP (done 2026-10-28; tests in `AttendeeFieldsTest.php`, `attendee-fields.spec.js`): ten field types, per-person name and email, saved question sets, answers in the attendee list, REST, and CSV.
 - Coupons, shared capacity across ticket types.
 - WooCommerce gateway adapter.
-- Check-in screen for door staff (mobile-friendly, works offline-first).
+- ✅ Passes and door check-in (tests in `CheckInTest.php`, `check-in.spec.js`): a signed pass page per person with a QR code (built-in encoder, inline SVG), linked from RSVP, ticket, and waitlist emails and the order page; Events → Check-in for typed codes, handheld scanners, and the camera, with warnings for unpaid orders, other dates, and called-off dates.
+- Offline check-in (download the list, sync later).
 
 ## Phase 6: Pro views and extras
 

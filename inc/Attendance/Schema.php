@@ -13,7 +13,7 @@ namespace OpenEvents\Attendance;
  */
 final class Schema {
 
-	public const VERSION        = '5';
+	public const VERSION        = '6';
 	public const VERSION_OPTION = 'openevents_attendance_db_version';
 
 	public static function ticket_types(): string {
@@ -116,7 +116,8 @@ final class Schema {
   KEY event_status (event_id,status),
   KEY ticket_type (ticket_type_id),
   KEY email (email(100)),
-  KEY ip_created (ip_hash,created_utc)
+  KEY ip_created (ip_hash,created_utc),
+  KEY security_code (security_code)
 ) {$charset};"
 		);
 

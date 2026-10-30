@@ -76,6 +76,7 @@ final class WaitlistMailer {
 					'',
 				),
 				$this->event_lines( $entry ),
+				Pass::email_lines( ( new Attendees() )->group( $entry->uuid ) ), // Promotion uses the entry's uuid for the response.
 				array(
 					'',
 					__( 'Change or cancel your RSVP:', 'openevents' ),
