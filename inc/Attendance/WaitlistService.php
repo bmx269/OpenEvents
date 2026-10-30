@@ -23,6 +23,8 @@ namespace OpenEvents\Attendance;
 final class WaitlistService {
 
 	public const CRON_HOOK = 'openevents_waitlist_sweep';
+	public const RATE      = 10;  // Joins per IP per window, as for RSVPs.
+	public const RATE_SPAN = 600; // Window, seconds.
 
 	private static bool $registered = false;
 
@@ -80,7 +82,11 @@ final class WaitlistService {
 	}
 
 	/**
-	 * Adds someone to the queue. $input: name, email, quantity, ip.
+	 * Adds someone to the queue. $input: name, email, quantity, ip, and for
+	 * RSVPs attendees (each person's details and answers, as the RSVP form
+	 * sends them). RSVP entries are promoted without anyone filling in a form,
+	 * so their answers are checked and kept now; ticket offers are claimed
+	 * through checkout, which asks the questions then.
 	 *
 	 * @param array<string, mixed> $input Raw input.
 	 */
@@ -106,6 +112,28 @@ final class WaitlistService {
 		if ( null === $type->remaining() || $type->remaining() >= $quantity ) {
 			return WaitlistResult::error( 'available', __( 'There’s room now, so you can book directly.', 'openevents' ) );
 		}
+		$people = array();
+		if ( 'rsvp' === $type->kind && Fields::asks( $type ) ) {
+			$answers = Fields::people(
+				$type,
+				$input['attendees'] ?? array(),
+				$quantity,
+				array(
+					'name'  => $name,
+					'email' => $email,
+				),
+				true
+			);
+			if ( $answers['error'] ) {
+				return WaitlistResult::error( 'fields', $answers['error'] );
+			}
+			$people = $answers['people'];
+		}
+
+		$ip_hash = Guard::hash_ip( (string) ( $input['ip'] ?? '' ) );
+		if ( $this->waitlist->count_recent_by_ip( $ip_hash, self::RATE_SPAN ) >= self::RATE ) {
+			return WaitlistResult::error( 'rate_limited', __( 'Too many requests from your connection. Please try again later.', 'openevents' ) );
+		}
 
 		// Same privacy rule as RSVP: never let someone else change an existing entry.
 		$existing = $this->waitlist->active_for_email( $type->id, $email );
@@ -125,7 +153,8 @@ final class WaitlistService {
 				'email'          => $email,
 				'quantity'       => $quantity,
 				'token_hash'     => Guard::hash_token( $token ),
-				'ip_hash'        => Guard::hash_ip( (string) ( $input['ip'] ?? '' ) ),
+				'ip_hash'        => $ip_hash,
+				'people'         => $people ? (string) wp_json_encode( $people ) : null,
 			)
 		);
 		$position = $this->waitlist->position( $entry );
@@ -209,14 +238,15 @@ final class WaitlistService {
 	}
 
 	/**
-	 * RSVP: move straight to "going" and send the usual confirmation link.
+	 * RSVP: move straight to "going", with the details and answers given when
+	 * joining, and send the usual confirmation link.
 	 */
 	private function promote( TicketType $type, WaitlistEntry $entry ): bool {
 		if ( ! $this->waitlist->transition( $entry->id, array( WaitlistEntry::WAITING ), WaitlistEntry::CLAIMED ) ) {
 			return false;
 		}
 		if ( ! $this->types->reserve( $type->id, $entry->quantity ) ) {
-			$this->waitlist->transition( $entry->id, array( WaitlistEntry::CLAIMED ), WaitlistEntry::WAITING );
+			$this->waitlist->transition( $entry->id, array( WaitlistEntry::CLAIMED ), WaitlistEntry::WAITING, array( 'people' => $entry->people ? (string) wp_json_encode( $entry->people ) : null ) );
 			return false;
 		}
 		$token = Guard::new_token();
@@ -230,7 +260,9 @@ final class WaitlistService {
 				'token_hash'     => Attendees::hash_token( $token ),
 			),
 			$entry->quantity,
-			$entry->uuid
+			$entry->uuid,
+			false,
+			$entry->people
 		);
 		$this->mailer->promoted( $entry, $token );
 

@@ -15,6 +15,10 @@ final class WaitlistEntry {
 	public const EXPIRED = 'expired';  // Offer ran out.
 	public const LEFT    = 'left';     // Removed by the person or an organiser.
 
+	/**
+	 * @param array<int, array{name: string, email: string, fields: array<string, mixed>}> $people
+	 *        RSVP only: each person's details and answers, as Fields::people() returns them.
+	 */
 	public function __construct(
 		public readonly int $id,
 		public readonly string $uuid,
@@ -27,9 +31,11 @@ final class WaitlistEntry {
 		public readonly int $order_id,
 		public readonly ?string $offer_expires_utc,
 		public readonly string $created_utc,
+		public readonly array $people = array(),
 	) {}
 
 	public static function from_row( object $row ): WaitlistEntry {
+		$people = isset( $row->people ) ? json_decode( (string) $row->people, true ) : array();
 		return new self(
 			(int) $row->id,
 			(string) $row->uuid,
@@ -42,6 +48,7 @@ final class WaitlistEntry {
 			(int) $row->order_id,
 			$row->offer_expires_utc ?: null,
 			(string) $row->created_utc,
+			is_array( $people ) ? $people : array(),
 		);
 	}
 

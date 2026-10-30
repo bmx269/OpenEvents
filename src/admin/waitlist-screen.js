@@ -37,6 +37,7 @@ export default function WaitlistScreen( { root } ) {
 			'type',
 			'quantity',
 			'status',
+			'answers',
 			'created_utc',
 		],
 		titleField: 'name',
@@ -155,6 +156,30 @@ export default function WaitlistScreen( { root } ) {
 				},
 				enableSorting: false,
 				filterBy: { operators: [ 'is' ], isPrimary: true },
+			},
+			{
+				id: 'answers',
+				label: __( 'Details', 'openevents' ),
+				getValue: ( { item } ) =>
+					( item.answers || [] )
+						.map( ( a ) => `${ a.label }: ${ a.value }` )
+						.join( '; ' ),
+				render: ( { item } ) =>
+					item.answers?.length ? (
+						<ul className="oe-answers">
+							{ item.answers.map( ( a ) => (
+								<li key={ a.key }>
+									<span className="oe-answers__label">
+										{ a.label }
+									</span>{ ' ' }
+									{ a.value }
+								</li>
+							) ) }
+						</ul>
+					) : (
+						'—'
+					),
+				enableSorting: false,
 			},
 			{
 				id: 'created_utc',

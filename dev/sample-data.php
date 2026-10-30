@@ -149,10 +149,11 @@ $adult = ( new OpenEvents\Attendance\TicketTypes() )->find( $concert, 'tkt-adult
 // Waitlists: a full talk (RSVP) and a sold-out front row (tickets).
 $talk_day = current_datetime()->modify( '+8 days' )->format( 'Y-m-d' );
 $talk     = $make( 'Author Talk (full)', "{$talk_day} 18:00:00", "{$talk_day} 19:00:00", array( '_oe_cost' => '0' ), 'Community' );
-update_post_meta( $talk, '_oe_rsvp', array( 'enabled' => true, 'capacity' => 2, 'max_per_response' => 2, 'waitlist' => true ) );
+$talk_questions = array( array( 'type' => 'radio', 'label' => 'Have you read the book?', 'required' => true, 'options' => array( 'Yes', 'Not yet' ) ) );
+update_post_meta( $talk, '_oe_rsvp', array( 'enabled' => true, 'capacity' => 2, 'max_per_response' => 2, 'waitlist' => true, 'fields' => $talk_questions ) );
 $rsvp->sync( $talk );
 foreach ( array( array( 'Mary Jackson', 'mary@example.com' ), array( 'Dorothy Vaughan', 'dorothy@example.com' ) ) as $i => $person ) {
-	$rsvp->respond( $talk, array( 'name' => $person[0], 'email' => $person[1], 'status' => 'going', 'quantity' => 1, 'ts' => OpenEvents\Attendance\Guard::sign_timestamp( time() - 60 ), 'ip' => '192.0.2.3' . $i ) );
+	$rsvp->respond( $talk, array( 'name' => $person[0], 'email' => $person[1], 'status' => 'going', 'quantity' => 1, 'attendees' => array( array( 'fields' => array( 'have-you-read-the-book' => 'Yes' ) ) ), 'ts' => OpenEvents\Attendance\Guard::sign_timestamp( time() - 60 ), 'ip' => '192.0.2.3' . $i ) );
 }
 $tickets_meta   = get_post_meta( $concert, '_oe_tickets', true );
 $tickets_meta[] = array( 'key' => 'front', 'name' => 'Front Row', 'price' => '60', 'capacity' => 2, 'max_per_order' => 2, 'waitlist' => true );

@@ -82,6 +82,20 @@ final class Waitlist {
 	/**
 	 * People waiting (sum of quantities) for one ticket type.
 	 */
+	/**
+	 * Entries joined from one connection within the last $seconds.
+	 */
+	public function count_recent_by_ip( string $ip_hash, int $seconds ): int {
+		global $wpdb;
+		if ( '' === $ip_hash ) {
+			return 0;
+		}
+		$table = Schema::waitlist();
+		$since = gmdate( 'Y-m-d H:i:s', time() - $seconds );
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		return (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$table} WHERE ip_hash = %s AND created_utc >= %s", $ip_hash, $since ) );
+	}
+
 	public function waiting_count( int $ticket_type_id ): int {
 		global $wpdb;
 		$table = Schema::waitlist();
@@ -91,20 +105,26 @@ final class Waitlist {
 
 	/**
 	 * Conditional status change; false if someone else changed it first.
+	 * Leaving the queue (claimed, left, expired) also drops the guests'
+	 * details and answers: promotion has copied them to attendees, and
+	 * otherwise they're no longer needed.
 	 *
 	 * @param string[]             $from  Allowed current statuses.
 	 * @param array<string, mixed> $extra Other columns to set.
 	 */
 	public function transition( int $id, array $from, string $to, array $extra = array() ): bool {
 		global $wpdb;
+		if ( WaitlistEntry::WAITING !== $to && WaitlistEntry::OFFERED !== $to ) {
+			$extra += array( 'people' => null );
+		}
 		$table = Schema::waitlist();
-		$in    = "'" . implode( "','", array_map( 'esc_sql', $from ) ) . "'";
 		$sets  = array( $wpdb->prepare( 'status = %s', $to ), $wpdb->prepare( 'updated_utc = %s', gmdate( 'Y-m-d H:i:s' ) ) );
 		foreach ( $extra as $column => $value ) {
-			$sets[] = null === $value ? "{$column} = NULL" : $wpdb->prepare( "{$column} = %s", (string) $value ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			$sets[] = null === $value ? $wpdb->prepare( '%i = NULL', $column ) : $wpdb->prepare( '%i = %s', $column, (string) $value );
 		}
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared
-		return 1 === (int) $wpdb->query( $wpdb->prepare( "UPDATE {$table} SET " . implode( ', ', $sets ) . " WHERE id = %d AND status IN ({$in})", $id ) );
+		$in = implode( ', ', array_fill( 0, count( $from ), '%s' ) );
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
+		return 1 === (int) $wpdb->query( $wpdb->prepare( "UPDATE {$table} SET " . implode( ', ', $sets ) . " WHERE id = %d AND status IN ({$in})", $id, ...$from ) );
 	}
 
 	/**

@@ -415,8 +415,6 @@ final class Fields {
 
 	/**
 	 * An attendee's answers with their question labels, in question order.
-	 * Answers whose question was since removed (or came from an import) keep
-	 * their key as the label, so nothing is dropped.
 	 *
 	 * @param array<int, TicketType|null> $types Ticket types by id (a cache the caller keeps).
 	 * @return array<int, array{key: string, label: string, value: string}>
@@ -428,18 +426,30 @@ final class Fields {
 		if ( ! array_key_exists( $attendee->ticket_type_id, $types ) ) {
 			$types[ $attendee->ticket_type_id ] = ( new TicketTypes() )->get( $attendee->ticket_type_id );
 		}
-		$type   = $types[ $attendee->ticket_type_id ];
+		return self::labelled( $attendee->fields, $types[ $attendee->ticket_type_id ] );
+	}
+
+	/**
+	 * Answers with their question labels, in question order. Answers whose
+	 * question was since removed (or came from an import) keep their key as
+	 * the label, so nothing is dropped.
+	 *
+	 * @param array<string, mixed> $values Stored answers.
+	 * @param TicketType|null      $type   Ticket type whose settings hold the questions.
+	 * @return array<int, array{key: string, label: string, value: string}>
+	 */
+	public static function labelled( array $values, ?TicketType $type ): array {
 		$labels = array();
 		foreach ( self::sanitize( $type ? $type->setting( 'fields', array() ) : array() ) as $field ) {
 			$labels[ $field['key'] ] = $field['label'];
 		}
 		$out = array();
 		// `+` keeps keys (array_merge would renumber a numeric key such as "18").
-		foreach ( array_intersect_key( $labels, $attendee->fields ) + $attendee->fields as $key => $unused ) {
+		foreach ( array_intersect_key( $labels, $values ) + $values as $key => $unused ) {
 			$out[] = array(
 				'key'   => (string) $key,
 				'label' => $labels[ $key ] ?? (string) $key,
-				'value' => self::display( $attendee->fields[ $key ] ),
+				'value' => self::display( $values[ $key ] ),
 			);
 		}
 		return $out;

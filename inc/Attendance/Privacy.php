@@ -13,7 +13,8 @@ namespace OpenEvents\Attendance;
  *
  * Erasing anonymises attendees and orders instead of deleting them: the rows
  * keep seat counts and order totals right, but lose the name, email, answers,
- * and IP hash. Waitlist entries hold nothing else of value and are deleted.
+ * and IP hash. Waitlist entries (including any guests' details and answers)
+ * hold nothing else of value and are deleted.
  *
  * Registered by core, so requests are answered even with RSVP and Tickets
  * switched off.
@@ -110,19 +111,67 @@ final class Privacy {
 						array( 'name' => __( 'Created (UTC)', 'openevents' ), 'value' => (string) $row->created_utc ),
 					),
 				);
-			} else {
+			} elseif ( 'waitlist' === $row->kind ) {
+				$entry  = WaitlistEntry::from_row( $row );
+				$fields = array(
+					array( 'name' => __( 'Event', 'openevents' ), 'value' => $title ),
+					array( 'name' => __( 'Name', 'openevents' ), 'value' => $entry->name ),
+					array( 'name' => __( 'Email', 'openevents' ), 'value' => $entry->email ),
+					array( 'name' => __( 'Status', 'openevents' ), 'value' => $entry->status ),
+					array( 'name' => __( 'People', 'openevents' ), 'value' => (string) $entry->quantity ),
+					array( 'name' => __( 'Joined (UTC)', 'openevents' ), 'value' => $entry->created_utc ),
+				);
+				if ( $entry->people ) {
+					if ( ! array_key_exists( $entry->ticket_type_id, $types ) ) {
+						$types[ $entry->ticket_type_id ] = ( new TicketTypes() )->get( $entry->ticket_type_id );
+					}
+					foreach ( $entry->people as $i => $person ) {
+						$who = Fields::person_label( (int) $i, true );
+						if ( $i > 0 ) {
+							foreach ( array( 'name' => __( 'Name', 'openevents' ), 'email' => __( 'Email', 'openevents' ) ) as $key => $label ) {
+								if ( '' !== (string) ( $person[ $key ] ?? '' ) ) {
+									/* translators: 1: who, e.g. "Guest 2", 2: what, e.g. "Name" */
+									$fields[] = array( 'name' => sprintf( __( '%1$s: %2$s', 'openevents' ), $who, $label ), 'value' => (string) $person[ $key ] );
+								}
+							}
+						}
+						foreach ( Fields::labelled( (array) ( $person['fields'] ?? array() ), $types[ $entry->ticket_type_id ] ) as $answer ) {
+							/* translators: 1: who, e.g. "You" or "Guest 2", 2: question */
+							$fields[] = array( 'name' => sprintf( __( '%1$s: %2$s', 'openevents' ), $who, $answer['label'] ), 'value' => $answer['value'] );
+						}
+					}
+				}
 				$data[] = array(
 					'group_id'    => 'openevents-waitlist',
 					'group_label' => __( 'Event waitlists', 'openevents' ),
-					'item_id'     => 'openevents-waitlist-' . (int) $row->id,
-					'data'        => array(
-						array( 'name' => __( 'Event', 'openevents' ), 'value' => $title ),
-						array( 'name' => __( 'Name', 'openevents' ), 'value' => (string) $row->name ),
-						array( 'name' => __( 'Email', 'openevents' ), 'value' => (string) $row->email ),
-						array( 'name' => __( 'Status', 'openevents' ), 'value' => (string) $row->status ),
-						array( 'name' => __( 'People', 'openevents' ), 'value' => (string) $row->quantity ),
-						array( 'name' => __( 'Joined (UTC)', 'openevents' ), 'value' => (string) $row->created_utc ),
-					),
+					'item_id'     => 'openevents-waitlist-' . $entry->id,
+					'data'        => $fields,
+				);
+			} else {
+				// A guest on someone else's waitlist entry: only their own part.
+				$entry  = WaitlistEntry::from_row( $row );
+				$person = $entry->people[ $row->guest ];
+				$fields = array(
+					array( 'name' => __( 'Event', 'openevents' ), 'value' => $title ),
+					array( 'name' => __( 'Name', 'openevents' ), 'value' => (string) ( $person['name'] ?? '' ) ),
+					array( 'name' => __( 'Email', 'openevents' ), 'value' => (string) ( $person['email'] ?? '' ) ),
+					array( 'name' => __( 'Status', 'openevents' ), 'value' => $entry->status ),
+					array( 'name' => __( 'Joined (UTC)', 'openevents' ), 'value' => $entry->created_utc ),
+				);
+				if ( ! array_key_exists( $entry->ticket_type_id, $types ) ) {
+					$types[ $entry->ticket_type_id ] = ( new TicketTypes() )->get( $entry->ticket_type_id );
+				}
+				foreach ( Fields::labelled( (array) ( $person['fields'] ?? array() ), $types[ $entry->ticket_type_id ] ) as $answer ) {
+					$fields[] = array(
+						'name'  => $answer['label'],
+						'value' => $answer['value'],
+					);
+				}
+				$data[] = array(
+					'group_id'    => 'openevents-waitlist',
+					'group_label' => __( 'Event waitlists', 'openevents' ),
+					'item_id'     => 'openevents-waitlist-' . $entry->id . '-guest-' . (int) $row->guest,
+					'data'        => $fields,
 				);
 			}
 		}
@@ -160,6 +209,17 @@ final class Privacy {
 		$attendees = (int) $wpdb->update( Schema::attendees(), $anon + array( 'fields' => '{}', 'updated_utc' => $now ), array( 'email' => $email ) );
 		$orders    = (int) $wpdb->update( Schema::orders(), $anon + array( 'updated_utc' => $now ), array( 'email' => $email ) );
 		$waitlist  = (int) $wpdb->delete( Schema::waitlist(), array( 'email' => $email ) );
+		foreach ( self::guest_entries( $email ) as $match ) {
+			$people = $match['entry']->people;
+			foreach ( $match['guests'] as $i ) {
+				$people[ $i ] = array(
+					'name'   => '',
+					'email'  => '',
+					'fields' => array(),
+				);
+			}
+			$waitlist += (int) $wpdb->update( Schema::waitlist(), array( 'people' => (string) wp_json_encode( $people ), 'updated_utc' => $now ), array( 'id' => $match['entry']->id ) );
+		}
 		// phpcs:enable
 
 		if ( $attendees || $orders || $waitlist ) {
@@ -204,7 +264,51 @@ final class Privacy {
 		foreach ( $waitlist as $row ) {
 			$row->kind = 'waitlist';
 		}
-		return array_slice( array_merge( $attendees, $orders, $waitlist ), $offset, self::PAGE );
+		$guests = array();
+		foreach ( self::guest_entries( $email ) as $match ) {
+			foreach ( $match['guests'] as $i ) {
+				$guests[] = (object) array_merge(
+					(array) $match['row'],
+					array(
+						'kind'  => 'waitlist_guest',
+						'guest' => $i,
+					)
+				);
+			}
+		}
+		return array_slice( array_merge( $attendees, $orders, $waitlist, $guests ), $offset, self::PAGE );
+	}
+
+	/**
+	 * Waitlist entries that list $email as a guest (not the person who
+	 * joined), with the guests' places in the party. Guests' details are kept
+	 * as JSON, so the LIKE only narrows the search; the decoded list decides.
+	 *
+	 * @return array<int, array{row: object, entry: WaitlistEntry, guests: int[]}>
+	 */
+	private static function guest_entries( string $email ): array {
+		global $wpdb;
+		$like = '%' . $wpdb->esc_like( '"email":' . wp_json_encode( $email ) ) . '%';
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		$rows = (array) $wpdb->get_results( $wpdb->prepare( 'SELECT * FROM %i WHERE people LIKE %s AND email <> %s ORDER BY id', Schema::waitlist(), $like, $email ) );
+		$out  = array();
+		foreach ( $rows as $row ) {
+			$entry  = WaitlistEntry::from_row( $row );
+			$guests = array();
+			foreach ( $entry->people as $i => $person ) {
+				if ( $i > 0 && 0 === strcasecmp( (string) ( $person['email'] ?? '' ), $email ) ) {
+					$guests[] = (int) $i;
+				}
+			}
+			if ( $guests ) {
+				$out[] = array(
+					'row'    => $row,
+					'entry'  => $entry,
+					'guests' => $guests,
+				);
+			}
+		}
+		return $out;
 	}
 
 	private static function installed(): bool {

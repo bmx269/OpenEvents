@@ -43,6 +43,7 @@ Priority order, set 2026-10-27. Everything here is free: no paid tier, no platfo
    - RRULE/EXDATE expansion through `openevents/occurrences/generate`. This is the first piece of the recurrence module.
 
 - ✅ **Waitlists** for RSVPs (automatic promotion) and ticket types (held, time-limited offers); tests in `WaitlistTest.php`, `WaitlistFormsTest.php`, `waitlist.spec.js`.
+- ✅ **Attendee questions on RSVP waitlists**: asked when joining and carried onto attendees at promotion; covered by the privacy tools, including guests; tests in `WaitlistQuestionsTest.php`, `waitlist.spec.js`.
 
 Requested 2026-10-27 (all done):
 - ✅ **Category colours on event details**: coloured category badges in the details panel (they currently show only on calendars).

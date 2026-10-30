@@ -124,7 +124,7 @@ final class WaitlistController {
 
 	public function join( WP_REST_Request $request ): WP_REST_Response {
 		$result = $this->do_join( (int) $request['id'], $request->get_params() );
-		$codes  = array( 'invalid' => 422, 'disabled' => 404, 'available' => 409 );
+		$codes  = array( 'invalid' => 422, 'disabled' => 404, 'available' => 409, 'rate_limited' => 429 );
 		return new WP_REST_Response( $result->to_array(), $result->ok ? 200 : ( $codes[ $result->code ] ?? 400 ) );
 	}
 
@@ -204,6 +204,7 @@ final class WaitlistController {
 					array(
 						'event_title' => html_entity_decode( get_the_title( $e->event_id ), ENT_QUOTES ),
 						'type_name'   => $type ? ( 'rsvp' === $type->kind ? __( 'RSVP', 'openevents' ) : $type->name ) : '',
+						'answers'     => self::answers( $e, $type ),
 					)
 				);
 			},
@@ -212,6 +213,46 @@ final class WaitlistController {
 		$response = new WP_REST_Response( $items );
 		$response->header( 'X-WP-Total', (string) $result['total'] );
 		return $response;
+	}
+
+	/**
+	 * Guests' details and everyone's answers, labelled for the organiser
+	 * ("Guest 2: Name", "Guest 2: Dietary needs").
+	 *
+	 * @return array<int, array{key: string, label: string, value: string}>
+	 */
+	private static function answers( WaitlistEntry $entry, ?TicketType $type ): array {
+		$out = array();
+		foreach ( $entry->people as $i => $person ) {
+			$rows = Fields::labelled( (array) ( $person['fields'] ?? array() ), $type );
+			if ( $i > 0 ) {
+				$contact = array_filter(
+					array(
+						'name'  => (string) ( $person['name'] ?? '' ),
+						'email' => (string) ( $person['email'] ?? '' ),
+					)
+				);
+				foreach ( $contact as $key => $value ) {
+					array_unshift(
+						$rows,
+						array(
+							'key'   => $key,
+							'label' => 'name' === $key ? __( 'Name', 'openevents' ) : __( 'Email', 'openevents' ),
+							'value' => $value,
+						)
+					);
+				}
+			}
+			foreach ( $rows as $row ) {
+				$out[] = array(
+					'key'   => $i . '-' . $row['key'],
+					/* translators: 1: who, e.g. "Guest 2", 2: question */
+					'label' => $i > 0 ? sprintf( __( '%1$s: %2$s', 'openevents' ), Fields::person_label( (int) $i, true ), $row['label'] ) : $row['label'],
+					'value' => $row['value'],
+				);
+			}
+		}
+		return $out;
 	}
 
 	public function entry_action( WP_REST_Request $request ): WP_REST_Response {
@@ -273,10 +314,11 @@ final class WaitlistController {
 
 	public static function result_text( string $code ): string {
 		$messages = array(
-			'waitlisted' => __( 'You’re on the waitlist. We’ll email you if a spot opens up.', 'openevents' ),
-			'exists'     => __( 'You’re already on the waitlist. We’ve emailed you a link to manage your place.', 'openevents' ),
-			'left'       => __( 'You’ve left the waitlist.', 'openevents' ),
-			'available'  => __( 'Good news: there’s room now, so you can book directly.', 'openevents' ),
+			'waitlisted'   => __( 'You’re on the waitlist. We’ll email you if a spot opens up.', 'openevents' ),
+			'exists'       => __( 'You’re already on the waitlist. We’ve emailed you a link to manage your place.', 'openevents' ),
+			'left'         => __( 'You’ve left the waitlist.', 'openevents' ),
+			'available'    => __( 'Good news: there’s room now, so you can book directly.', 'openevents' ),
+			'rate_limited' => __( 'Too many requests from your connection. Please try again later.', 'openevents' ),
 		);
 		return $messages[ $code ] ?? __( 'Please check the form and try again.', 'openevents' );
 	}

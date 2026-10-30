@@ -13,7 +13,7 @@ namespace OpenEvents\Attendance;
  */
 final class Schema {
 
-	public const VERSION        = '3';
+	public const VERSION        = '4';
 	public const VERSION_OPTION = 'openevents_attendance_db_version';
 
 	public static function ticket_types(): string {
@@ -152,6 +152,8 @@ final class Schema {
 
 		// First come, first served: the queue is ordered by id. An "offered"
 		// entry holds seats (counted in ticket_types.sold) until offer_expires_utc.
+		// `people` keeps an RSVP entry's guest details and answers (JSON) so
+		// promotion creates attendees exactly as a direct response would.
 		dbDelta(
 			'CREATE TABLE ' . self::waitlist() . " (
   id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
@@ -168,12 +170,14 @@ final class Schema {
   offer_expires_utc datetime DEFAULT NULL,
   created_utc datetime NOT NULL,
   updated_utc datetime NOT NULL,
+  people longtext,
   PRIMARY KEY  (id),
   UNIQUE KEY uuid (uuid),
   KEY type_status (ticket_type_id,status,id),
   KEY status_expires (status,offer_expires_utc),
   KEY token_hash (token_hash),
-  KEY email (email(100))
+  KEY email (email(100)),
+  KEY ip_created (ip_hash,created_utc)
 ) {$charset};"
 		);
 
