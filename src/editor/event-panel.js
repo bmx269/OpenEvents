@@ -6,6 +6,7 @@ import {
 	Dropdown,
 	FormTokenField,
 	Notice,
+	SelectControl,
 	Slot,
 	TextControl,
 	ToggleControl,
@@ -421,6 +422,47 @@ export default function EventPanel( {
 				value={ meta._oe_url || '' }
 				onChange={ ( value ) => setMeta( { _oe_url: value } ) }
 			/>
+			<SelectControl
+				__next40pxDefaultSize
+				__nextHasNoMarginBottom
+				label={ __( 'Status', 'openevents' ) }
+				help={ __(
+					'Cancelled and postponed events stay listed with a label, and stop taking RSVPs and ticket orders.',
+					'openevents'
+				) }
+				value={ meta._oe_status || 'scheduled' }
+				options={ [
+					{
+						value: 'scheduled',
+						label: __( 'Scheduled', 'openevents' ),
+					},
+					{
+						value: 'cancelled',
+						label: __( 'Cancelled', 'openevents' ),
+					},
+					{
+						value: 'postponed',
+						label: __( 'Postponed', 'openevents' ),
+					},
+				] }
+				onChange={ ( value ) => setMeta( { _oe_status: value } ) }
+			/>
+			{ ( meta._oe_status || 'scheduled' ) !== 'scheduled' && (
+				<TextControl
+					__next40pxDefaultSize
+					__nextHasNoMarginBottom
+					label={ __( 'Note for visitors', 'openevents' ) }
+					help={ __(
+						'Optional, shown with the status. For example, the reason or what happens next.',
+						'openevents'
+					) }
+					maxLength={ 500 }
+					value={ meta._oe_status_reason || '' }
+					onChange={ ( value ) =>
+						setMeta( { _oe_status_reason: value } )
+					}
+				/>
+			) }
 			<ToggleControl
 				__nextHasNoMarginBottom
 				label={ __( 'Featured event', 'openevents' ) }

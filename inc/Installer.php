@@ -18,7 +18,7 @@ use OpenEvents\Content\PostTypes;
  */
 final class Installer {
 
-	public const DB_VERSION        = '2';
+	public const DB_VERSION        = '3';
 	public const DB_VERSION_OPTION = 'openevents_db_version';
 	public const FLUSH_OPTION      = 'openevents_flush_rewrite';
 	public const ERROR_OPTION      = 'openevents_schema_error';
@@ -111,6 +111,7 @@ final class Installer {
   hide_from_listings tinyint(1) NOT NULL DEFAULT 0,
   post_type varchar(20) NOT NULL DEFAULT '',
   status varchar(20) NOT NULL DEFAULT '',
+  event_status varchar(20) NOT NULL DEFAULT 'scheduled',
   PRIMARY KEY  (id),
   UNIQUE KEY event_sequence (event_id,sequence),
   KEY status_start_local (status,start_local),

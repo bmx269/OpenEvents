@@ -63,6 +63,7 @@ final class Generator {
 			'timezone'           => (string) $event->meta( '_oe_timezone' ),
 			'all_day'            => $event->is_all_day() ? 1 : 0,
 			'hide_from_listings' => $event->meta( '_oe_hide_from_listings' ) ? 1 : 0,
+			'event_status'       => \OpenEvents\Content\EventStatus::for_date( $event, $start )['status'],
 		);
 	}
 }

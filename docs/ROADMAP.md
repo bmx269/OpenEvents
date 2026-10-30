@@ -65,7 +65,7 @@ Done in Phase 2 groundwork:
 - **Event Tickets importer** (RSVP and Tickets Commerce), following `docs/research/event-tickets-data-model.md`. Keeps security codes.
 - CSV import (TEC column names accepted).
 - Venue filter on the calendar block (category filter, keyword search, and the day view are done).
-- Event status: scheduled, cancelled, postponed (with a reason).
+- ✅ Event status: scheduled, cancelled, postponed (with a note), for the whole event or one date of a repeating event; closes bookings; shown in listings, event pages, iCal (STATUS), and REST; `openevents/set-event-status` ability; TEC status imported (tests in `EventStatusTest.php`, `event-status.spec.js`).
 - `Event` JSON-LD with Offer, Place, and Organizer.
 - Venue map embed (OpenStreetMap; Google optional).
 - Add WP trunk and PHP 8.5 to the CI matrix; MySQL job alongside SQLite.

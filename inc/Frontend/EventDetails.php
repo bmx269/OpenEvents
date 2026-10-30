@@ -51,6 +51,15 @@ final class EventDetails {
 
 		$rows = array();
 
+		// Called off: first, so nobody misses it.
+		if ( $occurrence->is_called_off() ) {
+			$reason         = \OpenEvents\Content\EventStatus::reason( $occurrence );
+			$rows['status'] = array(
+				'label' => __( 'Status', 'openevents' ),
+				'html'  => \OpenEvents\Content\EventStatus::badge( $occurrence, 'oe-status' ) . ( '' !== $reason ? ' ' . esc_html( $reason ) : '' ),
+			);
+		}
+
 		$rows['date'] = array(
 			'label' => __( 'When', 'openevents' ),
 			'html'  => sprintf(

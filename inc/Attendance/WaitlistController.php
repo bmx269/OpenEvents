@@ -121,7 +121,7 @@ final class WaitlistController {
 		}
 		// Not for a date that has already started (each date has its own waitlist).
 		$occurrence = TicketTypes::occurrence( $type );
-		if ( ! $occurrence || gmdate( 'Y-m-d H:i:s' ) >= $occurrence->start_utc()->format( 'Y-m-d H:i:s' ) ) {
+		if ( ! $occurrence || $occurrence->is_called_off() || gmdate( 'Y-m-d H:i:s' ) >= $occurrence->start_utc()->format( 'Y-m-d H:i:s' ) ) {
 			return WaitlistResult::error( 'disabled', __( 'There’s no waitlist for this.', 'openevents' ) );
 		}
 		return ( new WaitlistService() )->join( $type, array_merge( $input, array( 'ip' => Guard::client_ip() ) ) );

@@ -10,6 +10,7 @@ namespace OpenEvents\Occurrences;
 use DateTimeImmutable;
 use DateTimeZone;
 use OpenEvents\Content\Event;
+use OpenEvents\Content\EventStatus;
 use OpenEvents\Content\Meta;
 
 /**
@@ -24,6 +25,8 @@ final class Occurrence {
 		public readonly DateTimeImmutable $start,
 		public readonly DateTimeImmutable $end,
 		public readonly bool $all_day,
+		/** Scheduled, cancelled, or postponed (see Content\EventStatus). */
+		public readonly string $event_status = EventStatus::SCHEDULED,
 	) {}
 
 	/**
@@ -38,6 +41,7 @@ final class Occurrence {
 			DateTimeImmutable::createFromFormat( Meta::DATETIME_FORMAT, $row->start_local, $tz ),
 			DateTimeImmutable::createFromFormat( Meta::DATETIME_FORMAT, $row->end_local, $tz ),
 			(bool) $row->all_day,
+			(string) ( $row->event_status ?? EventStatus::SCHEDULED ),
 		);
 	}
 
@@ -47,6 +51,13 @@ final class Occurrence {
 
 	public function is_multi_day(): bool {
 		return $this->start->format( 'Y-m-d' ) !== $this->end->format( 'Y-m-d' );
+	}
+
+	/**
+	 * Cancelled or postponed: not happening as listed.
+	 */
+	public function is_called_off(): bool {
+		return EventStatus::SCHEDULED !== $this->event_status;
 	}
 
 	public function has_ended(): bool {

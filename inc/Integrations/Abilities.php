@@ -7,6 +7,7 @@
 
 namespace OpenEvents\Integrations;
 
+use OpenEvents\Content\EventStatus;
 use OpenEvents\Content\Meta;
 use OpenEvents\Occurrences\Repository;
 use OpenEvents\Rest\OccurrencesController;
@@ -50,6 +51,11 @@ final class Abilities {
 				'end'       => array( 'type' => 'string', 'format' => 'date-time' ),
 				'timezone'  => array( 'type' => 'string' ),
 				'all_day'   => array( 'type' => 'boolean' ),
+				'status'    => array(
+					'type' => 'string',
+					'enum' => EventStatus::ALL,
+				),
+				'status_reason' => array( 'type' => 'string' ),
 				'cost'      => array( 'type' => 'string' ),
 			),
 		);
@@ -166,6 +172,56 @@ final class Abilities {
 				),
 			)
 		);
+
+		wp_register_ability(
+			'openevents/set-event-status',
+			array(
+				'label'               => __( 'Cancel or postpone an event', 'openevents' ),
+				'description'         => __( 'Marks an event, or one date of a repeating event, as cancelled, postponed, or scheduled again, with an optional note shown to visitors. Bookings close while it is cancelled or postponed.', 'openevents' ),
+				'category'            => self::CATEGORY,
+				'input_schema'        => array(
+					'type'                 => 'object',
+					'required'             => array( 'event_id', 'status' ),
+					'properties'           => array(
+						'event_id' => array( 'type' => 'integer' ),
+						'status'   => array(
+							'type' => 'string',
+							'enum' => EventStatus::ALL,
+						),
+						'reason'   => array(
+							'type'        => 'string',
+							'maxLength'   => 500,
+							'description' => __( 'Optional note for visitors, such as the reason.', 'openevents' ),
+						),
+						'date'     => array(
+							'type'        => 'string',
+							'format'      => 'date',
+							'description' => __( 'One date (Y-m-d) of a repeating event; omit for the whole event.', 'openevents' ),
+						),
+					),
+					'additionalProperties' => false,
+				),
+				'output_schema'       => array(
+					'type'       => 'object',
+					'properties' => array(
+						'event_id' => array( 'type' => 'integer' ),
+						'status'   => array( 'type' => 'string' ),
+						'date'     => array( 'type' => 'string' ),
+						'link'     => array( 'type' => 'string' ),
+					),
+				),
+				'execute_callback'    => array( $this, 'set_event_status' ),
+				'permission_callback' => static fn( $input ): bool => current_user_can( 'edit_post', (int) ( ( (array) $input )['event_id'] ?? 0 ) ),
+				'meta'                => array(
+					'show_in_rest' => true,
+					'annotations'  => array(
+						'readonly'    => false,
+						'destructive' => false,
+						'idempotent'  => true,
+					),
+				),
+			)
+		);
 	}
 
 	/**
@@ -235,6 +291,27 @@ final class Abilities {
 			'id'       => $id,
 			'edit_url' => (string) get_edit_post_link( $id, 'raw' ),
 			'link'     => (string) get_permalink( $id ),
+		);
+	}
+
+	/**
+	 * @param array<string, mixed> $input Validated input.
+	 * @return array<string, mixed>|WP_Error
+	 */
+	public function set_event_status( $input ) {
+		$input    = (array) $input;
+		$event_id = (int) $input['event_id'];
+		$date     = (string) ( $input['date'] ?? '' );
+		$result   = EventStatus::set( $event_id, (string) $input['status'], (string) ( $input['reason'] ?? '' ), $date );
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+		$occurrence = '' !== $date ? openevents()->occurrences()->on_date( $event_id, $date ) : null;
+		return array(
+			'event_id' => $event_id,
+			'status'   => (string) $input['status'],
+			'date'     => $date,
+			'link'     => $occurrence ? openevents_occurrence_url( $occurrence ) : (string) get_permalink( $event_id ),
 		);
 	}
 }

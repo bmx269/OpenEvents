@@ -19,6 +19,11 @@ import { useEffect, useState } from '@wordpress/element';
 import { DateField, display } from './event-panel';
 
 const EMPTY = { rrule: '', rdates: [], exdates: [] };
+
+const STATUS_LABELS = {
+	cancelled: __( 'Cancelled', 'openevents' ),
+	postponed: __( 'Postponed', 'openevents' ),
+};
 const DAYS = [ 'MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU' ];
 const DAY_NAMES = () => [
 	__( 'Monday', 'openevents' ),
@@ -175,9 +180,11 @@ function useOccurrenceIds( postId, enabled ) {
  * @param {Object}   props.meta       Post meta.
  * @param {Object}   props.recurrence Recurrence meta.
  * @param {Function} props.onSkip     Skips a date.
+ * @param {Array}    props.dateStatus Dates cancelled or postponed on their own.
+ * @param {Function} props.onStatus   Sets a date's status ('' for scheduled).
  * @param {number}   props.postId     Event id.
  */
-function Preview( { meta, recurrence, onSkip, postId } ) {
+function Preview( { meta, recurrence, onSkip, dateStatus, onStatus, postId } ) {
 	const [ result, setResult ] = useState( null );
 	const [ error, setError ] = useState( '' );
 	const [ busy, setBusy ] = useState( false );
@@ -255,10 +262,20 @@ function Preview( { meta, recurrence, onSkip, postId } ) {
 		<div className="oe-editor-panel__preview">
 			{ result.description && <p>{ result.description }</p> }
 			<ul aria-label={ __( 'Next dates', 'openevents' ) }>
-				{ result.dates.map( ( date, index ) => (
-					<li key={ date.start }>
-						<span>{ display( format, date.start ) }</span>
-						{ index > 0 && (
+				{ result.dates.map( ( date, index ) => {
+					const dateState = dateStatus.find(
+						( entry ) => entry.date === date.start.slice( 0, 10 )
+					)?.status;
+					return (
+						<li key={ date.start }>
+							<span>
+								{ display( format, date.start ) }
+								{ dateState && (
+									<span className="oe-editor-panel__tag">
+										{ STATUS_LABELS[ dateState ] }
+									</span>
+								) }
+							</span>
 							<DropdownMenu
 								icon="ellipsis"
 								label={ sprintf(
@@ -272,60 +289,117 @@ function Preview( { meta, recurrence, onSkip, postId } ) {
 								} }
 							>
 								{ ( { onClose } ) => (
-									<MenuGroup>
-										<MenuItem
-											onClick={ () => {
-												onSkip( date.start );
-												onClose();
-											} }
-										>
-											{ __(
-												'Skip this date',
-												'openevents'
+									<>
+										<MenuGroup>
+											{ dateState ? (
+												<MenuItem
+													onClick={ () => {
+														onStatus(
+															date.start,
+															''
+														);
+														onClose();
+													} }
+												>
+													{ __(
+														'Mark this date as scheduled',
+														'openevents'
+													) }
+												</MenuItem>
+											) : (
+												<>
+													<MenuItem
+														onClick={ () => {
+															onStatus(
+																date.start,
+																'cancelled'
+															);
+															onClose();
+														} }
+													>
+														{ __(
+															'Cancel this date',
+															'openevents'
+														) }
+													</MenuItem>
+													<MenuItem
+														onClick={ () => {
+															onStatus(
+																date.start,
+																'postponed'
+															);
+															onClose();
+														} }
+													>
+														{ __(
+															'Postpone this date',
+															'openevents'
+														) }
+													</MenuItem>
+												</>
 											) }
-										</MenuItem>
-										<MenuItem
-											disabled={ ! ids[ date.start ] }
-											onClick={ () =>
-												act(
-													ids[ date.start ],
-													'detach'
-												)
-											}
-										>
-											{ __(
-												'Edit only this date',
-												'openevents'
-											) }
-										</MenuItem>
-										<MenuItem
-											disabled={ ! ids[ date.start ] }
-											onClick={ () =>
-												act(
-													ids[ date.start ],
-													'split'
-												)
-											}
-										>
-											{ __(
-												'Edit this and following dates',
-												'openevents'
-											) }
-										</MenuItem>
-										{ ! canSplit && (
-											<p className="oe-editor-panel__hint">
-												{ __(
-													'Publish and save your changes to edit one date or the rest of the series separately.',
-													'openevents'
+										</MenuGroup>
+										{ index > 0 && (
+											<MenuGroup>
+												<MenuItem
+													onClick={ () => {
+														onSkip( date.start );
+														onClose();
+													} }
+												>
+													{ __(
+														'Skip this date',
+														'openevents'
+													) }
+												</MenuItem>
+												<MenuItem
+													disabled={
+														! ids[ date.start ]
+													}
+													onClick={ () =>
+														act(
+															ids[ date.start ],
+															'detach'
+														)
+													}
+												>
+													{ __(
+														'Edit only this date',
+														'openevents'
+													) }
+												</MenuItem>
+												<MenuItem
+													disabled={
+														! ids[ date.start ]
+													}
+													onClick={ () =>
+														act(
+															ids[ date.start ],
+															'split'
+														)
+													}
+												>
+													{ __(
+														'Edit this and following dates',
+														'openevents'
+													) }
+												</MenuItem>
+												{ ! canSplit && (
+													<p className="oe-editor-panel__hint">
+														{ __(
+															'Publish and save your changes to edit one date or the rest of the series separately.',
+															'openevents'
+														) }
+													</p>
 												) }
-											</p>
+											</MenuGroup>
 										) }
-									</MenuGroup>
+									</>
 								) }
 							</DropdownMenu>
-						) }
-					</li>
-				) ) }
+						</li>
+					);
+				} ) }
 			</ul>
 			{ result.more && (
 				<p className="oe-editor-panel__hint">
@@ -345,6 +419,19 @@ export default function RepeatPanel( { meta, setMeta, postId, config } ) {
 	const recurrence = { ...EMPTY, ...( meta._oe_recurrence || {} ) };
 	const update = ( changes ) =>
 		setMeta( { _oe_recurrence: { ...recurrence, ...changes } } );
+	// One date cancelled or postponed on its own (see Content\EventStatus).
+	const dateStatus = meta._oe_date_status || [];
+	const setDateStatus = ( date, status, reason = '' ) => {
+		const day = date.slice( 0, 10 );
+		const others = dateStatus.filter( ( entry ) => entry.date !== day );
+		setMeta( {
+			_oe_date_status: status
+				? [ ...others, { date: day, status, reason } ].sort( ( a, b ) =>
+						a.date.localeCompare( b.date )
+				  )
+				: others,
+		} );
+	};
 	const parts = parse( recurrence.rrule );
 	const isCustom =
 		recurrence.rrule &&
@@ -626,7 +713,56 @@ export default function RepeatPanel( { meta, setMeta, postId, config } ) {
 							].sort(),
 						} )
 					}
+					dateStatus={ dateStatus }
+					onStatus={ setDateStatus }
 				/>
+			) }
+
+			{ dateStatus.length > 0 && (
+				<div>
+					<h3 className="oe-editor-panel__subhead">
+						{ __( 'Cancelled and postponed dates', 'openevents' ) }
+					</h3>
+					<ul className="oe-editor-panel__list">
+						{ dateStatus.map( ( entry ) => (
+							<li key={ entry.date }>
+								<TextControl
+									__next40pxDefaultSize
+									__nextHasNoMarginBottom
+									label={ sprintf(
+										/* translators: 1: date, 2: status such as "Cancelled" */
+										__( '%1$s (%2$s): note', 'openevents' ),
+										display(
+											getSettings().formats.date,
+											`${ entry.date } 00:00:00`
+										),
+										STATUS_LABELS[ entry.status ]
+									) }
+									help={ __(
+										'Optional, shown with the date. For example, the reason.',
+										'openevents'
+									) }
+									value={ entry.reason || '' }
+									onChange={ ( reason ) =>
+										setDateStatus(
+											entry.date,
+											entry.status,
+											reason
+										)
+									}
+								/>
+								<Button
+									variant="link"
+									onClick={ () =>
+										setDateStatus( entry.date, '' )
+									}
+								>
+									{ __( 'Mark as scheduled', 'openevents' ) }
+								</Button>
+							</li>
+						) ) }
+					</ul>
+				</div>
 			) }
 
 			{ recurrence.exdates.length > 0 && (

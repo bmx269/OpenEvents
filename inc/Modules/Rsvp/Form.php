@@ -82,7 +82,7 @@ final class Form {
 		$html .= '<p class="oe-rsvp__notice oe-rsvp__live" role="status" aria-live="polite" tabindex="-1" data-wp-text="context.message" data-wp-class--is-error="context.error" data-wp-bind--hidden="!context.message" hidden></p>';
 
 		if ( $closed && ! $existing ) {
-			return $html . '<p class="oe-rsvp__closed">' . esc_html( 'started' === $closed || 'ended' === $closed ? __( 'RSVPs closed when the event started.', 'openevents' ) : __( 'RSVPs for this event are closed.', 'openevents' ) ) . '</p></section>';
+			return $html . '<p class="oe-rsvp__closed">' . esc_html( self::closed_text( $closed ) ) . '</p></section>';
 		}
 		if ( $type->is_full() && ! $existing ) {
 			$html .= '<p class="oe-rsvp__closed">' . esc_html__( 'This event is full.', 'openevents' ) . '</p>';
@@ -240,6 +240,15 @@ final class Form {
 
 	private static function field( string $id, string $label, string $control ): string {
 		return '<p class="oe-rsvp__field"><label for="' . esc_attr( $id ) . '">' . esc_html( $label ) . '</label>' . $control . '</p>';
+	}
+
+	public static function closed_text( string $reason ): string {
+		return match ( $reason ) {
+			'started', 'ended' => __( 'RSVPs closed when the event started.', 'openevents' ),
+			'cancelled'        => __( 'This event has been cancelled.', 'openevents' ),
+			'postponed'        => __( 'This event has been postponed. RSVPs will open again when there’s a new date.', 'openevents' ),
+			default            => __( 'RSVPs for this event are closed.', 'openevents' ),
+		};
 	}
 
 	public static function count_text( int $going, ?int $remaining ): string {

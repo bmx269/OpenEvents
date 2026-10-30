@@ -77,10 +77,15 @@ final class Checkout {
 	}
 
 	/**
-	 * Why a ticket type can't be bought right now ("not_started", "ended",
-	 * "event_started", "sold_out"), or null when it can.
+	 * Why a ticket type can't be bought right now ("cancelled", "postponed",
+	 * "not_started", "ended", "event_started", "sold_out"), or null when it can.
 	 */
 	public function sale_state( TicketType $type ): ?string {
+		// Its date called off (a series pass covers many dates, so not one).
+		$date = TicketTypes::date_of( $type );
+		if ( $date && $date->is_called_off() ) {
+			return $date->event_status;
+		}
 		$now   = gmdate( 'Y-m-d H:i:s' );
 		$start = (string) $type->setting( 'sale_start_utc', '' );
 		if ( '' !== $start && $now < $start ) {

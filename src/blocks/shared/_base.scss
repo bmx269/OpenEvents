@@ -29,3 +29,19 @@
 // like amber, in light and dark themes alike. Used where --oe-event-bg is set,
 // since a custom property would resolve it on the container instead.
 $event-line: color-mix(in srgb, var(--oe-event-bg, var(--oe-accent)) 60%, currentcolor);
+
+// Cancelled or postponed. The word carries the meaning (not colour), in the
+// text colour, so contrast follows the theme.
+.oe-status {
+	display: inline-block;
+	margin-inline-end: 0.4em;
+	padding: 0 0.4em;
+	border: 1px solid currentcolor;
+	border-radius: var(--oe-radius, 4px);
+	font-size: 0.8em;
+	font-weight: 700;
+	letter-spacing: 0.03em;
+	line-height: 1.4;
+	text-transform: uppercase;
+	vertical-align: baseline;
+}

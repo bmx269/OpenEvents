@@ -18,7 +18,7 @@ final class Meta {
 	public const DATETIME_FORMAT = 'Y-m-d H:i:s';
 
 	/** Keys whose change requires regenerating occurrences. */
-	public const SCHEDULE_KEYS = array( '_oe_start', '_oe_end', '_oe_timezone', '_oe_all_day', '_oe_hide_from_listings', '_oe_recurrence' );
+	public const SCHEDULE_KEYS = array( '_oe_start', '_oe_end', '_oe_timezone', '_oe_all_day', '_oe_hide_from_listings', '_oe_recurrence', '_oe_status', '_oe_date_status' );
 
 	public function register(): void {
 		// After every post type (ours and other plugins') is registered, so revision support can be checked.
@@ -71,6 +71,47 @@ final class Meta {
 			),
 			'_oe_featured'           => array( 'type' => 'boolean' ),
 			'_oe_hide_from_listings' => array( 'type' => 'boolean' ),
+			// Scheduled, cancelled, or postponed, with an optional note; see EventStatus.
+			'_oe_status'             => array(
+				'type'              => 'string',
+				'default'           => EventStatus::SCHEDULED,
+				'sanitize_callback' => array( EventStatus::class, 'sanitize' ),
+				'show_in_rest'      => array(
+					'schema' => array(
+						'type' => 'string',
+						'enum' => EventStatus::ALL,
+					),
+				),
+			),
+			'_oe_status_reason'      => array(
+				'type'              => 'string',
+				'sanitize_callback' => array( EventStatus::class, 'sanitize_reason' ),
+			),
+			// One date of a repeating event cancelled or postponed on its own.
+			'_oe_date_status'        => array(
+				'type'              => 'array',
+				'default'           => array(),
+				'sanitize_callback' => array( EventStatus::class, 'sanitize_dates' ),
+				'show_in_rest'      => array(
+					'schema' => array(
+						'type'  => 'array',
+						'items' => array(
+							'type'       => 'object',
+							'properties' => array(
+								'date'   => array(
+									'type'    => 'string',
+									'pattern' => '^\\d{4}-\\d{2}-\\d{2}$',
+								),
+								'status' => array(
+									'type' => 'string',
+									'enum' => array( EventStatus::CANCELLED, EventStatus::POSTPONED ),
+								),
+								'reason' => array( 'type' => 'string' ),
+							),
+						),
+					),
+				),
+			),
 			// Extra labelled details shown in the event details (imported TEC Pro additional fields).
 			'_oe_details'            => array(
 				'type'              => 'array',
