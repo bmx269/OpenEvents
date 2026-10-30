@@ -26,13 +26,25 @@ const DEFAULTS = {
 };
 
 /**
- * Live "12 going · 8 spots left" summary for published events.
+ * Whether the event repeats (each date then has its own places).
  *
- * @param {Object} props
- * @param {number} props.postId Event id.
- * @param {Object} props.config Editor config.
+ * @param {Object} meta Post meta.
+ * @return {boolean} Repeats.
  */
-function Summary( { postId, config } ) {
+export const repeats = ( meta ) =>
+	!! ( meta._oe_recurrence?.rrule || meta._oe_recurrence?.rdates?.length );
+
+/**
+ * Live "12 going · 8 spots left" summary for published events. A repeating
+ * event's dates each have their own, so it links to the attendee list
+ * (which filters by date) instead.
+ *
+ * @param {Object}  props
+ * @param {number}  props.postId  Event id.
+ * @param {Object}  props.config  Editor config.
+ * @param {boolean} props.repeats Whether the event repeats.
+ */
+function Summary( { postId, config, repeats: perDate } ) {
 	const [ summary, setSummary ] = useState( null );
 	const status = useSelect(
 		( select ) => select( editorStore ).getEditedPostAttribute( 'status' ),
@@ -44,14 +56,27 @@ function Summary( { postId, config } ) {
 	);
 
 	useEffect( () => {
-		if ( status !== 'publish' || isSaving ) {
+		if ( status !== 'publish' || isSaving || perDate ) {
 			return;
 		}
 		apiFetch( { path: `/openevents/v1/events/${ postId }/rsvp` } )
 			.then( setSummary )
 			.catch( () => setSummary( null ) );
-	}, [ postId, status, isSaving ] );
+	}, [ postId, status, isSaving, perDate ] );
 
+	const attendees = (
+		<ExternalLink href={ `${ config.attendeesUrl }&event=${ postId }` }>
+			{ __( 'Attendees', 'openevents' ) }
+		</ExternalLink>
+	);
+	if ( perDate ) {
+		return status === 'publish' ? (
+			<Flex justify="space-between" wrap>
+				<span>{ __( 'Counted per date.', 'openevents' ) }</span>
+				{ attendees }
+			</Flex>
+		) : null;
+	}
 	if ( ! summary ) {
 		return null;
 	}
@@ -81,9 +106,7 @@ function Summary( { postId, config } ) {
 						summary.remaining
 					) }` }
 			</span>
-			<ExternalLink href={ `${ config.attendeesUrl }&event=${ postId }` }>
-				{ __( 'Attendees', 'openevents' ) }
-			</ExternalLink>
+			{ attendees }
 		</Flex>
 	);
 }
@@ -113,7 +136,14 @@ export default function RsvpPanel( { meta, setMeta, postId, config } ) {
 						type="number"
 						min={ 0 }
 						label={ __( 'Capacity', 'openevents' ) }
-						help={ __( '0 means unlimited.', 'openevents' ) }
+						help={
+							repeats( meta )
+								? __(
+										'For each date. 0 means unlimited.',
+										'openevents'
+								  )
+								: __( '0 means unlimited.', 'openevents' )
+						}
 						value={ String( rsvp.capacity ) }
 						onChange={ ( value ) =>
 							update( {
@@ -184,7 +214,11 @@ export default function RsvpPanel( { meta, setMeta, postId, config } ) {
 						forWhom="guest"
 						onChange={ update }
 					/>
-					<Summary postId={ postId } config={ config } />
+					<Summary
+						postId={ postId }
+						config={ config }
+						repeats={ repeats( meta ) }
+					/>
 				</>
 			) }
 		</Flex>

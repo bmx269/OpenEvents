@@ -24,7 +24,10 @@ final class Form {
 		$event_id = $event->id();
 		$closed   = $service->closed_reason( $event_id, $type );
 		$existing = '' !== $token ? $service->response_for_token( $token ) : array();
-		$counts   = $type->setting( 'show_count', true ) ? ( new Attendees() )->counts( $event_id ) : null;
+		if ( $existing && $existing[0]->ticket_type_id !== $type->id ) {
+			$existing = array(); // Another event's or date's response.
+		}
+		$counts = $type->setting( 'show_count', true ) ? ( new Attendees() )->counts( $event_id, $type->id ) : null;
 
 		$html  = '<section class="oe-rsvp" id="rsvp" aria-labelledby="oe-rsvp-title-' . esc_attr( (string) $event_id ) . '"';
 		$html .= ' data-wp-interactive="openevents/rsvp"';
@@ -43,6 +46,7 @@ final class Form {
 			)
 		) . '">';
 		$html .= '<h3 class="oe-rsvp__title" id="oe-rsvp-title-' . esc_attr( (string) $event_id ) . '">' . esc_html__( 'RSVP', 'openevents' ) . '</h3>';
+		$html .= \OpenEvents\Frontend\Formatter::booking_date( $type, 'oe-rsvp__date' );
 
 		$waitlist_on = \OpenEvents\Attendance\WaitlistService::enabled( $type );
 		if ( $counts ) {
@@ -117,6 +121,7 @@ final class Form {
 		$html      .= '<form class="oe-rsvp__form" method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" data-wp-on--submit="actions.submit" data-wp-bind--hidden="context.done" data-wp-context="' . esc_attr( (string) wp_json_encode( $form_state ) ) . '">';
 		$html .= '<input type="hidden" name="action" value="openevents_rsvp">';
 		$html .= '<input type="hidden" name="event_id" value="' . esc_attr( (string) $event_id ) . '">';
+		$html .= '<input type="hidden" name="sequence" value="' . esc_attr( (string) $type->sequence ) . '">';
 		$html .= '<input type="hidden" name="ts" value="' . esc_attr( Service::sign_timestamp() ) . '">';
 		if ( $lead ) {
 			$html .= '<input type="hidden" name="token" value="' . esc_attr( $token ) . '">';
@@ -176,7 +181,7 @@ final class Form {
 		);
 		$html       = '<form class="oe-rsvp__form oe-waitlist" method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" data-wp-on--submit="actions.submit" data-wp-bind--hidden="context.done" data-wp-context="' . esc_attr( (string) wp_json_encode( $form_state ) ) . '">';
 		$html .= '<p class="oe-waitlist__intro">' . esc_html__( 'Join the waitlist and we’ll confirm you automatically if a spot opens up.', 'openevents' ) . '</p>';
-		$html .= '<input type="hidden" name="action" value="openevents_rsvp"><input type="hidden" name="event_id" value="' . esc_attr( (string) $event_id ) . '">';
+		$html .= '<input type="hidden" name="action" value="openevents_rsvp"><input type="hidden" name="event_id" value="' . esc_attr( (string) $event_id ) . '"><input type="hidden" name="sequence" value="' . esc_attr( (string) $type->sequence ) . '">';
 		$html .= '<input type="hidden" name="status" value="waitlist"><input type="hidden" name="ts" value="' . esc_attr( Service::sign_timestamp() ) . '">';
 		$html .= '<div class="oe-rsvp__hp" aria-hidden="true"><label>' . esc_html__( 'Website', 'openevents' ) . ' <input type="text" name="website" tabindex="-1" autocomplete="off"></label></div>';
 		$html .= '<div class="oe-rsvp__fields">';

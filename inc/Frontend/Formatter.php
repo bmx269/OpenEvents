@@ -66,6 +66,26 @@ final class Formatter {
 	}
 
 	/**
+	 * "For <date>" above an RSVP or tickets form on a repeating event, whose
+	 * dates each have their own places; empty for other events.
+	 */
+	public static function booking_date( \OpenEvents\Attendance\TicketType $type, string $class_name ): string {
+		$event = openevents_get_event( $type->event_id );
+		if ( ! $event || ! \OpenEvents\Modules\Recurrence\Recurrence::for_event( $event ) ) {
+			return '';
+		}
+		$occurrence = \OpenEvents\Attendance\TicketTypes::date_of( $type );
+		if ( ! $occurrence ) {
+			return '';
+		}
+		return '<p class="' . esc_attr( $class_name ) . '">' . sprintf(
+			/* translators: %s: date and time of one date of a repeating event */
+			esc_html__( 'For %s', 'openevents' ),
+			'<time datetime="' . esc_attr( self::iso( $occurrence->start, $occurrence->all_day ) ) . '">' . esc_html( self::range( $occurrence ) ) . '</time>'
+		) . '</p>';
+	}
+
+	/**
 	 * Machine-readable datetime attribute for <time>.
 	 */
 	public static function iso( \DateTimeImmutable $date, bool $all_day = false ): string {

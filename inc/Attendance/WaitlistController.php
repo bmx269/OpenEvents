@@ -119,6 +119,11 @@ final class WaitlistController {
 		if ( ! $type || $type->event_id !== $event_id || 'publish' !== get_post_status( $event_id ) ) {
 			return WaitlistResult::error( 'disabled', __( 'There’s no waitlist for this.', 'openevents' ) );
 		}
+		// Not for a date that has already started (each date has its own waitlist).
+		$occurrence = TicketTypes::occurrence( $type );
+		if ( ! $occurrence || gmdate( 'Y-m-d H:i:s' ) >= $occurrence->start_utc()->format( 'Y-m-d H:i:s' ) ) {
+			return WaitlistResult::error( 'disabled', __( 'There’s no waitlist for this.', 'openevents' ) );
+		}
 		return ( new WaitlistService() )->join( $type, array_merge( $input, array( 'ip' => Guard::client_ip() ) ) );
 	}
 
@@ -136,10 +141,11 @@ final class WaitlistController {
 	public function handle_join(): void {
 		// phpcs:disable WordPress.Security.NonceVerification.Missing -- public form; see do_join().
 		$event_id = absint( $_POST['event_id'] ?? 0 );
+		$type_id  = absint( $_POST['ticket_type_id'] ?? 0 );
 		$result   = $this->do_join(
 			$event_id,
 			array(
-				'ticket_type_id' => absint( $_POST['ticket_type_id'] ?? 0 ),
+				'ticket_type_id' => $type_id,
 				'name'           => wp_unslash( $_POST['name'] ?? '' ),
 				'email'          => wp_unslash( $_POST['email'] ?? '' ),
 				'quantity'       => absint( $_POST['quantity'] ?? 1 ),
@@ -148,8 +154,16 @@ final class WaitlistController {
 			)
 		);
 		// phpcs:enable
-		wp_safe_redirect( add_query_arg( 'oe_waitlist_result', $result->code, (string) get_permalink( $event_id ) ) . '#tickets', 303 );
+		wp_safe_redirect( add_query_arg( 'oe_waitlist_result', $result->code, self::page( $event_id, $type_id ) ) . '#tickets', 303 );
 		exit;
+	}
+
+	/**
+	 * Back to the page of the type's date (each date has its own waitlist).
+	 */
+	private static function page( int $event_id, int $ticket_type_id ): string {
+		$type = ( new TicketTypes() )->get( $ticket_type_id );
+		return $type && $type->event_id === $event_id ? TicketTypes::url( $type ) : (string) get_permalink( $event_id );
 	}
 
 	public function handle_leave(): void {
@@ -158,8 +172,9 @@ final class WaitlistController {
 		$event_id = absint( $_POST['event_id'] ?? 0 );
 		$anchor   = sanitize_key( wp_unslash( $_POST['anchor'] ?? 'tickets' ) );
 		// phpcs:enable
+		$entry  = ( new Waitlist() )->by_token( $token );
 		$result = ( new WaitlistService() )->leave( $token );
-		wp_safe_redirect( add_query_arg( 'oe_waitlist_result', $result->ok ? 'left' : 'invalid', (string) get_permalink( $event_id ) ) . '#' . $anchor, 303 );
+		wp_safe_redirect( add_query_arg( 'oe_waitlist_result', $result->ok ? 'left' : 'invalid', self::page( $event_id, $entry ? $entry->ticket_type_id : 0 ) ) . '#' . $anchor, 303 );
 		exit;
 	}
 
@@ -196,13 +211,15 @@ final class WaitlistController {
 			)
 		);
 		$types = new TicketTypes();
+		$dates = array();
 		$items = array_map(
-			static function ( WaitlistEntry $e ) use ( $types ): array {
+			static function ( WaitlistEntry $e ) use ( $types, &$dates ): array {
 				$type = $types->get( $e->ticket_type_id );
 				return array_merge(
 					$e->to_array(),
 					array(
 						'event_title' => html_entity_decode( get_the_title( $e->event_id ), ENT_QUOTES ),
+						'date'        => $types->date_label( $e->ticket_type_id, $dates ),
 						'type_name'   => $type ? ( 'rsvp' === $type->kind ? __( 'RSVP', 'openevents' ) : $type->name ) : '',
 						'answers'     => self::answers( $e, $type ),
 					)

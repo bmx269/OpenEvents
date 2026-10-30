@@ -132,7 +132,7 @@ final class Attendees {
 	/**
 	 * Paged, filterable list for the admin and REST.
 	 *
-	 * @param array<string, mixed> $args event_id, status, search, checked_in, per_page, page, orderby, order.
+	 * @param array<string, mixed> $args event_id, status, search, checked_in, sequence, per_page, page, orderby, order.
 	 * @return array{items: Attendee[], total: int}
 	 */
 	public function query( array $args ): array {
@@ -145,6 +145,7 @@ final class Attendees {
 				'status'     => '',
 				'search'     => '',
 				'checked_in' => null,
+				'sequence'   => null, // One date of a repeating event (needs event_id).
 				'per_page'   => 50,
 				'page'       => 1,
 				'orderby'    => 'created_utc',
@@ -165,6 +166,9 @@ final class Attendees {
 		}
 		if ( null !== $args['checked_in'] ) {
 			$where[] = $args['checked_in'] ? 'checked_in_utc IS NOT NULL' : 'checked_in_utc IS NULL';
+		}
+		if ( null !== $args['sequence'] && $args['event_id'] ) {
+			$where[] = $wpdb->prepare( 'ticket_type_id IN (SELECT id FROM %i WHERE event_id = %d AND sequence = %d)', Schema::ticket_types(), $args['event_id'], $args['sequence'] );
 		}
 		if ( '' !== (string) $args['search'] ) {
 			$like    = '%' . $wpdb->esc_like( (string) $args['search'] ) . '%';
@@ -188,15 +192,17 @@ final class Attendees {
 	}
 
 	/**
-	 * Going / not going counts for an event in one query.
+	 * Going / not going counts for an event, or one of its ticket types (such
+	 * as one date's RSVP), in one query.
 	 *
 	 * @return array{going: int, not_going: int, checked_in: int}
 	 */
-	public function counts( int $event_id ): array {
+	public function counts( int $event_id, int $ticket_type_id = 0 ): array {
 		global $wpdb;
 		$table = Schema::attendees();
+		$type  = $ticket_type_id ? $wpdb->prepare( ' AND ticket_type_id = %d', $ticket_type_id ) : '';
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-		$row = $wpdb->get_row( $wpdb->prepare( "SELECT SUM(status = 'going') AS going, SUM(status = 'not_going') AS not_going, SUM(status = 'going' AND checked_in_utc IS NOT NULL) AS checked_in FROM {$table} WHERE event_id = %d", $event_id ) );
+		$row = $wpdb->get_row( $wpdb->prepare( "SELECT SUM(status = 'going') AS going, SUM(status = 'not_going') AS not_going, SUM(status = 'going' AND checked_in_utc IS NOT NULL) AS checked_in FROM {$table} WHERE event_id = %d{$type}", $event_id ) );
 		return array(
 			'going'      => (int) ( $row->going ?? 0 ),
 			'not_going'  => (int) ( $row->not_going ?? 0 ),

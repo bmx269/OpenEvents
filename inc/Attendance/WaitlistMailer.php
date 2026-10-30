@@ -16,8 +16,17 @@ use OpenEvents\Frontend\Formatter;
 final class WaitlistMailer {
 
 	public static function link( WaitlistEntry $entry, string $token ): string {
-		$anchor = 'rsvp' === ( ( new TicketTypes() )->get( $entry->ticket_type_id )?->kind ) ? 'rsvp' : 'tickets';
-		return add_query_arg( 'oe_waitlist', rawurlencode( $token ), (string) get_permalink( $entry->event_id ) ) . '#' . $anchor;
+		$type   = ( new TicketTypes() )->get( $entry->ticket_type_id );
+		$anchor = 'rsvp' === $type?->kind ? 'rsvp' : 'tickets';
+		return add_query_arg( 'oe_waitlist', rawurlencode( $token ), self::page( $entry, $type ) ) . '#' . $anchor;
+	}
+
+	/**
+	 * The page for the entry's date (each date of a repeating event has its
+	 * own waitlist).
+	 */
+	private static function page( WaitlistEntry $entry, ?TicketType $type ): string {
+		return $type ? TicketTypes::url( $type ) : (string) get_permalink( $entry->event_id );
 	}
 
 	public function joined( WaitlistEntry $entry, int $position, string $token ): void {
@@ -70,7 +79,7 @@ final class WaitlistMailer {
 				array(
 					'',
 					__( 'Change or cancel your RSVP:', 'openevents' ),
-					add_query_arg( 'oe_rsvp_token', rawurlencode( $token ), (string) get_permalink( $entry->event_id ) ) . '#rsvp',
+					add_query_arg( 'oe_rsvp_token', rawurlencode( $token ), self::page( $entry, ( new TicketTypes() )->get( $entry->ticket_type_id ) ) ) . '#rsvp',
 				)
 			)
 		);
@@ -107,12 +116,13 @@ final class WaitlistMailer {
 	 */
 	private function event_lines( WaitlistEntry $entry ): array {
 		$lines      = array();
-		$occurrence = openevents()->occurrences()->for_event( $entry->event_id );
+		$type       = ( new TicketTypes() )->get( $entry->ticket_type_id );
+		$occurrence = ( $type ? TicketTypes::date_of( $type ) : null ) ?? openevents()->occurrences()->for_event( $entry->event_id );
 		if ( $occurrence ) {
 			/* translators: %s: date and time */
 			$lines[] = sprintf( __( 'When: %s', 'openevents' ), Formatter::range( $occurrence ) );
 		}
-		$lines[] = (string) get_permalink( $entry->event_id );
+		$lines[] = self::page( $entry, $type );
 		return $lines;
 	}
 

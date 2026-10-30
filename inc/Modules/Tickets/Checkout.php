@@ -48,18 +48,27 @@ final class Checkout {
 	}
 
 	/**
-	 * Active, on-sale paid ticket types for an event, keyed by id.
+	 * Active, on-sale paid ticket types for one date of an event (0 is the
+	 * event's own date), keyed by id. A repeating event's other dates have
+	 * their own rows, created on first use, so only dates that are really on
+	 * the schedule get any.
 	 *
 	 * @return array<int, TicketType>
 	 */
-	public function ticket_types( int $event_id, bool $on_sale_only = false ): array {
+	public function ticket_types( int $event_id, bool $on_sale_only = false, int $sequence = 0 ): array {
 		global $wpdb;
+		if ( $sequence && ! openevents()->occurrences()->by_sequence( $event_id, $sequence ) ) {
+			return array();
+		}
 		$table = Schema::ticket_types();
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-		$rows = (array) $wpdb->get_results( $wpdb->prepare( "SELECT * FROM {$table} WHERE event_id = %d AND kind = 'paid' AND status = 'active' ORDER BY id", $event_id ) );
+		$rows = (array) $wpdb->get_results( $wpdb->prepare( "SELECT * FROM {$table} WHERE event_id = %d AND sequence = 0 AND kind = 'paid' AND status = 'active' ORDER BY id", $event_id ) );
 		$out  = array();
 		foreach ( $rows as $row ) {
-			$type = TicketType::from_row( $row );
+			$type = $this->types->for_date( TicketType::from_row( $row ), $sequence );
+			if ( ! $type ) {
+				continue;
+			}
 			if ( ! $on_sale_only || null === $this->sale_state( $type ) ) {
 				$out[ $type->id ] = $type;
 			}
@@ -80,10 +89,8 @@ final class Checkout {
 		if ( $type->sale_end_utc && $now > $type->sale_end_utc ) {
 			return 'ended';
 		}
-		// A series pass sells until the series' last date starts.
-		$occurrence = \OpenEvents\Modules\Series\Module::POST_TYPE === get_post_type( $type->event_id )
-			? openevents()->occurrences()->last_in_series( $type->event_id )
-			: openevents()->occurrences()->for_event( $type->event_id );
+		// Until its date starts (a series pass: the series' last date).
+		$occurrence = TicketTypes::occurrence( $type );
 		if ( ! $type->sale_end_utc && ( ! $occurrence || $now >= $occurrence->start_utc()->format( 'Y-m-d H:i:s' ) ) ) {
 			return 'event_started';
 		}
@@ -91,8 +98,10 @@ final class Checkout {
 	}
 
 	/**
-	 * Places an order. $input: name, email, tickets (type id => quantity),
-	 * gateway, website (honeypot), ts (signed timestamp), ip.
+	 * Places an order. $input: name, email, sequence (which date of a
+	 * repeating event; 0 by default), tickets (type id => quantity, ids of
+	 * that date's types), gateway, website (honeypot), ts (signed timestamp),
+	 * ip, and waitlist_token (claims held tickets, on the offer's date).
 	 *
 	 * @param array<string, mixed> $input Raw input.
 	 */
@@ -120,18 +129,21 @@ final class Checkout {
 			return CheckoutResult::error( 'rate_limited', __( 'Too many orders from your connection. Please try again later.', 'openevents' ) );
 		}
 
-		$types    = $this->ticket_types( $event_id );
 		$currency = self::currency();
 		$lines    = array();
 
 		// Claiming a waitlist offer: exactly the held tickets, whose seats are already reserved.
 		$offer = null;
 		if ( '' !== (string) ( $input['waitlist_token'] ?? '' ) ) {
-			$offer = ( new \OpenEvents\Attendance\WaitlistService() )->offer_for_token( (string) $input['waitlist_token'] );
+			$offer      = ( new \OpenEvents\Attendance\WaitlistService() )->offer_for_token( (string) $input['waitlist_token'] );
+			$offer_type = $offer ? $this->types->get( $offer->ticket_type_id ) : null;
+			$types      = $offer_type ? $this->ticket_types( $event_id, false, $offer_type->sequence ) : array();
 			if ( ! $offer || $offer->event_id !== $event_id || ! isset( $types[ $offer->ticket_type_id ] ) ) {
 				return CheckoutResult::error( 'invalid', __( 'This waitlist offer has expired or was already used.', 'openevents' ) );
 			}
 			$input['tickets'] = array( $offer->ticket_type_id => $offer->quantity );
+		} else {
+			$types = $this->ticket_types( $event_id, false, absint( $input['sequence'] ?? 0 ) );
 		}
 		$count    = 0;
 		$total    = 0;
@@ -450,6 +462,23 @@ final class Checkout {
 		if ( '' !== $token ) {
 			$args['oe_order_token'] = $token;
 		}
-		return add_query_arg( $args, (string) get_permalink( $order->event_id ) ) . '#tickets';
+		return add_query_arg( $args, self::order_page( $order ) ) . '#tickets';
+	}
+
+	/**
+	 * A ticket type the order is for. An order is for one date: its lines are
+	 * that date's types.
+	 */
+	public static function order_type( Order $order ): ?TicketType {
+		$items = ( new \OpenEvents\Attendance\Orders() )->items( $order->id );
+		return $items ? ( new TicketTypes() )->get( (int) $items[0]->ticket_type_id ) : null;
+	}
+
+	/**
+	 * The page of the order's date (or of the event or series).
+	 */
+	public static function order_page( Order $order ): string {
+		$type = self::order_type( $order );
+		return $type ? TicketTypes::url( $type ) : (string) get_permalink( $order->event_id );
 	}
 }

@@ -40,6 +40,7 @@ final class Rest {
 					'methods'             => WP_REST_Server::READABLE,
 					'callback'            => array( $this, 'summary' ),
 					'permission_callback' => '__return_true',
+					'args'                => array( 'sequence' => self::sequence_arg() ),
 				),
 				array(
 					'methods'             => WP_REST_Server::CREATABLE,
@@ -57,6 +58,7 @@ final class Rest {
 							'type'    => 'integer',
 							'minimum' => 1,
 						),
+						'sequence' => self::sequence_arg(),
 						'token'    => array( 'type' => 'string' ),
 						'website'  => array( 'type' => 'string' ),
 						'ts'       => array( 'type' => 'string' ),
@@ -87,6 +89,11 @@ final class Rest {
 						'default' => '',
 					),
 					'checked_in' => array( 'type' => 'boolean' ),
+					'sequence'   => array(
+						'description' => __( 'One date of a repeating event (an occurrence sequence); needs event.', 'openevents' ),
+						'type'        => 'integer',
+						'minimum'     => 0,
+					),
 					'page'       => array(
 						'type'    => 'integer',
 						'default' => 1,
@@ -112,6 +119,23 @@ final class Rest {
 
 		register_rest_route(
 			self::NS,
+			'/attendees/dates',
+			array(
+				'methods'             => WP_REST_Server::READABLE,
+				'callback'            => array( $this, 'booked_dates' ),
+				'permission_callback' => array( $this, 'can_list' ),
+				'args'                => array(
+					'event' => array(
+						'type'     => 'integer',
+						'required' => true,
+						'minimum'  => 1,
+					),
+				),
+			)
+		);
+
+		register_rest_route(
+			self::NS,
 			'/attendees/(?P<id>\d+)',
 			array(
 				'methods'             => WP_REST_Server::EDITABLE,
@@ -128,13 +152,30 @@ final class Rest {
 		);
 	}
 
+	/**
+	 * Which date of a repeating event (an occurrence's sequence; 0, the
+	 * default, is the event's own date).
+	 *
+	 * @return array<string, mixed>
+	 */
+	private static function sequence_arg(): array {
+		return array(
+			'type'    => 'integer',
+			'minimum' => 0,
+			'default' => 0,
+		);
+	}
+
 	public function summary( WP_REST_Request $request ): WP_REST_Response|WP_Error {
 		$event_id = (int) $request['id'];
-		$type     = $this->service->ticket_type( $event_id );
-		if ( ! $type || 'publish' !== get_post_status( $event_id ) ) {
+		if ( 'publish' !== get_post_status( $event_id ) ) {
 			return new WP_Error( 'openevents_rsvp_disabled', __( 'This event is not taking RSVPs.', 'openevents' ), array( 'status' => 404 ) );
 		}
-		$counts = $this->attendees->counts( $event_id );
+		$type = $this->service->ticket_type( $event_id, (int) $request['sequence'] );
+		if ( ! $type ) {
+			return new WP_Error( 'openevents_rsvp_disabled', __( 'This event is not taking RSVPs.', 'openevents' ), array( 'status' => 404 ) );
+		}
+		$counts = $this->attendees->counts( $event_id, $type->id );
 		return new WP_REST_Response(
 			array(
 				'open'      => null === $this->service->closed_reason( $event_id, $type ),
@@ -155,6 +196,7 @@ final class Rest {
 			'email'    => (string) $request['email'],
 			'status'   => (string) ( $request['status'] ?: 'going' ),
 			'quantity' => (int) ( $request['quantity'] ?: 1 ),
+			'sequence' => (int) $request['sequence'],
 			'attendees' => (array) $request['attendees'],
 			'token'    => (string) $request['token'],
 			'website'  => (string) $request['website'],
@@ -163,11 +205,14 @@ final class Rest {
 		);
 		$result = $request['cancel'] ? $this->service->cancel( $input['token'] ) : $this->service->respond( $event_id, $input );
 
-		$type = ( new TicketTypes() )->find( $event_id, Service::TYPE_KEY );
+		// Counts for the date the response is for.
+		$type = $result->group
+			? $this->service->response_type( $event_id, $this->attendees->group( $result->group ) )
+			: $this->service->ticket_type( $event_id, $input['sequence'] );
 		$data = array_merge(
 			$result->to_array(),
 			array(
-				'going'     => $type && $type->setting( 'show_count', true ) ? $this->attendees->counts( $event_id )['going'] : null,
+				'going'     => $type && $type->setting( 'show_count', true ) ? $this->attendees->counts( $event_id, $type->id )['going'] : null,
 				'remaining' => $type?->remaining(),
 			)
 		);
@@ -194,6 +239,13 @@ final class Rest {
 		return $event_id ? current_user_can( 'edit_post', $event_id ) : current_user_can( self::capability() );
 	}
 
+	/**
+	 * The event's dates that have attendees: value (sequence) and label.
+	 */
+	public function booked_dates( WP_REST_Request $request ): WP_REST_Response {
+		return new WP_REST_Response( ( new TicketTypes() )->booked_dates( (int) $request['event'] ) );
+	}
+
 	public function can_edit_attendee( WP_REST_Request $request ): bool {
 		$attendee = $this->attendees->get( (int) $request['id'] );
 		return $attendee && current_user_can( 'edit_post', $attendee->event_id );
@@ -206,6 +258,7 @@ final class Rest {
 				'status'     => sanitize_key( (string) $request['status'] ),
 				'search'     => (string) $request['search'],
 				'checked_in' => $request->has_param( 'checked_in' ) ? (bool) $request['checked_in'] : null,
+				'sequence'   => $request->has_param( 'sequence' ) ? (int) $request['sequence'] : null,
 				'page'       => (int) $request['page'],
 				'per_page'   => (int) $request['per_page'],
 				'orderby'    => sanitize_key( (string) $request['orderby'] ),
@@ -220,12 +273,15 @@ final class Rest {
 		}
 
 		$types    = array();
+		$dates    = array();
+		$repo     = new TicketTypes();
 		$items    = array_map(
-			static function ( Attendee $a ) use ( &$types ) {
+			static function ( Attendee $a ) use ( &$types, &$dates, $repo ) {
 				return array_merge(
 					$a->to_array(),
 					array(
 						'event_title' => html_entity_decode( get_the_title( $a->event_id ), ENT_QUOTES ),
+						'date'        => $repo->date_label( $a->ticket_type_id, $dates ),
 						'code'        => $a->security_code,
 						'answers'     => \OpenEvents\Attendance\Fields::answers( $a, $types ),
 					)

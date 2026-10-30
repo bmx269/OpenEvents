@@ -147,7 +147,7 @@ Patterns used throughout:
 
 ## RSVP module
 
-- Settings live in the `_oe_rsvp` meta object (saved and revisioned with the event) and are mirrored into an `oe_ticket_types` row of kind `rsvp`, keyed by `(event_id, type_key)` so `sold` survives edits.
+- Settings live in the `_oe_rsvp` meta object (saved and revisioned with the event) and are mirrored into an `oe_ticket_types` row of kind `rsvp`, keyed by `(event_id, type_key, sequence)` so `sold` survives edits (see Per-date places).
 - One `oe_attendees` row per person (guests included) for per-person check-in; a response is a group sharing `group_uuid`.
 - Seats: `UPDATE … SET sold = sold + n WHERE … sold + n <= capacity`; no row changed means full. Changing a response reserves or releases the difference.
 - Privacy: a second response with an already-used email never changes the first. The owner is emailed a fresh private link (token stored as an HMAC hash) to change or cancel.
@@ -155,6 +155,18 @@ Patterns used throughout:
 - Entry points: REST `POST /openevents/v1/events/{id}/rsvp` (status codes 409 full, 403 closed, 422 invalid, 429 rate-limited), the no-JS `admin-post.php` form, and `Service::respond()` for add-ons.
 - Admin: Events → Attendees (DataViews, server-paged) with check-in, cancel, and streamed CSV export protected against spreadsheet formula injection.
 - Hooks: `openevents/rsvp/responded`, `openevents/rsvp/cancelled`, `openevents/rsvp/email`, `openevents/attendees/capability`, `openevents/client_ip`.
+
+## Per-date places (repeating events)
+
+Each date of a repeating event has its own RSVP and ticket capacity, so a weekly storytime for 12 takes 12 every week.
+
+- **Rows per date:** `oe_ticket_types` is unique on `(event_id, type_key, sequence)`. The row with sequence 0 is the event's own date; it is the only row for a single event or a series pass, and it holds the definition. Another date gets its own row the first time it's shown or booked (`TicketTypes::for_date()`, an `INSERT IGNORE … SELECT` from the sequence-0 row, so concurrent first bookings share one row). Settings changes reach every date's row; `sold` is kept per row.
+- **Why sequences, not occurrence ids:** sequences are derived from the date (see Recurrence), so they survive rebuilds and a date that is removed and added again. The `occurrence_id` column is unused.
+- **Everything else follows from the row id:** seats are reserved on the date's row, attendees and order lines point at it, and waitlists are keyed by it, so each date has its own queue. Sale windows close at the row's own date (`TicketTypes::occurrence()`; a series pass uses the series' last date).
+- **Which date:** forms book the date being viewed (`Repository::requested()`: a dated URL, else the next date) and post its `sequence`. Only dates on the schedule can create rows, so a made-up sequence is refused. Private links keep their own date: changing an RSVP, leaving a waitlist, or claiming held tickets acts on the date of that response or entry, wherever the link opens. Emails name the booked date and link to its page (`TicketTypes::url()`).
+- **Admin:** the attendee and waitlist lists show each person's date; the attendee list filters by date once an event is chosen (`GET /openevents/v1/attendees/dates?event=`, then `sequence=`), and so does its CSV. On a repeating event the editor shows capacity as "for each date".
+- **Upgrade:** schema 5 adds the column and drops the old `(event_id, type_key)` unique key, which dbDelta would keep. Existing rows become sequence 0, so bookings made before stay on the event's own date.
+- **Not yet:** removing a date that has bookings leaves them on a date no longer on the schedule; the attendee list labels them so.
 
 ## Event attributes and calendar filters
 
@@ -294,7 +306,8 @@ Opt-in per RSVP (`waitlist` in `_oe_rsvp`) and per ticket type (`waitlist` in `_
 Built on the same attendance tables as RSVP, plus orders:
 
 ```
-oe_ticket_types   (shared with RSVP) kind 'paid', price in settings.price_minor, capacity, sold
+oe_ticket_types   (shared with RSVP) kind 'paid', price in settings.price_minor, capacity, sold;
+                  one row per date of a repeating event (sequence; see Per-date places)
 oe_orders         id, uuid, event_id, status, gateway, gateway_ref, gateway_txn, name, email,
                   total_minor, currency, token_hash, ip_hash, expires_utc, created_utc, meta
 oe_order_items    order_id, ticket_type_id, quantity, unit_price_minor

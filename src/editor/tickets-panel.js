@@ -9,6 +9,7 @@ import {
 } from '@wordpress/components';
 import { DateField } from './event-panel';
 import AttendeeFields from './attendee-fields';
+import { repeats } from './rsvp-panel';
 
 const newType = () => ( {
 	key: Math.random().toString( 36 ).slice( 2, 10 ),
@@ -93,7 +94,14 @@ export default function TicketsPanel( { meta, setMeta, postId, config } ) {
 								type="number"
 								min={ 0 }
 								label={ __( 'Capacity', 'openevents' ) }
-								help={ __( '0 is unlimited.', 'openevents' ) }
+								help={
+									repeats( meta )
+										? __(
+												'For each date. 0 is unlimited.',
+												'openevents'
+										  )
+										: __( '0 is unlimited.', 'openevents' )
+								}
 								value={ String( type.capacity ) }
 								onChange={ ( value ) =>
 									update( index, {

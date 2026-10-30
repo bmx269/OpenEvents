@@ -43,6 +43,12 @@ final class Rest {
 				'args'                => array(
 					'name'    => array( 'type' => 'string' ),
 					'email'   => array( 'type' => 'string' ),
+					'sequence' => array(
+						'description' => __( 'Which date of a repeating event (an occurrence sequence; 0 is the event’s own date).', 'openevents' ),
+						'type'        => 'integer',
+						'minimum'     => 0,
+						'default'     => 0,
+					),
 					'tickets' => array( 'type' => 'object' ),
 					'attendees' => array(
 						'description' => __( 'Per ticket type id, a list of people: name, email, and fields (answers by field key).', 'openevents' ),
@@ -136,6 +142,7 @@ final class Rest {
 			array(
 				'name'    => (string) $request['name'],
 				'email'   => (string) $request['email'],
+				'sequence' => (int) $request['sequence'],
 				'tickets' => array_map( 'absint', (array) $request['tickets'] ),
 				'attendees' => (array) $request['attendees'],
 				'gateway' => sanitize_key( (string) $request['gateway'] ),
@@ -190,7 +197,7 @@ final class Rest {
 		if ( $token && ( new Orders() )->by_token( $token )?->id === $order->id ) {
 			$args['oe_order_token'] = $token;
 		}
-		return $this->redirect( add_query_arg( $args, (string) get_permalink( $order->event_id ) ) . '#tickets' );
+		return $this->redirect( add_query_arg( $args, Checkout::order_page( $order ) ) . '#tickets' );
 	}
 
 	public function webhook( WP_REST_Request $request ): WP_REST_Response {

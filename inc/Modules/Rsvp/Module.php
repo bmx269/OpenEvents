@@ -169,14 +169,37 @@ final class Module extends AbstractModule {
 	 * @return string[]
 	 */
 	public function section( array $sections, Event $event, Occurrence $occurrence ): array {
-		$type = $this->service->ticket_type( $event->id() );
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only display state.
+		$token = sanitize_text_field( wp_unslash( $_GET['oe_rsvp_token'] ?? '' ) );
+		$type  = $this->type_for_page( $event->id(), $occurrence, $token );
 		if ( $type ) {
 			wp_enqueue_script_module( 'openevents-rsvp' );
-			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only display state.
-			$token             = sanitize_text_field( wp_unslash( $_GET['oe_rsvp_token'] ?? '' ) );
 			$sections['rsvp'] = Form::render( $event, $type, $this->service, $token );
 		}
 		return $sections;
+	}
+
+	/**
+	 * The date the form is for: a private link's response or waitlist place
+	 * keeps its own date wherever the link opens; otherwise the date shown.
+	 */
+	private function type_for_page( int $event_id, Occurrence $occurrence, string $token ): ?\OpenEvents\Attendance\TicketType {
+		if ( '' !== $token ) {
+			$type = $this->service->response_type( $event_id, $this->service->response_for_token( $token ) );
+			if ( $type ) {
+				return $type;
+			}
+		}
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only display state.
+		$wl_token = sanitize_text_field( wp_unslash( $_GET['oe_waitlist'] ?? '' ) );
+		$entry    = '' !== $wl_token ? ( new \OpenEvents\Attendance\Waitlist() )->by_token( $wl_token ) : null;
+		if ( $entry && $entry->event_id === $event_id ) {
+			$type = ( new \OpenEvents\Attendance\TicketTypes() )->get( $entry->ticket_type_id );
+			if ( $type && Service::TYPE_KEY === $type->type_key && 'active' === $type->status ) {
+				return $type;
+			}
+		}
+		return $this->service->ticket_type( $event_id, $occurrence->event_id === $event_id ? $occurrence->sequence : 0 );
 	}
 
 	/**
@@ -190,6 +213,7 @@ final class Module extends AbstractModule {
 			'email'    => wp_unslash( $_POST['email'] ?? '' ),
 			'status'   => sanitize_key( wp_unslash( $_POST['status'] ?? 'going' ) ),
 			'quantity' => absint( $_POST['quantity'] ?? 1 ),
+			'sequence' => absint( $_POST['sequence'] ?? 0 ),
 			'attendees' => wp_unslash( (array) ( $_POST['attendees'] ?? array() ) ),
 			'token'    => sanitize_text_field( wp_unslash( $_POST['token'] ?? '' ) ),
 			'website'  => wp_unslash( $_POST['website'] ?? '' ),
@@ -200,7 +224,9 @@ final class Module extends AbstractModule {
 		// phpcs:enable
 
 		$result = $cancel ? $this->service->cancel( $input['token'] ) : $this->service->respond( $event_id, $input );
-		$url    = get_permalink( $event_id ) ?: home_url( '/' );
+		// Back to the date the form was for.
+		$occurrence = openevents()->occurrences()->by_sequence( $event_id, $input['sequence'] );
+		$url        = ( $occurrence ? openevents_occurrence_url( $occurrence ) : get_permalink( $event_id ) ) ?: home_url( '/' );
 		$args   = array( 'oe_rsvp' => $result->code );
 		if ( ! $result->ok && $input['token'] ) {
 			$args['oe_rsvp_token'] = rawurlencode( $input['token'] );

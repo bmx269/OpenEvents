@@ -48,7 +48,7 @@ Requires WordPress 7.1+ and PHP 8.2+.
 | **Privacy tools**: attendee data in WordPress's personal data export and erase | ✅ Done |
 | **Week and day views** | ✅ Done |
 | **Event attributes and calendar filters**: lists such as Audiences, filter by attribute and day of the week | ✅ Done |
-| Per-date RSVP and tickets for recurring events | 🚧 In progress |
+| **Per-date places** for recurring events: each date has its own RSVP and ticket capacity, waitlist, and attendee list | ✅ Done |
 | Calendar filter and search, event popups, category badges, per-category and per-post-type templates | ✅ Done |
 | Google Calendar import (iCal feeds) | Next |
 | Ticket QR codes and door check-in, Pro views (week, photo, map) | Planned |

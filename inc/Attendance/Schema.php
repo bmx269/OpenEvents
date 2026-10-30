@@ -13,7 +13,7 @@ namespace OpenEvents\Attendance;
  */
 final class Schema {
 
-	public const VERSION        = '4';
+	public const VERSION        = '5';
 	public const VERSION_OPTION = 'openevents_attendance_db_version';
 
 	public static function ticket_types(): string {
@@ -53,13 +53,19 @@ final class Schema {
 		$charset = $wpdb->get_charset_collate();
 
 		// Ticket types are derived from event meta (like occurrences), keyed by
-		// (event_id, type_key) so edits update rows in place and `sold` survives.
+		// (event_id, type_key, sequence) so edits update rows in place and `sold`
+		// survives. Sequence 0 is the event's own date (and the only one for a
+		// single event or a series pass); a repeating event's other dates get
+		// their own rows, copied from it on first use, so each date has its own
+		// capacity. Sequences are the occurrences' (see Recurrence\Module).
+		// occurrence_id is unused.
 		dbDelta(
 			'CREATE TABLE ' . self::ticket_types() . " (
   id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   event_id bigint(20) unsigned NOT NULL,
   occurrence_id bigint(20) unsigned NOT NULL DEFAULT 0,
   type_key varchar(40) NOT NULL,
+  sequence int(10) unsigned NOT NULL DEFAULT 0,
   kind varchar(10) NOT NULL DEFAULT 'rsvp',
   name varchar(200) NOT NULL DEFAULT '',
   description text NOT NULL,
@@ -72,10 +78,16 @@ final class Schema {
   status varchar(20) NOT NULL DEFAULT 'active',
   settings longtext NOT NULL,
   PRIMARY KEY  (id),
-  UNIQUE KEY event_type (event_id,type_key),
+  UNIQUE KEY event_type_date (event_id,type_key,sequence),
   KEY event_status (event_id,status)
 ) {$charset};"
 		);
+		// Before schema 5 a type was unique per event, which would refuse per-date
+		// rows; dbDelta adds keys but never drops them.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		if ( $wpdb->get_var( $wpdb->prepare( 'SHOW INDEX FROM %i WHERE Key_name = %s', self::ticket_types(), 'event_type' ) ) ) {
+			$wpdb->query( $wpdb->prepare( 'ALTER TABLE %i DROP INDEX event_type', self::ticket_types() ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.DirectDatabaseQuery.SchemaChange
+		}
 
 		// One row per person. group_uuid ties a response (or order) together;
 		// token_hash authorises the private "change or cancel" link.

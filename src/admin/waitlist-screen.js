@@ -34,6 +34,7 @@ export default function WaitlistScreen( { root } ) {
 		fields: [
 			'email',
 			'event',
+			'date',
 			'type',
 			'quantity',
 			'status',
@@ -125,6 +126,12 @@ export default function WaitlistScreen( { root } ) {
 				elements: events,
 				enableSorting: false,
 				filterBy: { operators: [ 'is' ], isPrimary: true },
+			},
+			{
+				id: 'date',
+				label: __( 'Date', 'openevents' ),
+				render: ( { item } ) => item.date || '—',
+				enableSorting: false,
 			},
 			{
 				id: 'type',

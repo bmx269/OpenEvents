@@ -8,7 +8,9 @@
 namespace OpenEvents\Modules\Rsvp;
 
 use OpenEvents\Attendance\Attendee;
+use OpenEvents\Attendance\TicketTypes;
 use OpenEvents\Frontend\Formatter;
+use OpenEvents\Occurrences\Occurrence;
 
 /**
  * Plain-text emails: confirmation (with a private change/cancel link) and a
@@ -44,11 +46,12 @@ final class Mailer {
 				: sprintf( __( 'We’ve noted that you can’t make it to %s.', 'openevents' ), $title ),
 			'',
 		);
-		$lines = array_merge( $lines, $this->event_lines( $event_id ) );
+		$occurrence = self::occurrence( $event_id, $people );
+		$lines      = array_merge( $lines, $this->event_lines( $event_id, $occurrence ) );
 		if ( $token ) {
 			$lines[] = '';
 			$lines[] = __( 'Change or cancel your RSVP:', 'openevents' );
-			$lines[] = self::manage_url( $event_id, $token );
+			$lines[] = self::manage_url( $event_id, $token, $occurrence );
 		}
 
 		$this->send( $lead->email, $subject, $lines, 'confirmation', $event_id, $people );
@@ -69,7 +72,7 @@ final class Mailer {
 			/* translators: %s: event title */
 			sprintf( __( 'Someone (hopefully you) tried to RSVP to %s with this email address, which already has a response.', 'openevents' ), $title ),
 			__( 'Use this private link to change or cancel your RSVP:', 'openevents' ),
-			self::manage_url( $event_id, $token ),
+			self::manage_url( $event_id, $token, self::occurrence( $event_id, $people ) ),
 			'',
 			__( 'If this wasn’t you, you can ignore this email.', 'openevents' ),
 		);
@@ -77,16 +80,31 @@ final class Mailer {
 		$this->send( $people[0]->email, sprintf( __( 'Your RSVP for %s', 'openevents' ), $title ), $lines, 'manage_link', $event_id, $people );
 	}
 
-	public static function manage_url( int $event_id, string $token ): string {
-		return add_query_arg( 'oe_rsvp_token', rawurlencode( $token ), get_permalink( $event_id ) ) . '#rsvp';
+	/**
+	 * The private link, on the response's date when given (the link works on
+	 * any date's page, but that's the one it's about).
+	 */
+	public static function manage_url( int $event_id, string $token, ?Occurrence $occurrence = null ): string {
+		$url = $occurrence ? openevents_occurrence_url( $occurrence ) : get_permalink( $event_id );
+		return add_query_arg( 'oe_rsvp_token', rawurlencode( $token ), $url ) . '#rsvp';
+	}
+
+	/**
+	 * The date a response is for: its RSVP type's (each date of a repeating
+	 * event has its own), else the event's next.
+	 *
+	 * @param Attendee[] $people Response rows.
+	 */
+	private static function occurrence( int $event_id, array $people ): ?Occurrence {
+		$type = $people ? ( new TicketTypes() )->get( $people[0]->ticket_type_id ) : null;
+		return ( $type ? TicketTypes::date_of( $type ) : null ) ?? openevents()->occurrences()->for_event( $event_id );
 	}
 
 	/**
 	 * @return string[]
 	 */
-	private function event_lines( int $event_id ): array {
-		$lines      = array();
-		$occurrence = openevents()->occurrences()->for_event( $event_id );
+	private function event_lines( int $event_id, ?Occurrence $occurrence ): array {
+		$lines = array();
 		if ( $occurrence ) {
 			/* translators: %s: date and time */
 			$lines[] = sprintf( __( 'When: %s', 'openevents' ), Formatter::range( $occurrence ) );
@@ -98,7 +116,7 @@ final class Mailer {
 			/* translators: %s: venue name and address */
 			$lines[] = sprintf( __( 'Where: %s', 'openevents' ), wp_strip_all_tags( get_the_title( $venue ) ) . ( $address ? ', ' . $address : '' ) );
 		}
-		$lines[] = get_permalink( $event_id );
+		$lines[] = $occurrence ? openevents_occurrence_url( $occurrence ) : get_permalink( $event_id );
 		return $lines;
 	}
 

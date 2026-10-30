@@ -34,7 +34,8 @@ final class Mailer {
 			'',
 		);
 
-		$occurrence = openevents()->occurrences()->for_event( $order->event_id );
+		$type       = Checkout::order_type( $order );
+		$occurrence = ( $type ? \OpenEvents\Attendance\TicketTypes::date_of( $type ) : null ) ?? openevents()->occurrences()->for_event( $order->event_id );
 		if ( $occurrence ) {
 			/* translators: %s: date and time */
 			$lines[] = sprintf( __( 'When: %s', 'openevents' ), Formatter::range( $occurrence ) );
@@ -66,7 +67,7 @@ final class Mailer {
 		$lines[] = '';
 		/* translators: %s: order number */
 		$lines[] = sprintf( __( 'Order: %s', 'openevents' ), $order->uuid );
-		$lines[] = get_permalink( $order->event_id );
+		$lines[] = $type ? \OpenEvents\Attendance\TicketTypes::url( $type ) : get_permalink( $order->event_id );
 
 		$email = array(
 			'to'      => $order->email,
