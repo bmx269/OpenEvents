@@ -64,6 +64,7 @@ final class Plugin {
 		Installer::register();
 		( new PostTypes( $this->settings ) )->register();
 		( new Meta( $this->settings ) )->register();
+		\OpenEvents\Content\Attributes::register();
 		( new Sync() )->register();
 		\OpenEvents\Attendance\Cleanup::register();
 		\OpenEvents\Attendance\Privacy::register();

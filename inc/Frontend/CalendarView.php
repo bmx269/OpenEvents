@@ -67,7 +67,7 @@ final class CalendarView {
 		++self::$instance;
 
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only navigation params.
-		$params = array_intersect_key( wp_unslash( $_GET ), array_flip( self::PARAMS ) );
+		$params = array_intersect_key( wp_unslash( $_GET ), array_flip( self::params() ) );
 		$key    = 'cal:' . md5(
 			wp_json_encode(
 				array(
@@ -121,6 +121,8 @@ final class CalendarView {
 			'enabled'    => $enabled,
 			'category'   => null,
 			'search'     => mb_substr( sanitize_text_field( wp_unslash( $_GET['oe_s'] ?? '' ) ), 0, 100 ),
+			'weekdays'   => self::requested_weekdays( wp_unslash( $_GET['oe_dow'] ?? array() ) ),
+			'terms'      => self::requested_terms(),
 		);
 		$state['category'] = $this->requested_category( sanitize_title( wp_unslash( $_GET['oe_cat'] ?? '' ) ), $state['categories'] );
 		if ( $state['category'] ) {
@@ -200,11 +202,9 @@ final class CalendarView {
 			array(
 				'local_from' => $grid_start->format( 'Y-m-d 00:00:00' ),
 				'local_to'   => $grid_end->format( 'Y-m-d 23:59:59' ),
-				'categories' => $state['categories'],
-				'search'     => $state['search'],
 				'per_page'   => -1,
 				'count'      => false,
-			)
+			) + self::query_filters( $state )
 		);
 
 		$days = array();
@@ -418,12 +418,10 @@ final class CalendarView {
 			array(
 				'local_from'   => $from->format( 'Y-m-d 00:00:00' ),
 				'local_to'     => $to->format( 'Y-m-d 23:59:59' ),
-				'categories'   => $state['categories'],
-				'search'       => $state['search'],
 				'per_page'     => -1,
 				'count'        => false,
 				'prime_images' => 'day' === $state['view'],
-			)
+			) + self::query_filters( $state )
 		);
 		$days = array();
 		foreach ( $result['items'] as $occurrence ) {
@@ -475,9 +473,7 @@ final class CalendarView {
 	 */
 	public static function render_list( CalendarView $view, array $state ): string {
 		$per_page = (int) ( $view->attributes['perPage'] ?? 0 ) ?: (int) openevents()->settings()->get( 'per_page' );
-		$args     = array(
-			'categories'   => $state['categories'],
-			'search'       => $state['search'],
+		$args     = self::query_filters( $state ) + array(
 			'per_page'     => $per_page,
 			'page'         => $state['page'],
 			'prime_images' => true,
@@ -673,7 +669,102 @@ final class CalendarView {
 	}
 
 	private static function is_filtered( array $state ): bool {
-		return null !== $state['category'] || '' !== $state['search'];
+		return null !== $state['category'] || '' !== $state['search'] || $state['weekdays'] || $state['terms'];
+	}
+
+	/**
+	 * Weekdays from ?oe_dow (a list, or comma-separated), 0 (Sunday) to 6.
+	 *
+	 * @return int[]
+	 */
+	private static function requested_weekdays( mixed $value ): array {
+		$days = is_array( $value ) ? $value : explode( ',', (string) $value );
+		$days = array_values( array_unique( array_filter( array_map( 'intval', array_filter( $days, 'is_numeric' ) ), static fn( $d ) => $d >= 0 && $d <= 6 ) ) );
+		sort( $days );
+		return count( $days ) < 7 ? $days : array();
+	}
+
+	/**
+	 * Attribute terms from ?{taxonomy}[]=slug, as taxonomy => term ids.
+	 *
+	 * @return array<string, int[]>
+	 */
+	private static function requested_terms(): array {
+		$out = array();
+		foreach ( array_keys( \OpenEvents\Content\Attributes::all() ) as $taxonomy ) {
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			$value = wp_unslash( $_GET[ $taxonomy ] ?? array() );
+			$slugs = array_map( 'sanitize_title', is_array( $value ) ? $value : explode( ',', (string) $value ) );
+			$ids   = array();
+			foreach ( array_filter( $slugs ) as $slug ) {
+				$term = get_term_by( 'slug', $slug, $taxonomy );
+				if ( $term instanceof \WP_Term ) {
+					$ids[] = $term->term_id;
+				}
+			}
+			if ( $ids ) {
+				$out[ $taxonomy ] = $ids;
+			}
+		}
+		return $out;
+	}
+
+	/**
+	 * "More filters": day of the week and each event attribute, as checkboxes
+	 * (any ticked value matches). Open while any of them is in use.
+	 *
+	 * @param array<string, mixed> $state View state.
+	 */
+	private static function more_filters( string $id, array $state ): string {
+		global $wp_locale;
+		$sow    = (int) get_option( 'start_of_week', 1 );
+		$groups = '';
+
+		$days = '';
+		for ( $i = 0; $i < 7; $i++ ) {
+			$day   = ( $sow + $i ) % 7;
+			$days .= sprintf(
+				'<label class="oe-calendar__choice"><input type="checkbox" name="oe_dow[]" value="%1$d"%2$s> %3$s</label>',
+				$day,
+				checked( in_array( $day, $state['weekdays'], true ), true, false ),
+				esc_html( $wp_locale->get_weekday( $day ) )
+			);
+		}
+		$groups .= '<fieldset class="oe-calendar__choices"><legend>' . esc_html__( 'Day of the week', 'openevents' ) . '</legend>' . $days . '</fieldset>';
+
+		foreach ( \OpenEvents\Content\Attributes::all() as $taxonomy => $label ) {
+			$terms = get_terms(
+				array(
+					'taxonomy'   => $taxonomy,
+					'hide_empty' => true,
+					// Creation order: imported options keep their source order.
+					'orderby'    => 'term_id',
+				)
+			);
+			if ( ! is_array( $terms ) || ! $terms ) {
+				continue;
+			}
+			$chosen = $state['terms'][ $taxonomy ] ?? array();
+			$items  = '';
+			foreach ( $terms as $term ) {
+				$items .= sprintf(
+					'<label class="oe-calendar__choice"><input type="checkbox" name="%1$s[]" value="%2$s"%3$s> %4$s</label>',
+					esc_attr( $taxonomy ),
+					esc_attr( $term->slug ),
+					checked( in_array( $term->term_id, $chosen, true ), true, false ),
+					esc_html( $term->name )
+				);
+			}
+			$groups .= '<fieldset class="oe-calendar__choices"><legend>' . esc_html( $label ) . '</legend>' . $items . '</fieldset>';
+		}
+
+		return sprintf(
+			'<details class="oe-calendar__more" id="%1$s-more"%2$s><summary>%3$s</summary><div class="oe-calendar__more-groups">%4$s</div></details>',
+			esc_attr( $id ),
+			$state['weekdays'] || $state['terms'] ? ' open' : '',
+			esc_html__( 'More filters', 'openevents' ),
+			$groups
+		);
 	}
 
 	/**
@@ -705,7 +796,7 @@ final class CalendarView {
 		$html  = sprintf(
 			'<form class="oe-calendar__filters" role="search" aria-label="%s" method="get" action="%s" data-wp-on--submit="actions.filter">',
 			esc_attr__( 'Filter events', 'openevents' ),
-			esc_url( remove_query_arg( self::PARAMS ) )
+			esc_url( remove_query_arg( self::params() ) )
 		);
 		// Keep the current view, month, date, and past/upcoming; filtering starts again at page 1.
 		$keep = array(
@@ -735,14 +826,20 @@ final class CalendarView {
 		}
 		$html .= '<p class="oe-calendar__filter"><label for="' . esc_attr( $id ) . '-s">' . esc_html__( 'Search events', 'openevents' ) . '</label>';
 		$html .= '<input id="' . esc_attr( $id ) . '-s" type="search" name="oe_s" maxlength="100" value="' . esc_attr( $state['search'] ) . '"></p>';
+		$html .= self::more_filters( $id, $state );
 		$html .= '<p class="oe-calendar__filter-actions"><button type="submit" class="oe-calendar__filter-submit">' . esc_html__( 'Filter', 'openevents' ) . '</button>';
 		if ( self::is_filtered( $state ) ) {
+			$clear = array(
+				'oe_cat'  => null,
+				'oe_s'    => null,
+				'oe_dow'  => null,
+				'oe_page' => null,
+			);
+			foreach ( array_keys( \OpenEvents\Content\Attributes::all() ) as $taxonomy ) {
+				$clear[ $taxonomy ] = null;
+			}
 			$html .= self::nav_link(
-				array(
-					'oe_cat'  => null,
-					'oe_s'    => null,
-					'oe_page' => null,
-				),
+				$clear,
 				__( 'Clear filters', 'openevents' ),
 				__( 'Clear filters', 'openevents' ),
 				false
@@ -784,6 +881,25 @@ final class CalendarView {
 		if ( ! self::is_filtered( $state ) ) {
 			return '';
 		}
+		if ( $state['weekdays'] || $state['terms'] ) {
+			global $wp_locale;
+			$parts = array();
+			if ( $state['category'] ) {
+				$parts[] = $state['category']->name;
+			}
+			foreach ( $state['terms'] as $taxonomy => $ids ) {
+				$parts[] = implode( ' / ', array_map( static fn( $id ) => get_term( $id, $taxonomy )->name, $ids ) );
+			}
+			if ( $state['weekdays'] ) {
+				$parts[] = implode( ' / ', array_map( array( $wp_locale, 'get_weekday' ), $state['weekdays'] ) );
+			}
+			if ( '' !== $state['search'] ) {
+				/* translators: %s: search terms */
+				$parts[] = sprintf( __( 'matching “%s”', 'openevents' ), $state['search'] );
+			}
+			/* translators: %s: active filters, e.g. "Kids / Teens, Saturday" */
+			return '<p class="oe-calendar__summary">' . esc_html( sprintf( __( 'Showing events: %s', 'openevents' ), implode( ', ', $parts ) ) ) . '</p>';
+		}
 		if ( $state['category'] && '' !== $state['search'] ) {
 			/* translators: 1: category name, 2: search terms */
 			$text = sprintf( __( 'Showing %1$s events matching “%2$s”', 'openevents' ), $state['category']->name, $state['search'] );
@@ -804,15 +920,41 @@ final class CalendarView {
 	 */
 	public static function url( array $params ): string {
 		$keep = array();
-		foreach ( self::PARAMS as $key ) {
+		foreach ( self::params() as $key ) {
 			// phpcs:ignore WordPress.Security.NonceVerification.Recommended
 			if ( isset( $_GET[ $key ] ) && 'oe_page' !== $key ) {
-				$keep[ $key ] = sanitize_text_field( wp_unslash( $_GET[ $key ] ) );
+				$value        = wp_unslash( $_GET[ $key ] ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+				$keep[ $key ] = is_array( $value ) ? array_map( 'sanitize_text_field', $value ) : sanitize_text_field( $value );
 			}
 		}
 		$params = array_merge( $keep, $params );
-		$url    = remove_query_arg( self::PARAMS );
+		$url    = remove_query_arg( self::params() );
 		return add_query_arg( array_filter( $params, static fn( $v ) => null !== $v ), $url );
+	}
+
+	/**
+	 * Every calendar query parameter: navigation, filters, and one per event
+	 * attribute (named after its taxonomy).
+	 *
+	 * @return string[]
+	 */
+	public static function params(): array {
+		return array_merge( self::PARAMS, array( 'oe_dow' ), array_keys( \OpenEvents\Content\Attributes::all() ) );
+	}
+
+	/**
+	 * Filters every view applies to its query.
+	 *
+	 * @param array<string, mixed> $state View state.
+	 * @return array<string, mixed>
+	 */
+	private static function query_filters( array $state ): array {
+		return array(
+			'categories' => $state['categories'],
+			'search'     => $state['search'],
+			'weekdays'   => $state['weekdays'],
+			'terms'      => $state['terms'],
+		);
 	}
 
 	private static function nav_link( array $params, string $label, string $text, bool $icon = true ): string {

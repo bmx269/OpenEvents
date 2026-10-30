@@ -491,3 +491,53 @@
 		}
 	}
 }
+
+// "More filters": day of the week and event attributes, as checkbox groups.
+.oe-calendar__more {
+	flex-basis: 100%;
+	order: 1;
+
+	> summary {
+		display: inline-flex;
+		align-items: center;
+		min-height: 2.75em;
+		font-weight: 600;
+		cursor: pointer;
+	}
+}
+
+.oe-calendar__more-groups {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.75rem var(--oe-gap);
+	padding-block: 0.5em;
+}
+
+.oe-calendar__choices {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0 1em;
+	margin: 0;
+	padding: 0;
+	border: 0;
+
+	legend {
+		width: 100%;
+		margin-bottom: 0.25em;
+		padding: 0;
+		font-size: 0.875em;
+		font-weight: 600;
+	}
+}
+
+.oe-calendar__choice {
+	display: inline-flex;
+	gap: 0.4em;
+	align-items: center;
+	min-height: 2.75em;
+
+	input {
+		width: 1.15em;
+		height: 1.15em;
+	}
+}

@@ -15,6 +15,7 @@ import { useState } from '@wordpress/element';
 import useSettings from './use-settings';
 import TicketsSettings from './tickets-settings';
 import {
+	AttributeFields,
 	DisplayFields,
 	EventContentFields,
 	FormatFields,
@@ -117,14 +118,27 @@ export default function SettingsScreen() {
 						</Tabs.Tab>
 					</Tabs.List>
 					<Tabs.Panel value="content">
-						<Section
-							title={ __( 'Where events live', 'openevents' ) }
-						>
-							<EventContentFields
-								settings={ settings }
-								update={ update }
-							/>
-						</Section>
+						<Stack direction="column" gap="lg">
+							<Section
+								title={ __(
+									'Where events live',
+									'openevents'
+								) }
+							>
+								<EventContentFields
+									settings={ settings }
+									update={ update }
+								/>
+							</Section>
+							<Section
+								title={ __( 'Event attributes', 'openevents' ) }
+							>
+								<AttributeFields
+									settings={ settings }
+									update={ update }
+								/>
+							</Section>
+						</Stack>
 					</Tabs.Panel>
 					<Tabs.Panel value="display">
 						<Stack direction="column" gap="lg">

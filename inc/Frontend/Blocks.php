@@ -52,7 +52,7 @@ final class Blocks {
 	 * @return array<string, bool|string>
 	 */
 	public function robots( array $robots ): array {
-		foreach ( CalendarView::PARAMS as $param ) {
+		foreach ( CalendarView::params() as $param ) {
 			if ( isset( $_GET[ $param ] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 				$robots['noindex'] = true;
 				$robots['follow']  = true;
