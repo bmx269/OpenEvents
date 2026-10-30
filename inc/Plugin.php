@@ -67,6 +67,7 @@ final class Plugin {
 		\OpenEvents\Content\Attributes::register();
 		( new Sync() )->register();
 		\OpenEvents\Attendance\Cleanup::register();
+		\OpenEvents\Attendance\Privacy::register();
 		$rest = new OccurrencesController( $this->occurrences );
 		$rest->register();
 		( new Abilities( $rest ) )->register();
