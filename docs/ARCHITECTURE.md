@@ -262,6 +262,7 @@ Questions asked of each person, defined per ticket type (the RSVP settings, or e
 - **Reporting:** `answers` in `GET /openevents/v1/attendees`, a Details column on the attendee screen, and one CSV column per question.
 - **Saved question sets** (`FieldSets`, option `openevents_field_sets`): `GET/POST /openevents/v1/field-sets`, `DELETE …/field-sets/{n}`. Applying a set copies its questions, so editing a set never changes past events.
 - Waitlisted RSVPs promoted automatically don't have answers yet (the waitlist form doesn't ask them).
+- **Privacy tools** (`Attendance\Privacy`): Tools → Export Personal Data includes an email's attendees (with answers under their questions), orders, and waitlist entries. Erase Personal Data anonymises attendees and orders (name, email, answers, IP hash) so seat counts and totals stay right, and deletes waitlist entries. Suggested privacy policy text is added. Registered by core.
 - **Deleting an event deletes its attendance data** (`Attendance\Cleanup`, on `before_delete_post`): attendees, waitlist entries, orders and their lines, and ticket types. Trashing keeps everything. Registered by core, so it runs even with RSVP and Tickets switched off. Fires `openevents/attendance/deleted`.
 
 ## Waitlist (RSVP and tickets)
