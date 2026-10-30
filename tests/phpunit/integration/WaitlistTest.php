@@ -213,6 +213,26 @@ final class WaitlistTest extends TestCase {
 		$this->assertSame( 1, $repo->get( $type->id )->sold );
 	}
 
+	public function test_joining_is_rate_limited_per_connection(): void {
+		$event = $this->rsvp_event( 1 );
+		$this->respond( $event, 'a@example.com' );
+		$type = $this->rsvp_type( $event );
+		$join = fn( int $n ) => $this->waitlist->join(
+			$type,
+			array(
+				'name'  => 'Person ' . $n,
+				'email' => "p{$n}@example.com",
+				'ip'    => '198.51.100.7',
+			)
+		);
+		for ( $n = 1; $n <= WaitlistService::RATE; $n++ ) {
+			$this->assertTrue( $join( $n )->ok );
+		}
+
+		$this->assertSame( 'rate_limited', $join( 99 )->code );
+		$this->assertSame( WaitlistService::RATE, $this->waitlist->waiting_count( $type->id ) );
+	}
+
 	public function test_processing_twice_does_not_double_promote(): void {
 		$event = $this->rsvp_event( 1 );
 		$this->respond( $event, 'a@example.com' );

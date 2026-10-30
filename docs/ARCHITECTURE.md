@@ -268,8 +268,8 @@ Questions asked of each person, defined per ticket type (the RSVP settings, or e
 - **Input shape** (forms and REST): RSVP `attendees[i][name|email|fields][key]`; checkout `attendees[ticket_type_id][i][…]`.
 - **Reporting:** `answers` in `GET /openevents/v1/attendees`, a Details column on the attendee screen, and one CSV column per question.
 - **Saved question sets** (`FieldSets`, option `openevents_field_sets`): `GET/POST /openevents/v1/field-sets`, `DELETE …/field-sets/{n}`. Applying a set copies its questions, so editing a set never changes past events.
-- Waitlisted RSVPs promoted automatically don't have answers yet (the waitlist form doesn't ask them).
-- **Privacy tools** (`Attendance\Privacy`): Tools → Export Personal Data includes an email's attendees (with answers under their questions), orders, and waitlist entries. Erase Personal Data anonymises attendees and orders (name, email, answers, IP hash) so seat counts and totals stay right, and deletes waitlist entries. Suggested privacy policy text is added. Registered by core.
+- **RSVP waitlists ask the same questions** as the RSVP form, checked the same way when joining (`WaitlistService::join()`), because promotion confirms people without another form. Each person's details and answers wait in `oe_waitlist.people` (JSON, the `Fields::people()` shape) and become the attendee rows at promotion. The copy is dropped when the entry leaves the queue (claimed, left, or expired). Ticket waitlists don't ask: claiming an offer goes through checkout, which does.
+- **Privacy tools** (`Attendance\Privacy`): Tools → Export Personal Data includes an email's attendees (with answers under their questions), orders, and waitlist entries (with their guests' details and answers). Erase Personal Data anonymises attendees and orders (name, email, answers, IP hash) so seat counts and totals stay right, and deletes waitlist entries. A guest named on someone else's waitlist entry is found by their own email too: the export shows only their part, and erasing blanks only their part, so the entry keeps its place. Suggested privacy policy text is added. Registered by core.
 - **Deleting an event deletes its attendance data** (`Attendance\Cleanup`, on `before_delete_post`): attendees, waitlist entries, orders and their lines, and ticket types. Trashing keeps everything. Registered by core, so it runs even with RSVP and Tickets switched off. Fires `openevents/attendance/deleted`.
 
 ## Waitlist (RSVP and tickets)
@@ -281,12 +281,12 @@ Opt-in per RSVP (`waitlist` in `_oe_rsvp`) and per ticket type (`waitlist` in `_
   - **Tickets** hold the seats (they're counted in `sold`) and email a claim link valid for `waitlist_offer_hours` (default 24). Checkout with `waitlist_token` buys exactly the held tickets without reserving them again. Unclaimed offers expire through a 5-minute cron and pass down the queue, and so do abandoned claim checkouts, through the normal order release.
 - **Fairness:** first come, first served. An entry larger than the free seats keeps its place while smaller ones behind it are served.
 - **Safety:** each entry moves with a conditional `UPDATE` before seats are taken with the atomic reserve, and is handed back if the reserve fails. A per-request re-entrancy guard stops expiry-triggered releases from recursing.
-- **Privacy and spam:** joining again with an email already on the list only emails a fresh private link, as with RSVPs. The forms are cache-safe: honeypot, signed timestamp, and rate limit.
+- **Privacy and spam:** joining again with an email already on the list only emails a fresh private link, as with RSVPs. The forms are cache-safe: honeypot, signed timestamp, and a per-connection rate limit (`WaitlistService::RATE` joins per `RATE_SPAN` seconds, by IP hash).
 - **Surfaces:**
   - The RSVP form switches to "Join the waitlist" when full, and the count shows how many are waiting.
   - The tickets section offers a waitlist form for sold-out types and a claim view behind the private link.
-  - REST: `POST /events/{id}/waitlist`, `POST /waitlist/leave`, `GET /waitlist`, and `POST /waitlist/{id}` (remove).
-  - Events → Waitlist (DataViews).
+  - REST: `POST /events/{id}/waitlist`, `POST /waitlist/leave`, `GET /waitlist` (with `answers` for organisers), and `POST /waitlist/{id}` (remove).
+  - Events → Waitlist (DataViews), with a Details column for answers.
 - **Hooks:** `openevents/waitlist/joined`, `promoted`, `offered`, `openevents/waitlist/email`, `openevents/seats_released`.
 
 ## Tickets module

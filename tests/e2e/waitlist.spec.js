@@ -3,7 +3,7 @@ const { test, expect } = require( '@playwright/test' );
 const humanPause = ( page ) => page.waitForTimeout( 2100 );
 
 test.describe( 'Waitlist', () => {
-	test( 'a full RSVP offers the waitlist, and a cancellation promotes the next person', async ( {
+	test( 'a full RSVP offers the waitlist, and a cancellation promotes the next person with their answers', async ( {
 		page,
 	} ) => {
 		await page.goto( '/events/author-talk-full/' );
@@ -12,12 +12,31 @@ test.describe( 'Waitlist', () => {
 
 		await rsvp.getByLabel( 'Name' ).fill( 'Waiting Person' );
 		await rsvp.getByLabel( 'Email' ).fill( 'waiting@example.com' );
+		// The same questions as an RSVP; a guest's appear with the party size.
+		const guest = rsvp.getByRole( 'group', { name: 'Guest 2' } );
+		await expect( guest ).toBeHidden();
+		await rsvp.getByLabel( 'People' ).selectOption( '2' );
+		await expect( guest ).toBeVisible();
+		await rsvp.getByLabel( 'People' ).selectOption( '1' );
+		await rsvp
+			.getByRole( 'group', { name: 'Your details' } )
+			.getByRole( 'radio', { name: 'Not yet' } )
+			.check();
 		await humanPause( page );
 		await rsvp.getByRole( 'button', { name: 'Join the waitlist' } ).click();
 
 		const message = rsvp.locator( '.oe-rsvp__live' );
 		await expect( message ).toHaveText( /on the waitlist \(#1\)/ );
 		await expect( message ).toBeFocused();
+
+		await page.goto(
+			'/wp-admin/edit.php?post_type=oe_event&page=openevents-waitlist'
+		);
+		await expect(
+			page
+				.locator( '.dataviews-view-table tr' )
+				.filter( { hasText: 'Waiting Person' } )
+		).toContainText( 'Have you read the book? Not yet' );
 
 		// An organiser cancels someone; the waitlisted person is confirmed automatically.
 		await page.goto(
@@ -35,6 +54,9 @@ test.describe( 'Waitlist', () => {
 			has: page.getByText( 'Waiting Person', { exact: true } ),
 		} );
 		await expect( promoted ).toContainText( 'Going' );
+		await expect( promoted ).toContainText(
+			'Have you read the book? Not yet'
+		);
 	} );
 
 	test( 'a sold-out ticket type offers a waitlist without JavaScript', async ( {

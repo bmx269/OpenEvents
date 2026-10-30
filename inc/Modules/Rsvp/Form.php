@@ -163,12 +163,18 @@ final class Form {
 	}
 
 	/**
-	 * "Join the waitlist" for a full event: same endpoint as RSVPs, status "waitlist".
+	 * "Join the waitlist" for a full event: same endpoint as RSVPs, status
+	 * "waitlist". It asks the same questions as an RSVP, since promotion from
+	 * the waitlist confirms people without another form.
 	 */
 	private static function waitlist_form( int $event_id, TicketType $type ): string {
-		$id   = 'oe-rsvp-wl-' . $event_id;
-		$max  = (int) $type->setting( 'max_per_response', 1 );
-		$html = '<form class="oe-rsvp__form oe-waitlist" method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" data-wp-on--submit="actions.submit" data-wp-bind--hidden="context.done">';
+		$id         = 'oe-rsvp-wl-' . $event_id;
+		$max        = (int) $type->setting( 'max_per_response', 1 );
+		$form_state = array(
+			'quantity' => 1,
+			'going'    => true,
+		);
+		$html       = '<form class="oe-rsvp__form oe-waitlist" method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" data-wp-on--submit="actions.submit" data-wp-bind--hidden="context.done" data-wp-context="' . esc_attr( (string) wp_json_encode( $form_state ) ) . '">';
 		$html .= '<p class="oe-waitlist__intro">' . esc_html__( 'Join the waitlist and we’ll confirm you automatically if a spot opens up.', 'openevents' ) . '</p>';
 		$html .= '<input type="hidden" name="action" value="openevents_rsvp"><input type="hidden" name="event_id" value="' . esc_attr( (string) $event_id ) . '">';
 		$html .= '<input type="hidden" name="status" value="waitlist"><input type="hidden" name="ts" value="' . esc_attr( Service::sign_timestamp() ) . '">';
@@ -181,9 +187,13 @@ final class Form {
 			for ( $n = 1; $n <= $max; $n++ ) {
 				$options .= sprintf( '<option value="%1$d">%1$d</option>', $n );
 			}
-			$html .= self::field( $id . '-qty', __( 'People', 'openevents' ), '<select id="' . $id . '-qty" name="quantity">' . $options . '</select>' );
+			$html .= self::field( $id . '-qty', __( 'People', 'openevents' ), '<select id="' . $id . '-qty" name="quantity" data-wp-on--change="actions.setQuantity">' . $options . '</select>' );
 		}
-		$html .= '</div><div class="oe-rsvp__actions"><button type="submit" class="oe-rsvp__submit wp-element-button" data-wp-bind--disabled="context.busy">' . esc_html__( 'Join the waitlist', 'openevents' ) . '</button></div></form>';
+		$html .= '</div>';
+		if ( Fields::asks( $type ) ) {
+			$html .= self::people_inputs( $type, $max, array(), $id, true );
+		}
+		$html .= '<div class="oe-rsvp__actions"><button type="submit" class="oe-rsvp__submit wp-element-button" data-wp-bind--disabled="context.busy">' . esc_html__( 'Join the waitlist', 'openevents' ) . '</button></div></form>';
 		return $html;
 	}
 
