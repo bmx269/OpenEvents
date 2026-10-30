@@ -158,7 +158,7 @@ final class Settings {
 			'event_template'           => ! empty( $input['event_template'] ),
 			'calendar_page'            => absint( $input['calendar_page'] ?? 0 ),
 			'per_page'                 => max( 1, min( 100, absint( $input['per_page'] ?? $defaults['per_page'] ) ) ),
-			'default_view'             => in_array( $view, array( 'month', 'list' ), true ) ? $view : $defaults['default_view'],
+			'default_view'             => in_array( $view, array( 'month', 'week', 'day', 'list' ), true ) ? $view : $defaults['default_view'],
 			'click_action'             => 'popup' === ( $input['click_action'] ?? '' ) ? 'popup' : 'page',
 			'waitlist_offer_hours'     => max( 1, min( 168, absint( $input['waitlist_offer_hours'] ?? $defaults['waitlist_offer_hours'] ) ) ),
 			'currency'                 => preg_match( '/^[A-Z]{3}$/', strtoupper( (string) ( $input['currency'] ?? '' ) ) ) ? strtoupper( (string) $input['currency'] ) : $defaults['currency'],

@@ -63,7 +63,7 @@ Done in Phase 2 groundwork:
   - Optional 301 redirects from old permalinks.
 - **Event Tickets importer** (RSVP and Tickets Commerce), following `docs/research/event-tickets-data-model.md`. Keeps security codes.
 - CSV import (TEC column names accepted).
-- Day view; venue filter on the calendar block (category filter and keyword search are done).
+- Venue filter on the calendar block (category filter, keyword search, and the day view are done).
 - Event status: scheduled, cancelled, postponed (with a reason).
 - `Event` JSON-LD with Offer, Place, and Organizer.
 - Venue map embed (OpenStreetMap; Google optional).
@@ -91,7 +91,8 @@ Done in Phase 2 groundwork:
 
 ## Phase 6: Pro views and extras
 
-- Week, photo, map, and summary views (through `openevents/calendar/views`).
+- ✅ Week and day views (done 2026-10-29; tests in `WeekDayViewsTest.php`, `week-day.spec.js`).
+- Photo, map, and summary views (through `openevents/calendar/views`).
 - Additional fields (filterable), duplicate event, related events, virtual events.
 - Admin event list built on DataViews.
 

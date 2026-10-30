@@ -414,3 +414,80 @@
 	margin-inline: auto;
 	padding: var(--oe-gap) var(--wp--style--root--padding-right, 1.25rem) calc(var(--oe-gap) * 2) var(--wp--style--root--padding-left, 1.25rem);
 }
+
+// Week view: a row of day columns; days stack on phones (empty ones hidden).
+.oe-week {
+	display: grid;
+	grid-template-columns: repeat(7, minmax(0, 1fr));
+	margin: 0;
+	padding: 0;
+	list-style: none;
+	border-inline-start: 1px solid var(--oe-border);
+
+	&__day {
+		min-height: 9rem;
+		margin: 0;
+		padding: 0.35rem;
+		border: 1px solid var(--oe-border);
+		border-inline-start: 0;
+
+		&.is-today .oe-week__date time {
+			display: inline-grid;
+			place-items: center;
+			min-width: 1.8em;
+			height: 1.8em;
+			border-radius: 50%;
+			background: var(--oe-accent);
+			color: var(--oe-on-accent);
+		}
+	}
+
+	&__date {
+		margin: 0 0 0.35em;
+		font-size: 0.85em;
+		font-weight: 600;
+
+		a {
+			display: inline-flex;
+			gap: 0.35em;
+			align-items: center;
+			min-height: 2.75em;
+			color: inherit;
+			text-decoration: none;
+
+			&:hover,
+			&:focus-visible {
+				text-decoration: underline;
+			}
+		}
+	}
+
+	&__weekday {
+		color: var(--oe-muted);
+		font-weight: 400;
+	}
+
+	&__events {
+		margin: 0;
+		padding: 0;
+		list-style: none;
+
+		.oe-month__event {
+			white-space: normal;
+		}
+	}
+
+	@media (max-width: 600px) {
+		grid-template-columns: 1fr;
+		border-inline-start: 0;
+
+		&__day {
+			min-height: 0;
+			border-width: 0 0 1px;
+
+			&.is-empty {
+				display: none;
+			}
+		}
+	}
+}

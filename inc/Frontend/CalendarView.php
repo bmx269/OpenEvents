@@ -39,6 +39,8 @@ final class CalendarView {
 	public static function views(): array {
 		$views = array(
 			'month' => array( self::class, 'render_month' ),
+			'week'  => array( self::class, 'render_week' ),
+			'day'   => array( self::class, 'render_day' ),
 			'list'  => array( self::class, 'render_list' ),
 		);
 
@@ -54,6 +56,8 @@ final class CalendarView {
 	public static function view_label( string $id ): string {
 		$labels = array(
 			'month' => __( 'Month', 'openevents' ),
+			'week'  => __( 'Week', 'openevents' ),
+			'day'   => __( 'Day', 'openevents' ),
 			'list'  => __( 'List', 'openevents' ),
 		);
 		return $labels[ $id ] ?? ucfirst( $id );
@@ -275,7 +279,7 @@ final class CalendarView {
 						esc_url(
 							self::url(
 								array(
-									'oe_view' => 'list',
+									'oe_view' => in_array( 'day', $state['enabled'], true ) ? 'day' : 'list',
 									'oe_date' => $key,
 								)
 							)
@@ -297,6 +301,155 @@ final class CalendarView {
 		}
 
 		return $nav . $html;
+	}
+
+	/**
+	 * A week of days, each listing its events (all-day ones first). A row of
+	 * day columns on wide screens; days stack on phones.
+	 *
+	 * @param array<string, mixed> $state View state.
+	 */
+	public static function render_week( CalendarView $view, array $state ): string {
+		$sow    = (int) get_option( 'start_of_week', 1 );
+		$anchor = self::clamp( $state['date'] ?? current_datetime()->setTime( 0, 0 ) );
+		$start  = $anchor->modify( '-' . ( ( (int) $anchor->format( 'w' ) - $sow + 7 ) % 7 ) . ' days' );
+		$end    = $start->modify( '+6 days' );
+		$days   = self::by_day( $start, $end, $state );
+		$tag    = $view->heading_tag();
+
+		/* translators: 1: first day of the week, 2: last day */
+		$title = sprintf( __( '%1$s – %2$s', 'openevents' ), wp_date( 'M j', $start->getTimestamp(), wp_timezone() ), wp_date( 'M j, Y', $end->getTimestamp(), wp_timezone() ) );
+		$prev  = $start->modify( '-7 days' );
+		$next  = $start->modify( '+7 days' );
+
+		$html  = '<div class="oe-calendar__header">';
+		$html .= sprintf( '<%1$s class="oe-calendar__title" tabindex="-1">%2$s</%1$s>', $tag, esc_html( $title ) );
+		$html .= '<div class="oe-calendar__tools">' . $state['switcher'];
+		$html .= '<nav class="oe-calendar__nav" aria-label="' . esc_attr__( 'Weeks', 'openevents' ) . '">';
+		$html .= $prev >= self::range_start() ? self::nav_link( array( 'oe_date' => $prev->format( 'Y-m-d' ) ), __( 'Previous week', 'openevents' ), '‹' ) : '';
+		$html .= self::nav_link( array( 'oe_date' => null ), __( 'This week', 'openevents' ), __( 'Today', 'openevents' ), false );
+		$html .= $next <= self::range_end() ? self::nav_link( array( 'oe_date' => $next->format( 'Y-m-d' ) ), __( 'Next week', 'openevents' ), '›' ) : '';
+		$html .= '</nav></div></div>' . $state['filters'] . self::summary( $state );
+
+		$today   = current_datetime()->format( 'Y-m-d' );
+		$sub_tag = 'h' . min( 6, (int) substr( $tag, 1 ) + 1 );
+		$any     = false;
+		$html   .= '<ol class="oe-week">';
+		for ( $day = $start; $day <= $end; $day = $day->modify( '+1 day' ) ) {
+			$key    = $day->format( 'Y-m-d' );
+			$events = $days[ $key ] ?? array();
+			$any    = $any || (bool) $events;
+			$html  .= sprintf( '<li class="oe-week__day%s%s">', $key === $today ? ' is-today' : '', $events ? '' : ' is-empty' );
+			$html  .= sprintf(
+				'<%1$s class="oe-week__date"><a href="%2$s" rel="nofollow" data-wp-on--click="actions.navigate"%5$s><span class="oe-week__weekday">%3$s</span> <time datetime="%4$s">%6$s</time></a></%1$s>',
+				$sub_tag,
+				esc_url(
+					self::url(
+						array(
+							'oe_view' => in_array( 'day', $state['enabled'], true ) ? 'day' : 'list',
+							'oe_date' => $key,
+						)
+					)
+				),
+				esc_html( wp_date( 'D', $day->getTimestamp(), wp_timezone() ) ),
+				esc_attr( $key ),
+				$key === $today ? ' aria-current="date"' : '',
+				esc_html( wp_date( 'j', $day->getTimestamp(), wp_timezone() ) )
+			);
+			if ( $events ) {
+				$html .= '<ul class="oe-week__events">';
+				foreach ( $events as $occurrence ) {
+					$html .= '<li>' . self::month_item( $occurrence, $key, $state['popup'] ) . '</li>';
+				}
+				$html .= '</ul>';
+			}
+			$html .= '</li>';
+		}
+		$html .= '</ol>';
+
+		if ( ! $any ) {
+			$html .= '<p class="oe-calendar__empty">' . esc_html( self::is_filtered( $state ) ? __( 'No events match these filters this week.', 'openevents' ) : __( 'No events scheduled this week.', 'openevents' ) ) . '</p>';
+		}
+		return $html;
+	}
+
+	/**
+	 * One day's events as cards, all-day ones first.
+	 *
+	 * @param array<string, mixed> $state View state.
+	 */
+	public static function render_day( CalendarView $view, array $state ): string {
+		$day    = self::clamp( $state['date'] ?? current_datetime()->setTime( 0, 0 ) );
+		$key    = $day->format( 'Y-m-d' );
+		$events = self::by_day( $day, $day, $state )[ $key ] ?? array();
+		$tag    = $view->heading_tag();
+		$prev   = $day->modify( '-1 day' );
+		$next   = $day->modify( '+1 day' );
+
+		$html  = '<div class="oe-calendar__header">';
+		$html .= sprintf( '<%1$s class="oe-calendar__title" tabindex="-1">%2$s</%1$s>', $tag, esc_html( wp_date( 'l, F j, Y', $day->getTimestamp(), wp_timezone() ) ) );
+		$html .= '<div class="oe-calendar__tools">' . $state['switcher'];
+		$html .= '<nav class="oe-calendar__nav" aria-label="' . esc_attr__( 'Days', 'openevents' ) . '">';
+		$html .= $prev >= self::range_start() ? self::nav_link( array( 'oe_date' => $prev->format( 'Y-m-d' ) ), __( 'Previous day', 'openevents' ), '‹' ) : '';
+		$html .= self::nav_link( array( 'oe_date' => null ), __( 'Today', 'openevents' ), __( 'Today', 'openevents' ), false );
+		$html .= $next <= self::range_end() ? self::nav_link( array( 'oe_date' => $next->format( 'Y-m-d' ) ), __( 'Next day', 'openevents' ), '›' ) : '';
+		$html .= '</nav></div></div>' . $state['filters'] . self::summary( $state );
+
+		if ( ! $events ) {
+			return $html . '<p class="oe-calendar__empty">' . esc_html( self::is_filtered( $state ) ? __( 'No events match these filters on this day.', 'openevents' ) : __( 'No events scheduled on this day.', 'openevents' ) ) . '</p>';
+		}
+		$sub_tag = 'h' . min( 6, (int) substr( $tag, 1 ) + 1 );
+		$html   .= '<ol class="oe-list__items oe-day">';
+		foreach ( $events as $occurrence ) {
+			$html .= '<li>' . self::list_item( $occurrence, $sub_tag, array( 'popup' => $state['popup'] ) ) . '</li>';
+		}
+		return $html . '</ol>';
+	}
+
+	/**
+	 * Occurrences touching each local day from $from to $to, all-day and
+	 * multi-day ones first, then by start time.
+	 *
+	 * @param array<string, mixed> $state View state.
+	 * @return array<string, Occurrence[]> Keyed by "Y-m-d".
+	 */
+	private static function by_day( DateTimeImmutable $from, DateTimeImmutable $to, array $state ): array {
+		$result = openevents()->occurrences()->query(
+			array(
+				'local_from'   => $from->format( 'Y-m-d 00:00:00' ),
+				'local_to'     => $to->format( 'Y-m-d 23:59:59' ),
+				'categories'   => $state['categories'],
+				'search'       => $state['search'],
+				'per_page'     => -1,
+				'count'        => false,
+				'prime_images' => 'day' === $state['view'],
+			)
+		);
+		$days = array();
+		foreach ( $result['items'] as $occurrence ) {
+			$day  = max( $occurrence->start->format( 'Y-m-d' ), $from->format( 'Y-m-d' ) );
+			$stop = min( $occurrence->end->format( 'Y-m-d' ), $to->format( 'Y-m-d' ) );
+			while ( $day <= $stop ) {
+				$days[ $day ][] = $occurrence;
+				$day            = gmdate( 'Y-m-d', strtotime( $day . ' +1 day' ) );
+			}
+		}
+		foreach ( $days as $key => $items ) {
+			usort(
+				$items,
+				static function ( Occurrence $a, Occurrence $b ) use ( $key ): int {
+					$a_long = $a->all_day || $a->start->format( 'Y-m-d' ) !== $key;
+					$b_long = $b->all_day || $b->start->format( 'Y-m-d' ) !== $key;
+					return $a_long === $b_long ? $a->start <=> $b->start : ( $a_long ? -1 : 1 );
+				}
+			);
+			$days[ $key ] = $items;
+		}
+		return $days;
+	}
+
+	private static function clamp( DateTimeImmutable $date ): DateTimeImmutable {
+		return max( self::range_start(), min( self::range_end(), $date ) );
 	}
 
 	private static function month_item( Occurrence $occurrence, string $day, bool $popup = false ): string {

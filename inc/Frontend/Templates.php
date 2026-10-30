@@ -224,7 +224,7 @@ final class Templates {
 
 	/**
 	 * [openevents_calendar] places the calendar anywhere shortcodes run (page
-	 * builders, widgets). Attributes: views ("month,list"), view (default
+	 * builders, widgets). Attributes: views ("month,week,day,list"), view (default
 	 * view), categories (ids or slugs), legend, filters (yes/no), per_page.
 	 *
 	 * @param array<string, string>|string $atts Shortcode attributes.
@@ -232,7 +232,7 @@ final class Templates {
 	public static function calendar_shortcode( array|string $atts ): string {
 		$atts       = shortcode_atts(
 			array(
-				'views'      => 'month,list',
+				'views'      => 'month,week,day,list',
 				'view'       => '',
 				'categories' => '',
 				'legend'     => 'yes',
@@ -253,8 +253,8 @@ final class Templates {
 			$categories[] = get_queried_object_id();
 		}
 		$attributes = array(
-			'views'       => array_values( array_intersect( array_map( 'trim', explode( ',', (string) $atts['views'] ) ), array( 'month', 'list' ) ) ) ?: array( 'month', 'list' ),
-			'defaultView' => in_array( $atts['view'], array( 'month', 'list' ), true ) ? $atts['view'] : '',
+			'views'       => array_values( array_intersect( array_map( 'trim', explode( ',', (string) $atts['views'] ) ), array( 'month', 'week', 'day', 'list' ) ) ) ?: array( 'month', 'list' ),
+			'defaultView' => in_array( $atts['view'], array( 'month', 'week', 'day', 'list' ), true ) ? $atts['view'] : '',
 			'categories'  => $categories,
 			'showLegend'  => 'no' !== $atts['legend'],
 			'showFilters' => 'no' !== $atts['filters'],

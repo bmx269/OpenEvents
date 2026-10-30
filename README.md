@@ -46,7 +46,8 @@ Requires WordPress 7.1+ and PHP 8.2+.
 | **Series**: group events under a series page, with series passes | ✅ Done |
 | **TEC and Event Tickets importer** (`wp openevents import-tec`): in-place conversion with verification and rollback | ✅ Done |
 | **Privacy tools**: attendee data in WordPress's personal data export and erase | ✅ Done |
-| Week and day views, more calendar filters, per-date RSVP and tickets for recurring events | 🚧 In progress |
+| **Week and day views** | ✅ Done |
+| More calendar filters, per-date RSVP and tickets for recurring events | 🚧 In progress |
 | Calendar filter and search, event popups, category badges, per-category and per-post-type templates | ✅ Done |
 | Google Calendar import (iCal feeds) | Next |
 | Ticket QR codes and door check-in, Pro views (week, photo, map) | Planned |

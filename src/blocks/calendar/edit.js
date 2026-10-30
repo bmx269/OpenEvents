@@ -12,6 +12,8 @@ import CategoryPicker from '../shared/category-picker';
 
 const VIEWS = [
 	{ value: 'month', label: __( 'Month', 'openevents' ) },
+	{ value: 'week', label: __( 'Week', 'openevents' ) },
+	{ value: 'day', label: __( 'Day', 'openevents' ) },
 	{ value: 'list', label: __( 'List', 'openevents' ) },
 ];
 
