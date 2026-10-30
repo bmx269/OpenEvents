@@ -32,6 +32,7 @@ export default function AttendeesScreen( { root } ) {
 		fields: [
 			'email',
 			'event',
+			'date',
 			'status',
 			'checked_in',
 			'answers',
@@ -47,6 +48,7 @@ export default function AttendeesScreen( { root } ) {
 	const [ isLoading, setIsLoading ] = useState( true );
 	const [ error, setError ] = useState( null );
 	const [ refresh, setRefresh ] = useState( 0 );
+	const [ dates, setDates ] = useState( [] );
 
 	const query = useMemo( () => {
 		const filter = ( field ) =>
@@ -54,18 +56,36 @@ export default function AttendeesScreen( { root } ) {
 				( f ) => f.field === field && f.value !== undefined
 			)?.value;
 		const checkedIn = filter( 'checked_in' );
+		const event = filter( 'event' ) || undefined;
 		return {
 			page: view.page,
 			per_page: view.perPage,
 			search: view.search || undefined,
 			orderby: view.sort?.field,
 			order: view.sort?.direction,
-			event: filter( 'event' ) || undefined,
+			event,
+			// A date (sequence) only means something within one event.
+			sequence: event ? filter( 'date' ) : undefined,
 			status: filter( 'status' ) || undefined,
 			checked_in:
 				checkedIn === undefined ? undefined : checkedIn === 'yes',
 		};
 	}, [ view ] );
+
+	// Dates with attendees, for the Date filter, once an event is chosen.
+	useEffect( () => {
+		if ( ! query.event ) {
+			setDates( [] );
+			return;
+		}
+		apiFetch( {
+			path: addQueryArgs( '/openevents/v1/attendees/dates', {
+				event: query.event,
+			} ),
+		} )
+			.then( setDates )
+			.catch( () => setDates( [] ) );
+	}, [ query.event, refresh ] );
 
 	useEffect( () => {
 		setIsLoading( true );
@@ -119,6 +139,14 @@ export default function AttendeesScreen( { root } ) {
 				elements: events,
 				enableSorting: false,
 				filterBy: { operators: [ 'is' ], isPrimary: true },
+			},
+			{
+				id: 'date',
+				label: __( 'Date', 'openevents' ),
+				render: ( { item } ) => item.date || '—',
+				elements: dates,
+				enableSorting: false,
+				filterBy: dates.length > 1 ? { operators: [ 'is' ] } : false,
 			},
 			{
 				id: 'status',
@@ -177,7 +205,7 @@ export default function AttendeesScreen( { root } ) {
 					).toLocaleString(),
 			},
 		],
-		[ events ]
+		[ events, dates ]
 	);
 
 	const actions = useMemo(
@@ -212,6 +240,7 @@ export default function AttendeesScreen( { root } ) {
 
 	const csvUrl = addQueryArgs( root.dataset.csv, {
 		event: query.event,
+		sequence: query.sequence,
 		status: query.status,
 	} );
 

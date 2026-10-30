@@ -110,17 +110,29 @@ final class Service {
 		);
 	}
 
-	public function ticket_type( int $event_id ): ?TicketType {
+	/**
+	 * The RSVP type for one date of the event (0 is the event's own date), or
+	 * null when RSVPs are off or the event has no such date. Each date of a
+	 * repeating event has its own row, created on first use, so only dates
+	 * that are really on the schedule may create one.
+	 */
+	public function ticket_type( int $event_id, int $sequence = 0 ): ?TicketType {
 		$type = $this->types->find( $event_id, self::TYPE_KEY );
-		return ( $type && 'active' === $type->status ) ? $type : null;
+		if ( ! $type || 'active' !== $type->status ) {
+			return null;
+		}
+		if ( 0 === $sequence ) {
+			return $type;
+		}
+		return openevents()->occurrences()->by_sequence( $event_id, $sequence ) ? $this->types->for_date( $type, $sequence ) : null;
 	}
 
 	/**
-	 * Why RSVPs are closed for this event, or null when open.
+	 * Why RSVPs are closed for the type's date, or null when open.
 	 */
 	public function closed_reason( int $event_id, ?TicketType $type = null ): ?string {
-		$type ??= $this->ticket_type( $event_id );
-		$occurrence = openevents()->occurrences()->for_event( $event_id );
+		$type     ??= $this->ticket_type( $event_id );
+		$occurrence = $type ? TicketTypes::occurrence( $type ) : null;
 		if ( ! $type || ! $occurrence ) {
 			return 'disabled';
 		}
@@ -137,15 +149,21 @@ final class Service {
 
 	/**
 	 * Handles a response. $input keys: name, email, status ("going"|"not_going"),
-	 * quantity, token (to change an earlier response), website (honeypot),
-	 * ts (signed form timestamp), ip.
+	 * quantity, sequence (which date of a repeating event; 0 by default),
+	 * token (to change an earlier response, whose date it keeps), website
+	 * (honeypot), ts (signed form timestamp), ip.
 	 *
 	 * @param array<string, mixed> $input Raw input.
 	 */
 	public function respond( int $event_id, array $input ): Result {
-		$type = $this->ticket_type( $event_id );
+		$token  = (string) ( $input['token'] ?? '' );
+		$group  = '' !== $token ? $this->attendees->find_group_by_token( $token ) : null;
+		$people = $group ? $this->attendees->group( $group ) : array();
+		$type   = $group ? $this->response_type( $event_id, $people ) : $this->ticket_type( $event_id, absint( $input['sequence'] ?? 0 ) );
 		if ( ! $type ) {
-			return Result::error( 'disabled', __( 'This event is not taking RSVPs.', 'openevents' ) );
+			return $group
+				? Result::error( 'invalid', __( 'That link is no longer valid.', 'openevents' ) )
+				: Result::error( 'disabled', __( 'This event is not taking RSVPs.', 'openevents' ) );
 		}
 
 		// Bots fill hidden fields; humans can't. Pretend it worked.
@@ -154,13 +172,6 @@ final class Service {
 		}
 		if ( ! self::verify_timestamp( (string) ( $input['ts'] ?? '' ) ) ) {
 			return Result::error( 'invalid', __( 'Please wait a moment and submit the form again.', 'openevents' ) );
-		}
-
-		$token  = (string) ( $input['token'] ?? '' );
-		$group  = '' !== $token ? $this->attendees->find_group_by_token( $token ) : null;
-		$people = $group ? $this->attendees->group( $group ) : array();
-		if ( $group && ( ! $people || $people[0]->ticket_type_id !== $type->id ) ) {
-			return Result::error( 'invalid', __( 'That link is no longer valid.', 'openevents' ) );
 		}
 
 		// Full event with a waitlist: queue instead of booking.
@@ -309,6 +320,17 @@ final class Service {
 
 		do_action( 'openevents/rsvp/cancelled', $people, $people[0]->event_id );
 		return Result::ok( 'cancelled', __( 'Your RSVP has been cancelled.', 'openevents' ), $group );
+	}
+
+	/**
+	 * The RSVP type (and so the date) a response belongs to, if it's this
+	 * event's and RSVPs are still on.
+	 *
+	 * @param Attendee[] $people Response rows.
+	 */
+	public function response_type( int $event_id, array $people ): ?TicketType {
+		$type = $people ? $this->types->get( $people[0]->ticket_type_id ) : null;
+		return $type && $type->event_id === $event_id && self::TYPE_KEY === $type->type_key && 'active' === $type->status ? $type : null;
 	}
 
 	/**

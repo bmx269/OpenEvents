@@ -104,6 +104,7 @@ final class Admin {
 			wp_die( esc_html__( 'You are not allowed to export these attendees.', 'openevents' ), 403 );
 		}
 		$status = sanitize_key( wp_unslash( $_GET['status'] ?? '' ) );
+		$date   = isset( $_GET['sequence'] ) ? absint( $_GET['sequence'] ) : null;
 
 		$filename = 'attendees' . ( $event_id ? '-' . get_post_field( 'post_name', $event_id ) : '' ) . '-' . gmdate( 'Y-m-d' ) . '.csv';
 		nocache_headers();
@@ -116,11 +117,14 @@ final class Admin {
 		$args  = array(
 			'event_id' => $event_id,
 			'status'   => $status,
+			'sequence' => $date,
 			'per_page' => 500,
 			'orderby'  => 'created_utc',
 			'order'    => 'ASC',
 		);
-		$types = array();
+		$types   = array();
+		$dates   = array();
+		$tickets = new \OpenEvents\Attendance\TicketTypes();
 
 		// First pass: one column per attendee question that has answers.
 		$columns = array();
@@ -135,7 +139,7 @@ final class Admin {
 			++$page;
 		} while ( count( $batch['items'] ) === 500 );
 
-		fputcsv( $out, array_merge( array( 'Name', 'Email', 'Event', 'Status', 'Checked in', 'Check-in code', 'Response group', 'Created (UTC)' ), array_map( array( self::class, 'safe_cell' ), array_values( $columns ) ) ) );
+		fputcsv( $out, array_merge( array( 'Name', 'Email', 'Event', 'Date', 'Status', 'Checked in', 'Check-in code', 'Response group', 'Created (UTC)' ), array_map( array( self::class, 'safe_cell' ), array_values( $columns ) ) ) );
 
 		$page = 1;
 		do {
@@ -154,6 +158,7 @@ final class Admin {
 							self::safe_cell( $a->name ),
 							self::safe_cell( $a->email ),
 							self::safe_cell( html_entity_decode( get_the_title( $a->event_id ), ENT_QUOTES ) ),
+							$tickets->date_label( $a->ticket_type_id, $dates ),
 							$a->status,
 							$a->checked_in_utc ?? '',
 							$a->security_code,

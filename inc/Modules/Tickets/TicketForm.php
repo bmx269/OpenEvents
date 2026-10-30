@@ -24,7 +24,7 @@ final class TicketForm {
 
 	/**
 	 * @param int|\OpenEvents\Content\Event $owner Event (or series id, for passes) the tickets are for.
-	 * @param TicketType[]                   $types Active paid ticket types.
+	 * @param TicketType[]                   $types Active paid ticket types, all for one date.
 	 */
 	public static function render( int|\OpenEvents\Content\Event $owner, array $types, Checkout $checkout, string $token = '' ): string {
 		$owner    = is_int( $owner ) ? $owner : $owner->id();
@@ -49,6 +49,10 @@ final class TicketForm {
 			)
 		) . '">';
 		$html .= '<h3 class="oe-tickets__title" id="' . esc_attr( $id ) . '-title">' . esc_html__( 'Tickets', 'openevents' ) . '</h3>';
+		$first = $types ? reset( $types ) : null;
+		if ( $first ) {
+			$html .= \OpenEvents\Frontend\Formatter::booking_date( $first, 'oe-tickets__date' );
+		}
 
 		// Returning buyer: show their order.
 		$order = '' !== $token ? ( new Orders() )->by_token( $token ) : null;
@@ -82,6 +86,7 @@ final class TicketForm {
 		$gateways = Gateways::available( $currency );
 		$html    .= '<form class="oe-tickets__form" method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" data-wp-on--submit="actions.submit" data-wp-on--change="actions.recalculate">';
 		$html    .= '<input type="hidden" name="action" value="openevents_checkout"><input type="hidden" name="event_id" value="' . esc_attr( (string) $owner ) . '">';
+		$html    .= '<input type="hidden" name="sequence" value="' . esc_attr( (string) $first->sequence ) . '">';
 		$html    .= '<input type="hidden" name="ts" value="' . esc_attr( Guard::sign_timestamp() ) . '">';
 		$html    .= '<div class="oe-tickets__hp" aria-hidden="true"><label>' . esc_html__( 'Website', 'openevents' ) . ' <input type="text" name="website" tabindex="-1" autocomplete="off"></label></div>';
 

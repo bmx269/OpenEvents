@@ -155,6 +155,12 @@ $rsvp->sync( $talk );
 foreach ( array( array( 'Mary Jackson', 'mary@example.com' ), array( 'Dorothy Vaughan', 'dorothy@example.com' ) ) as $i => $person ) {
 	$rsvp->respond( $talk, array( 'name' => $person[0], 'email' => $person[1], 'status' => 'going', 'quantity' => 1, 'attendees' => array( array( 'fields' => array( 'have-you-read-the-book' => 'Yes' ) ) ), 'ts' => OpenEvents\Attendance\Guard::sign_timestamp( time() - 60 ), 'ip' => '192.0.2.3' . $i ) );
 }
+// Per-date places: each storytime date takes 3 RSVPs; one is taken on the second upcoming date.
+update_post_meta( $storytime, '_oe_rsvp', array( 'enabled' => true, 'capacity' => 3, 'max_per_response' => 2 ) );
+$rsvp->sync( $storytime );
+$story_second = openevents()->occurrences()->query( array( 'event_ids' => array( $storytime ), 'ends_after' => OpenEvents\Occurrences\Repository::now(), 'per_page' => 2, 'count' => false, 'prime' => false ) )['items'][1];
+$rsvp->respond( $storytime, array( 'name' => 'Mae Jemison', 'email' => 'mae@example.com', 'status' => 'going', 'quantity' => 1, 'sequence' => $story_second->sequence, 'ts' => OpenEvents\Attendance\Guard::sign_timestamp( time() - 60 ), 'ip' => '192.0.2.40' ) );
+
 $tickets_meta   = get_post_meta( $concert, '_oe_tickets', true );
 $tickets_meta[] = array( 'key' => 'front', 'name' => 'Front Row', 'price' => '60', 'capacity' => 2, 'max_per_order' => 2, 'waitlist' => true );
 update_post_meta( $concert, '_oe_tickets', $tickets_meta );

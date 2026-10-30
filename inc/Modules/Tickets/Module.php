@@ -275,7 +275,7 @@ final class Module extends AbstractModule {
 	 */
 	public function section( array $sections, Event $event, Occurrence $occurrence ): array {
 		$checkout = new Checkout();
-		$types    = $checkout->ticket_types( $event->id() );
+		$types    = $checkout->ticket_types( $event->id(), false, $this->sequence_for_page( $event->id(), $occurrence ) );
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		$token = sanitize_text_field( wp_unslash( $_GET['oe_order_token'] ?? '' ) );
 		if ( $types || '' !== $token ) {
@@ -283,6 +283,21 @@ final class Module extends AbstractModule {
 			$sections['tickets'] = TicketForm::render( $event->id(), $types, $checkout, $token );
 		}
 		return $sections;
+	}
+
+	/**
+	 * The date the tickets are for: a private waitlist link keeps its own
+	 * date wherever it opens (to claim held tickets); otherwise the date shown.
+	 */
+	private function sequence_for_page( int $event_id, Occurrence $occurrence ): int {
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only display state.
+		$wl_token = sanitize_text_field( wp_unslash( $_GET['oe_waitlist'] ?? '' ) );
+		$entry    = '' !== $wl_token ? ( new \OpenEvents\Attendance\Waitlist() )->by_token( $wl_token ) : null;
+		$type     = $entry && $entry->event_id === $event_id ? ( new \OpenEvents\Attendance\TicketTypes() )->get( $entry->ticket_type_id ) : null;
+		if ( $type && 'paid' === $type->kind ) {
+			return $type->sequence;
+		}
+		return $occurrence->event_id === $event_id ? $occurrence->sequence : 0;
 	}
 
 	/**
@@ -314,6 +329,7 @@ final class Module extends AbstractModule {
 			array(
 				'name'    => wp_unslash( $_POST['name'] ?? '' ),
 				'email'   => wp_unslash( $_POST['email'] ?? '' ),
+				'sequence' => absint( $_POST['sequence'] ?? 0 ),
 				'tickets' => array_map( 'absint', (array) wp_unslash( $_POST['tickets'] ?? array() ) ),
 				'attendees' => wp_unslash( (array) ( $_POST['attendees'] ?? array() ) ),
 				'gateway' => sanitize_key( wp_unslash( $_POST['gateway'] ?? '' ) ),
@@ -329,7 +345,10 @@ final class Module extends AbstractModule {
 			wp_redirect( $result->redirect, 303 ); // phpcs:ignore WordPress.Security.SafeRedirect.wp_redirect_wp_redirect -- provider checkout URLs are external.
 			exit;
 		}
-		wp_safe_redirect( add_query_arg( array( 'oe_checkout' => 'error', 'oe_checkout_code' => $result->code ), (string) get_permalink( $event_id ) ) . '#tickets', 303 );
+		// Back to the date the form was for.
+		$occurrence = openevents()->occurrences()->by_sequence( $event_id, absint( $_POST['sequence'] ?? 0 ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
+		$page       = $occurrence ? openevents_occurrence_url( $occurrence ) : (string) get_permalink( $event_id );
+		wp_safe_redirect( add_query_arg( array( 'oe_checkout' => 'error', 'oe_checkout_code' => $result->code ), $page ) . '#tickets', 303 );
 		exit;
 	}
 

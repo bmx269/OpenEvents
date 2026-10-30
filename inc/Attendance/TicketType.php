@@ -24,6 +24,8 @@ final class TicketType {
 		public readonly string $status,
 		/** @var array<string, mixed> */
 		public readonly array $settings,
+		/** Which date of the event this row's seats are for; 0 is the event's own date. */
+		public readonly int $sequence = 0,
 	) {}
 
 	public static function from_row( object $row ): TicketType {
@@ -38,6 +40,7 @@ final class TicketType {
 			$row->sale_end_utc ?: null,
 			(string) $row->status,
 			(array) json_decode( (string) $row->settings, true ),
+			(int) ( $row->sequence ?? 0 ),
 		);
 	}
 

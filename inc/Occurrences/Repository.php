@@ -301,6 +301,17 @@ final class Repository {
 	}
 
 	/**
+	 * One date of an event by its sequence (0 is the event's own date).
+	 */
+	public function by_sequence( int $event_id, int $sequence ): ?Occurrence {
+		global $wpdb;
+		Sync::instance()->flush();
+		$table = Installer::occurrences_table();
+		$row   = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table} WHERE event_id = %d AND sequence = %d", $event_id, $sequence ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery
+		return $row ? Occurrence::from_row( $row ) : null;
+	}
+
+	/**
 	 * The occurrence a visitor asked for: the date in ?oe_occurrence= (links to one
 	 * date of a repeating event carry it), else the next one (see for_event()).
 	 */

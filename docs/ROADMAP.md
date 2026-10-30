@@ -75,7 +75,7 @@ Done in Phase 2 groundwork:
 - ✅ RRULE engine (RFC 5545 subset), RDATE/EXDATE, expansion into occurrences with stable ids, rolling two-year horizon extended by cron (done 2026-10-28; tests in `RuleTest.php`, `RecurrenceTest.php`, `recurrence.spec.js`).
 - ✅ Repeat panel in the editor with a live preview; editing scope "this date / this and following / all" (detach and split into new events linked by `_oe_series_parent`); skip and add dates.
 - ✅ Per-date links (`?oe_occurrence=`), event pages showing the requested date, the rule in words, and the next dates; REST preview and date actions.
-- Per-occurrence RSVP and tickets (the tables already carry `occurrence_id`).
+- ✅ Per-date RSVP and tickets: each date has its own capacity, waitlist, and attendee list, keyed by the date's sequence (stable across rebuilds); emails and private links keep their date (tests in `PerDateCapacityTest.php`, `per-date.spec.js`).
 - Import of TEC Pro `_EventRecurrence` rules (with the TEC importer).
 - RRULE export in iCal feeds (dates are exported expanded today).
 
