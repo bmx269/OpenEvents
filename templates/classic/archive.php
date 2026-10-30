@@ -8,7 +8,10 @@
 
 get_header();
 
-$openevents_attrs = array( 'showLegend' => true );
+$openevents_attrs = array(
+	'showLegend' => true,
+	'views'      => array( 'month', 'week', 'day', 'list' ),
+);
 if ( is_tax( OpenEvents\Content\PostTypes::CATEGORY ) ) {
 	$openevents_attrs['categories'] = array( get_queried_object_id() );
 }

@@ -261,8 +261,8 @@ final class Tec {
 						'events_slug'         => (string) ( $tec['eventsSlug'] ?? 'events' ),
 						'single_slug'         => (string) ( $tec['singleEventSlug'] ?? 'event' ),
 						'per_page'            => (int) ( $tec['postsPerPage'] ?? $current['per_page'] ),
-						// Week and day views aren't built yet; list is the closest for both.
-						'default_view'        => 'month' === $view ? 'month' : 'list',
+						// TEC's photo, map, and summary views have no equivalent yet; list is closest.
+						'default_view'        => in_array( $view, array( 'month', 'week', 'day', 'list' ), true ) ? $view : 'list',
 						'currency'            => (string) ( $tec['tickets-commerce-currency-code'] ?? $current['currency'] ),
 					)
 				)

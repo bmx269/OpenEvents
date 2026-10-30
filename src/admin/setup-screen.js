@@ -249,6 +249,20 @@ export default function SetupScreen() {
 												),
 											},
 											{
+												value: 'week',
+												label: __(
+													'Week',
+													'openevents'
+												),
+											},
+											{
+												value: 'day',
+												label: __(
+													'Day',
+													'openevents'
+												),
+											},
+											{
 												value: 'list',
 												label: __(
 													'List',
@@ -274,7 +288,7 @@ export default function SetupScreen() {
 								/>
 								<Text variant="body-sm">
 									{ __(
-										'Recurring events, RSVP, and ticket sales are in development and will appear here as modules.',
+										'Turn features on or off at any time in Events → Settings → Modules.',
 										'openevents'
 									) }
 								</Text>

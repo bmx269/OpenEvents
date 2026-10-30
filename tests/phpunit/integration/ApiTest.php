@@ -19,7 +19,7 @@ final class ApiTest extends TestCase {
 			array(
 				'event_post_types' => array( 'post', 'not_a_type', 'attachment' ),
 				'per_page'         => 5000,
-				'default_view'     => 'week',
+				'default_view'     => 'photo',
 				'events_slug'      => 'Our Events!',
 				'extra'            => 'dropped',
 			)

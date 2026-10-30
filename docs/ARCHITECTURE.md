@@ -195,7 +195,7 @@ Extend `AbstractModule` and register through the `openevents/modules` filter. En
 ## Front end
 
 - **Blocks (apiVersion 3, iframe-safe, server-rendered):**
-  - `calendar`: month and list views, view switcher, category legend, list pagination.
+  - `calendar`: month, week, day, and list views, view switcher, category legend, list pagination. The events archive offers all four; the block defaults to month and list.
   - `upcoming-events`: compact list.
   - `event-details`: date, venue with an OpenStreetMap link, organizers, cost, website, add-to-calendar links.
 - **Navigation** is links with `oe_view` / `oe_month` / `oe_date` / `oe_page` / `oe_past`.

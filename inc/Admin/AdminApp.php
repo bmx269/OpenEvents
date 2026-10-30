@@ -81,7 +81,7 @@ final class AdminApp {
 							'per_page'                 => array( 'type' => 'integer' ),
 							'default_view'             => array(
 								'type' => 'string',
-								'enum' => array( 'month', 'list' ),
+								'enum' => array( 'month', 'week', 'day', 'list' ),
 							),
 							'click_action'             => array(
 								'type' => 'string',
