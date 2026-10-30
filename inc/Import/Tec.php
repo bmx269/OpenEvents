@@ -131,6 +131,7 @@ final class Tec {
 		$this->convert_posts();
 		$this->venues_and_organizers();
 		$this->events();
+		$this->additional_fields();
 		$this->field_sets();
 		$this->tickets();
 		$this->orders_and_attendees();
@@ -412,6 +413,87 @@ final class Tec {
 		if ( $offsets ) {
 			$this->report['notes'][] = sprintf( '%d events used a fixed UTC offset; their wall-clock times were kept with the site timezone (ids: %s).', count( $offsets ), implode( ', ', array_slice( $offsets, 0, 20 ) ) );
 		}
+	}
+
+	/**
+	 * TEC Pro "Additional fields": choice fields (checkbox, radio, dropdown)
+	 * become event attributes (taxonomies) with their options as terms; text
+	 * fields become labelled rows in the event details (`_oe_details`).
+	 */
+	private function additional_fields(): void {
+		$this->step( 'Additional fields' );
+		$defs = (array) ( get_option( 'tribe_events_calendar_options', array() )['custom-fields'] ?? array() );
+		if ( ! $defs ) {
+			return;
+		}
+
+		$settings   = openevents()->settings()->all();
+		$attributes = (array) $settings['attributes'];
+		$choices    = array();
+		$texts      = array();
+		foreach ( $defs as $def ) {
+			if ( ! is_array( $def ) || empty( $def['name'] ) || '' === trim( (string) ( $def['label'] ?? '' ) ) ) {
+				continue;
+			}
+			$label = trim( (string) $def['label'] );
+			if ( in_array( $def['type'] ?? '', array( 'checkbox', 'radio', 'dropdown' ), true ) ) {
+				$existing = array_values( array_filter( $attributes, static fn( $a ) => $a['label'] === $label ) );
+				if ( ! $existing ) {
+					$attributes[] = array( 'label' => $label );
+				}
+				$choices[ (string) $def['name'] ] = array(
+					'label'   => $label,
+					'options' => array_values( array_filter( array_map( 'trim', preg_split( '/\r\n|\n|\r/', (string) ( $def['values'] ?? '' ) ) ) ) ),
+				);
+			} else {
+				$texts[ (string) $def['name'] ] = $label;
+			}
+		}
+
+		if ( $choices ) {
+			update_option( Settings::OPTION, Settings::sanitize( array_merge( $settings, array( 'attributes' => $attributes ) ) ) );
+			\OpenEvents\Content\Attributes::register_taxonomies();
+			$by_label = array_flip( \OpenEvents\Content\Attributes::all() );
+			foreach ( $choices as $name => $choice ) {
+				$taxonomy = $by_label[ $choice['label'] ] ?? '';
+				foreach ( $choice['options'] as $option ) {
+					// Created in TEC's order; the calendar lists terms by creation order.
+					if ( $taxonomy && ! term_exists( $option, $taxonomy ) ) {
+						wp_insert_term( $option, $taxonomy );
+					}
+				}
+				$choices[ $name ]['taxonomy'] = $taxonomy;
+			}
+		}
+
+		$assigned = 0;
+		foreach ( $this->converted( PostTypes::EVENT ) as $id ) {
+			foreach ( $choices as $name => $choice ) {
+				$value = trim( (string) get_post_meta( $id, $name, true ) );
+				if ( '' !== $value && $choice['taxonomy'] ) {
+					wp_set_object_terms( $id, array_values( array_filter( array_map( 'trim', explode( '|', $value ) ) ) ), $choice['taxonomy'] );
+					++$assigned;
+				}
+			}
+			$details = array();
+			foreach ( $texts as $name => $label ) {
+				$value = trim( (string) get_post_meta( $id, $name, true ) );
+				if ( '' !== $value ) {
+					$details[] = array(
+						'label' => $label,
+						'value' => $value,
+					);
+				}
+			}
+			if ( $details ) {
+				update_post_meta( $id, '_oe_details', Meta::sanitize_details( $details ) );
+			}
+		}
+		$this->report['additional fields'] = array(
+			'attributes'          => array_values( array_column( $choices, 'label' ) ),
+			'events with choices' => $assigned,
+			'text fields'         => array_values( $texts ),
+		);
 	}
 
 	/**

@@ -121,6 +121,16 @@ final class EventDetails {
 			);
 		}
 
+		$rows += \OpenEvents\Content\Attributes::detail_rows( $post_id );
+		foreach ( (array) $event->meta( '_oe_details' ) as $i => $detail ) {
+			if ( is_array( $detail ) && '' !== (string) ( $detail['label'] ?? '' ) && '' !== (string) ( $detail['value'] ?? '' ) ) {
+				$rows[ 'detail-' . $i ] = array(
+					'label' => (string) $detail['label'],
+					'html'  => make_clickable( esc_html( (string) $detail['value'] ) ),
+				);
+			}
+		}
+
 		if ( $event->url() ) {
 			$rows['website'] = array(
 				'label' => __( 'Website', 'openevents' ),

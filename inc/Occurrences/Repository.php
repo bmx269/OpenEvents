@@ -48,6 +48,8 @@ final class Repository {
 			'categories'     => array(), // Term ids; children included.
 			'venue'          => 0,
 			'series'         => 0,       // Series post id (series module).
+			'weekdays'       => array(), // Local start weekdays, 0 (Sunday) to 6; any of them.
+			'terms'          => array(), // Taxonomy => term ids: any term within a taxonomy, every taxonomy.
 			'event_ids'      => array(),
 			'post_types'     => array(), // Defaults to every event-enabled post type.
 			'search'         => '',
@@ -179,6 +181,21 @@ final class Repository {
 				"o.event_id IN (SELECT sm.post_id FROM {$wpdb->postmeta} sm WHERE sm.meta_key = '_oe_series_id' AND sm.meta_value = %s)",
 				(string) absint( $args['series'] )
 			);
+		}
+
+		$weekdays = array_values( array_unique( array_filter( array_map( 'intval', (array) $args['weekdays'] ), static fn( $d ) => $d >= 0 && $d <= 6 ) ) );
+		if ( $weekdays && count( $weekdays ) < 7 ) {
+			// DAYOFWEEK is 1 (Sunday) to 7.
+			$where[] = '( DAYOFWEEK( o.start_local ) - 1 ) IN (' . implode( ',', $weekdays ) . ')';
+		}
+
+		foreach ( (array) $args['terms'] as $taxonomy => $term_ids ) {
+			$tt_ids = self::term_tt_ids( (string) $taxonomy, (array) $term_ids );
+			if ( null !== $tt_ids ) {
+				$where[] = $tt_ids
+					? "o.event_id IN (SELECT tr.object_id FROM {$wpdb->term_relationships} tr WHERE tr.term_taxonomy_id IN (" . implode( ',', $tt_ids ) . '))'
+					: '1 = 0';
+			}
 		}
 
 		$event_ids = array_filter( array_map( 'absint', (array) $args['event_ids'] ) );
@@ -389,6 +406,36 @@ final class Repository {
 	 * @param int[] $term_ids Term ids.
 	 * @return int[]|null Null when no category filter applies; empty when none matched.
 	 */
+	/**
+	 * Term taxonomy ids for terms of any taxonomy (children included), or null
+	 * when there's nothing to filter by.
+	 *
+	 * @param int[] $term_ids Term ids.
+	 * @return int[]|null
+	 */
+	private static function term_tt_ids( string $taxonomy, array $term_ids ): ?array {
+		$term_ids = array_filter( array_map( 'absint', $term_ids ) );
+		if ( ! $term_ids || ! taxonomy_exists( $taxonomy ) ) {
+			return null;
+		}
+		$all = $term_ids;
+		foreach ( $term_ids as $term_id ) {
+			$children = get_term_children( $term_id, $taxonomy );
+			if ( is_array( $children ) ) {
+				$all = array_merge( $all, $children );
+			}
+		}
+		$terms = get_terms(
+			array(
+				'taxonomy'   => $taxonomy,
+				'include'    => array_unique( $all ),
+				'hide_empty' => false,
+				'fields'     => 'tt_ids',
+			)
+		);
+		return is_array( $terms ) ? array_map( 'intval', $terms ) : array();
+	}
+
 	private static function category_tt_ids( array $term_ids ): ?array {
 		$term_ids = array_filter( array_map( 'absint', $term_ids ) );
 		if ( ! $term_ids ) {

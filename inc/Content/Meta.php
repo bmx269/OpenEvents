@@ -71,6 +71,24 @@ final class Meta {
 			),
 			'_oe_featured'           => array( 'type' => 'boolean' ),
 			'_oe_hide_from_listings' => array( 'type' => 'boolean' ),
+			// Extra labelled details shown in the event details (imported TEC Pro additional fields).
+			'_oe_details'            => array(
+				'type'              => 'array',
+				'default'           => array(),
+				'sanitize_callback' => array( self::class, 'sanitize_details' ),
+				'show_in_rest'      => array(
+					'schema' => array(
+						'type'  => 'array',
+						'items' => array(
+							'type'       => 'object',
+							'properties' => array(
+								'label' => array( 'type' => 'string' ),
+								'value' => array( 'type' => 'string' ),
+							),
+						),
+					),
+				),
+			),
 		);
 	}
 
@@ -166,6 +184,24 @@ final class Meta {
 				);
 			}
 		}
+	}
+
+	/**
+	 * @return array<int, array{label: string, value: string}>
+	 */
+	public static function sanitize_details( mixed $value ): array {
+		$out = array();
+		foreach ( is_array( $value ) ? $value : array() as $row ) {
+			$label = trim( sanitize_text_field( (string) ( $row['label'] ?? '' ) ) );
+			$text  = trim( sanitize_textarea_field( (string) ( $row['value'] ?? '' ) ) );
+			if ( '' !== $label && '' !== $text ) {
+				$out[] = array(
+					'label' => $label,
+					'value' => $text,
+				);
+			}
+		}
+		return $out;
 	}
 
 	/**

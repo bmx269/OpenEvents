@@ -82,7 +82,8 @@ store( 'openevents/calendar', {
 			const url = new URL( form.action, window.location.href );
 			for ( const [ key, value ] of new window.FormData( form ) ) {
 				if ( value ) {
-					url.searchParams.set( key, value );
+					// Append: checkbox filters send several values for one name.
+					url.searchParams.append( key, value );
 				}
 			}
 			const { actions } = yield import(

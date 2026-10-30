@@ -45,6 +45,7 @@ Requires WordPress 7.1+ and PHP 8.2+.
 | **Attendee fields**: questions per RSVP or ticket type (ten field types, consent boxes), each person's own name and email, saved question sets, answers in the attendee list and CSV | ✅ Done |
 | **Series**: group events under a series page, with series passes | ✅ Done |
 | **Week and day views** | ✅ Done |
+| **Event attributes and calendar filters**: lists such as Audiences, filter by attribute and day of the week | ✅ Done |
 | TEC and Event Tickets importer, per-date RSVP and tickets for recurring events | 🚧 In progress |
 | Calendar filter and search, event popups, category badges, per-category and per-post-type templates | ✅ Done |
 | Google Calendar import (iCal feeds) | Next |

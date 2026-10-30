@@ -4,6 +4,7 @@
  */
 import { __, _n, sprintf } from '@wordpress/i18n';
 import {
+	Button,
 	CheckboxControl,
 	InputControl,
 	InputLayout,
@@ -291,6 +292,72 @@ export function ModuleFields( { enabled, onChange } ) {
 					}
 				/>
 			) ) }
+		</Stack>
+	);
+}
+
+/**
+ * Event attributes: lists such as Audiences that describe events beyond
+ * categories. Each is a taxonomy with checkboxes in the editor, a row in the
+ * event details, and a filter on the calendar.
+ *
+ * @param {Object}   props
+ * @param {Object}   props.settings Current settings.
+ * @param {Function} props.update   Receives partial settings.
+ */
+export function AttributeFields( { settings, update } ) {
+	const attributes = settings.attributes || [];
+	const set = ( next ) => update( { attributes: next } );
+	return (
+		<Stack direction="column" gap="md">
+			<Text variant="body-sm">
+				{ __(
+					'Add lists such as “Audiences” or “Format”. Editors pick from them in the Event panel, visitors see them in the event details and can filter the calendar by them. Manage each list’s choices under Events.',
+					'openevents'
+				) }
+			</Text>
+			{ attributes.map( ( attribute, index ) => (
+				<Stack
+					key={ attribute.slug || index }
+					direction="row"
+					gap="sm"
+					align="end"
+				>
+					<InputControl
+						label={ __( 'Attribute name', 'openevents' ) }
+						value={ attribute.label }
+						onValueChange={ ( label ) =>
+							set(
+								attributes.map( ( a, i ) =>
+									i === index ? { ...a, label } : a
+								)
+							)
+						}
+					/>
+					<Button
+						variant="outline"
+						onClick={ () =>
+							set( attributes.filter( ( _, i ) => i !== index ) )
+						}
+					>
+						{ sprintf(
+							/* translators: %s: attribute name */
+							__( 'Remove %s', 'openevents' ),
+							attribute.label || __( 'attribute', 'openevents' )
+						) }
+					</Button>
+				</Stack>
+			) ) }
+			<div>
+				<Button
+					variant="outline"
+					onClick={ () =>
+						set( [ ...attributes, { slug: '', label: '' } ] )
+					}
+				>
+					{ __( 'Add attribute', 'openevents' ) }
+				</Button>
+			</div>
 		</Stack>
 	);
 }

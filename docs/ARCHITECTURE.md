@@ -156,6 +156,13 @@ Patterns used throughout:
 - Admin: Events → Attendees (DataViews, server-paged) with check-in, cancel, and streamed CSV export protected against spreadsheet formula injection.
 - Hooks: `openevents/rsvp/responded`, `openevents/rsvp/cancelled`, `openevents/rsvp/email`, `openevents/attendees/capability`, `openevents/client_ip`.
 
+## Event attributes and calendar filters
+
+- **Attributes** (`Content\Attributes`): site-defined lists such as Audiences or Format, stored in the `attributes` setting as `[ { slug, label } ]` and registered as taxonomies `oe_{slug}` on every event post type: checkbox lists in the editor, REST, admin columns, no public archives. Each shows as a row in the event details. Manage them under Settings → Content.
+- **`_oe_details`**: extra labelled rows for the event details (`[ { label, value } ]`), used for imported TEC Pro text fields.
+- **Calendar filters:** besides category and search, a "More filters" disclosure with day of the week (`oe_dow[]`) and each attribute (`oe_{slug}[]`) as checkboxes. Values within a filter match any; different filters must all match. Repository arguments: `weekdays` (0–6, local start) and `terms` (taxonomy => term ids). Parameter names come from `CalendarView::params()`.
+- **TEC import:** Pro additional fields of type checkbox, radio, or dropdown become attributes with their options as terms; text fields become `_oe_details` rows.
+
 ## Recurrence module
 
 - **Storage:** `_oe_recurrence` = `{ rrule, rdates, exdates }`, the three parts of an iCal VEVENT. `rrule` is a standard RFC 5545 string, so rules from iCal feeds, Google Calendar, and TEC map over as text.

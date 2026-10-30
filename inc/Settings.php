@@ -41,6 +41,7 @@ final class Settings {
 			'date_format'              => '',
 			'time_format'              => '',
 			'remove_data_on_uninstall' => false,
+			'attributes'               => array(), // Event attributes (taxonomies): [ { slug, label } ].
 		);
 	}
 
@@ -165,6 +166,7 @@ final class Settings {
 			'date_format'              => sanitize_text_field( (string) ( $input['date_format'] ?? '' ) ),
 			'time_format'              => sanitize_text_field( (string) ( $input['time_format'] ?? '' ) ),
 			'remove_data_on_uninstall' => ! empty( $input['remove_data_on_uninstall'] ),
+			'attributes'               => \OpenEvents\Content\Attributes::sanitize( $input['attributes'] ?? array() ),
 		);
 	}
 
